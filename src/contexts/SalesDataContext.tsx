@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { ImportedSale, MarketplaceQuantity } from "@/types/import";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface DuplicateInfo {
   marketplace: string;
@@ -31,12 +32,12 @@ interface SalesDataContextType {
   updateSale: (sellerId: string, marketplace: string, ano: number, mes: number, dia: number, vendaTotal: number) => void;
   updateSaleField: (sellerId: string, marketplace: string, ano: number, mes: number, dia: number, field: string, value: number) => void;
   findDuplicates: (sellerId: string, newData: ImportedSale[]) => DuplicateCheckResult;
+  isLoading: boolean;
   // Marketplace quantities
   getMarketplaceQuantity: (sellerId: string, marketplace: string, ano: number, mes: number) => number;
   updateMarketplaceQuantity: (sellerId: string, marketplace: string, ano: number, mes: number, qtdVendas: number) => void;
 }
 
-const STORAGE_KEY = "imported_sales_data";
 const QUANTITIES_STORAGE_KEY = "marketplace_quantities";
 
 const SalesDataContext = createContext<SalesDataContextType | undefined>(undefined);
@@ -44,24 +45,70 @@ const SalesDataContext = createContext<SalesDataContextType | undefined>(undefin
 export function SalesDataProvider({ children }: { children: React.ReactNode }) {
   const [salesData, setSalesData] = useState<ImportedSale[]>([]);
   const [marketplaceQuantities, setMarketplaceQuantities] = useState<Record<string, number>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const hasLoadedRef = useRef(false);
 
-  // Load from localStorage on mount
+  // Load from Supabase on mount (once)
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+
+    async function loadFromDB() {
       try {
-        const parsed = JSON.parse(stored);
-        setSalesData(parsed);
-      } catch (error) {
-        console.error("Erro ao carregar dados de vendas:", error);
+        const allData: ImportedSale[] = [];
+        let from = 0;
+        const pageSize = 1000;
+
+        while (true) {
+          const { data, error } = await supabase
+            .from("sales_data")
+            .select("*")
+            .range(from, from + pageSize - 1);
+
+          if (error) {
+            console.error("Erro ao carregar dados do Supabase:", error);
+            break;
+          }
+          if (!data || data.length === 0) break;
+
+          const mapped = data.map((row) => ({
+            sellerId: row.seller_id,
+            marketplace: row.marketplace,
+            ano: row.ano,
+            mes: row.mes,
+            dia: row.dia,
+            vendaTotal: Number(row.venda_total),
+            vendaAprovadaReal: row.venda_aprovada_real ? Number(row.venda_aprovada_real) : undefined,
+            qtdVendas: row.qtd_vendas ? Number(row.qtd_vendas) : undefined,
+            pmt: row.pmt ? Number(row.pmt) : undefined,
+            metaVendas: row.meta_vendas ? Number(row.meta_vendas) : undefined,
+            vendaAnoAnterior: row.venda_ano_anterior ? Number(row.venda_ano_anterior) : undefined,
+          }));
+
+          allData.push(...mapped);
+          if (data.length < pageSize) break;
+          from += pageSize;
+        }
+
+        if (allData.length > 0) {
+          setSalesData(allData);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar dados:", err);
+      } finally {
+        setIsLoading(false);
       }
     }
-    
+
+    loadFromDB();
+  }, []);
+
+  // Load quantities from localStorage
+  useEffect(() => {
     const storedQuantities = localStorage.getItem(QUANTITIES_STORAGE_KEY);
     if (storedQuantities) {
       try {
-        const parsed = JSON.parse(storedQuantities);
-        setMarketplaceQuantities(parsed);
+        setMarketplaceQuantities(JSON.parse(storedQuantities));
       } catch (error) {
         console.error("Erro ao carregar quantidades:", error);
       }
