@@ -339,18 +339,18 @@ export function DailySalesTable({
   return (
     <Card>
       {!compact && (
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-primary" />
-          <CardTitle className="text-lg font-semibold">Vendas Diárias</CardTitle>
-          {isEditable && selectedMarketplace !== "all" && (
-            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-              Clique para editar
-            </span>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-primary" />
+            <CardTitle className="text-lg font-semibold">Vendas Diárias</CardTitle>
+            {isEditable && selectedMarketplace !== "all" && (
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                Clique para editar
+              </span>
+            )}
+          </div>
+        </CardHeader>
+      )}
         <div className="overflow-x-auto -mx-4 sm:mx-0">
           <Table>
             <TableHeader>
