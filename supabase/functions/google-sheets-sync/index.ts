@@ -217,8 +217,8 @@ function parseTabData(
     
     if (!colMap["dia"]) continue;
 
-    // Parse data rows (start at row 2)
-    for (let i = 2; i < rows.length; i++) {
+    // Parse data rows
+    for (let i = dataStartRow; i < rows.length; i++) {
       const row = rows[i];
       if (!row || row.length <= section.startCol) continue;
 
