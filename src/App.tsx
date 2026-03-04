@@ -18,6 +18,7 @@ import Sellers from "./pages/Sellers";
 import UserManagement from "./pages/UserManagement";
 import Profile from "./pages/Profile";
 import TVMode from "./pages/TVMode";
+import Integrations from "./pages/Integrations";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -47,6 +48,7 @@ const App = () => (
                       <Route path="/sellers" element={<RoleRoute><Sellers /></RoleRoute>} />
                       <Route path="/usuarios" element={<RoleRoute><UserManagement /></RoleRoute>} />
                       <Route path="/perfil" element={<Profile />} />
+                      <Route path="/integracoes" element={<RoleRoute><Integrations /></RoleRoute>} />
                     </Route>
                   </Route>
                   <Route path="*" element={<NotFound />} />

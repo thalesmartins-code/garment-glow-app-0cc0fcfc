@@ -1,0 +1,392 @@
+import { useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { useSeller } from "@/contexts/SellerContext";
+import { Seller } from "@/types/seller";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ExternalLink,
+  Link2,
+  Link2Off,
+  RefreshCw,
+  ShieldCheck,
+  Zap,
+} from "lucide-react";
+
+interface MarketplaceIntegration {
+  id: string;
+  name: string;
+  logo: string;
+  description: string;
+  status: "connected" | "disconnected" | "expired";
+  authType: "oauth" | "api_key";
+  docsUrl: string;
+  features: string[];
+}
+
+const MARKETPLACE_INTEGRATIONS: MarketplaceIntegration[] = [
+  {
+    id: "ml",
+    name: "Mercado Livre",
+    logo: "🟡",
+    description: "Sincronize pedidos, vendas e métricas diretamente da sua conta do Mercado Livre.",
+    status: "disconnected",
+    authType: "oauth",
+    docsUrl: "https://developers.mercadolivre.com.br",
+    features: ["Pedidos", "Vendas", "Métricas", "Anúncios"],
+  },
+  {
+    id: "amz",
+    name: "Amazon",
+    logo: "📦",
+    description: "Conecte sua conta Seller Central da Amazon para importar dados de vendas.",
+    status: "disconnected",
+    authType: "oauth",
+    docsUrl: "https://developer-docs.amazon.com/sp-api",
+    features: ["Pedidos", "Vendas", "Inventário", "Relatórios"],
+  },
+  {
+    id: "shopee",
+    name: "Shopee",
+    logo: "🧡",
+    description: "Integre com a Shopee para acompanhar pedidos e performance da loja.",
+    status: "disconnected",
+    authType: "oauth",
+    docsUrl: "https://open.shopee.com",
+    features: ["Pedidos", "Vendas", "Logística", "Chat"],
+  },
+  {
+    id: "magalu",
+    name: "Magazine Luiza",
+    logo: "🔵",
+    description: "Conecte com o Magalu Marketplace para sincronizar vendas e pedidos.",
+    status: "disconnected",
+    authType: "api_key",
+    docsUrl: "https://dev.magalu.com",
+    features: ["Pedidos", "Vendas", "Catálogo"],
+  },
+  {
+    id: "americanas",
+    name: "Americanas",
+    logo: "🔴",
+    description: "Importe dados de vendas da Americanas Marketplace automaticamente.",
+    status: "disconnected",
+    authType: "api_key",
+    docsUrl: "https://developers.americanas.com",
+    features: ["Pedidos", "Vendas", "Catálogo"],
+  },
+  {
+    id: "dafiti",
+    name: "Dafiti",
+    logo: "👗",
+    description: "Sincronize vendas e pedidos da Dafiti / GFG Marketplace.",
+    status: "disconnected",
+    authType: "api_key",
+    docsUrl: "https://sellercenter-api.dafiti.com.br",
+    features: ["Pedidos", "Vendas", "Produtos"],
+  },
+  {
+    id: "netshoes",
+    name: "Netshoes",
+    logo: "👟",
+    description: "Conecte com a Netshoes para acompanhar vendas e performance.",
+    status: "disconnected",
+    authType: "api_key",
+    docsUrl: "https://developers.netshoes.com.br",
+    features: ["Pedidos", "Vendas", "Catálogo"],
+  },
+];
+
+const statusConfig = {
+  connected: {
+    label: "Conectado",
+    variant: "default" as const,
+    icon: CheckCircle2,
+    color: "text-emerald-500",
+  },
+  disconnected: {
+    label: "Desconectado",
+    variant: "secondary" as const,
+    icon: Link2Off,
+    color: "text-muted-foreground",
+  },
+  expired: {
+    label: "Token expirado",
+    variant: "destructive" as const,
+    icon: AlertCircle,
+    color: "text-destructive",
+  },
+};
+
+export default function Integrations() {
+  const { selectedSeller } = useSeller();
+  const { toast } = useToast();
+  const [integrations, setIntegrations] = useState(MARKETPLACE_INTEGRATIONS);
+  const [connectDialog, setConnectDialog] = useState<MarketplaceIntegration | null>(null);
+  const [apiKeyInput, setApiKeyInput] = useState("");
+  const [connecting, setConnecting] = useState(false);
+
+  const handleConnect = (integration: MarketplaceIntegration) => {
+    setConnectDialog(integration);
+    setApiKeyInput("");
+  };
+
+  const handleDisconnect = (integrationId: string) => {
+    setIntegrations((prev) =>
+      prev.map((i) => (i.id === integrationId ? { ...i, status: "disconnected" as const } : i))
+    );
+    toast({
+      title: "Marketplace desconectado",
+      description: "A integração foi removida com sucesso.",
+    });
+  };
+
+  const handleConfirmConnect = async () => {
+    if (!connectDialog) return;
+    setConnecting(true);
+
+    // Simulate connection (real implementation would call Edge Function)
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    setIntegrations((prev) =>
+      prev.map((i) => (i.id === connectDialog.id ? { ...i, status: "connected" as const } : i))
+    );
+
+    setConnecting(false);
+    setConnectDialog(null);
+    toast({
+      title: "Marketplace conectado!",
+      description: `${connectDialog.name} foi integrado com sucesso para ${selectedSeller?.name ?? "o seller ativo"}.`,
+    });
+  };
+
+  const connectedCount = integrations.filter((i) => i.status === "connected").length;
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Integrações"
+        subtitle="Conecte suas contas de marketplaces para sincronizar dados de vendas automaticamente."
+      />
+
+      {/* Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-6 flex items-center gap-4">
+            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10">
+              <Zap className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{connectedCount}</p>
+              <p className="text-sm text-muted-foreground">Conectados</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6 flex items-center gap-4">
+            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-muted">
+              <Link2Off className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{integrations.length - connectedCount}</p>
+              <p className="text-sm text-muted-foreground">Disponíveis</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6 flex items-center gap-4">
+            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10">
+              <ShieldCheck className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">OAuth 2.0</p>
+              <p className="text-sm text-muted-foreground">Autenticação segura</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Seller info */}
+      {selectedSeller && (
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-muted/50 border border-border text-sm">
+          <span className="font-medium">Seller ativo:</span>
+          <Badge variant="outline">{selectedSeller.name}</Badge>
+          <span className="text-muted-foreground">— As integrações abaixo serão vinculadas a este seller.</span>
+        </div>
+      )}
+
+      {/* Marketplace cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {integrations.map((integration) => {
+          const statusInfo = statusConfig[integration.status];
+          const StatusIcon = statusInfo.icon;
+          const isConnected = integration.status === "connected";
+
+          return (
+            <Card
+              key={integration.id}
+              className={`transition-all duration-200 hover:shadow-md ${
+                isConnected ? "border-primary/30 bg-primary/[0.02]" : ""
+              }`}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{integration.logo}</span>
+                    <div>
+                      <CardTitle className="text-base">{integration.name}</CardTitle>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <StatusIcon className={`w-3.5 h-3.5 ${statusInfo.color}`} />
+                        <span className={`text-xs ${statusInfo.color}`}>{statusInfo.label}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Badge variant={statusInfo.variant} className="text-[10px] uppercase tracking-wider">
+                    {integration.authType === "oauth" ? "OAuth" : "API Key"}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <CardDescription className="text-sm leading-relaxed">
+                  {integration.description}
+                </CardDescription>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {integration.features.map((feature) => (
+                    <Badge key={feature} variant="secondary" className="text-[11px] font-normal">
+                      {feature}
+                    </Badge>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2 pt-2 border-t border-border">
+                  {isConnected ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleDisconnect(integration.id)}
+                      >
+                        <Link2Off className="w-4 h-4 mr-1.5" />
+                        Desconectar
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <RefreshCw className="w-4 h-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleConnect(integration)}
+                      >
+                        <Link2 className="w-4 h-4 mr-1.5" />
+                        Conectar
+                      </Button>
+                      <Button variant="ghost" size="sm" asChild>
+                        <a href={integration.docsUrl} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Connect Dialog */}
+      <Dialog open={!!connectDialog} onOpenChange={(open) => !open && setConnectDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="text-2xl">{connectDialog?.logo}</span>
+              Conectar {connectDialog?.name}
+            </DialogTitle>
+            <DialogDescription>
+              {connectDialog?.authType === "oauth"
+                ? `Você será redirecionado para autorizar o acesso à sua conta do ${connectDialog?.name}. Nenhuma senha será armazenada.`
+                : `Insira sua chave de API do ${connectDialog?.name} para habilitar a sincronização de dados.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {connectDialog?.authType === "api_key" && (
+            <div className="space-y-3 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="api-key">Chave de API</Label>
+                <Input
+                  id="api-key"
+                  type="password"
+                  placeholder="Cole sua chave de API aqui..."
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Sua chave será armazenada de forma segura e criptografada no servidor.
+              </p>
+            </div>
+          )}
+
+          {connectDialog?.authType === "oauth" && (
+            <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border border-border">
+              <ShieldCheck className="w-5 h-5 text-primary flex-shrink-0" />
+              <div className="text-sm">
+                <p className="font-medium">Autenticação segura via OAuth 2.0</p>
+                <p className="text-muted-foreground mt-0.5">
+                  Seus dados de login nunca passam pelo nosso sistema.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConnectDialog(null)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmConnect}
+              disabled={connecting || (connectDialog?.authType === "api_key" && !apiKeyInput.trim())}
+            >
+              {connecting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-1.5 animate-spin" />
+                  Conectando...
+                </>
+              ) : connectDialog?.authType === "oauth" ? (
+                <>
+                  <ExternalLink className="w-4 h-4 mr-1.5" />
+                  Autorizar acesso
+                </>
+              ) : (
+                <>
+                  <Link2 className="w-4 h-4 mr-1.5" />
+                  Salvar e conectar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

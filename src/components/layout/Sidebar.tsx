@@ -10,6 +10,7 @@ import {
   ChevronRight,
   AreaChart,
   ShieldCheck,
+  Plug,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { canAccess } from "@/config/roleAccess";
@@ -26,6 +27,7 @@ const baseNavItems = [
   { icon: FileUp, label: "Importação", path: "/importacao" },
   { icon: SlidersHorizontal, label: "Configurações", path: "/configuracoes" },
   { icon: Users, label: "Sellers", path: "/sellers" },
+  { icon: Plug, label: "Integrações", path: "/integracoes" },
 ];
 
 export function Sidebar() {

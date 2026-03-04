@@ -8,6 +8,7 @@ export const roleAccess: Record<string, AppRole[]> = {
   "/sellers": ["admin", "editor"],
   "/usuarios": ["admin"],
   "/perfil": ["admin", "editor", "viewer"],
+  "/integracoes": ["admin", "editor"],
 };
 
 export function canAccess(role: AppRole | null, path: string): boolean {
