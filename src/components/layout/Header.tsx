@@ -1,6 +1,5 @@
-import { Bell, Search, User } from "lucide-react";
+import { Bell, ChevronDown, Store, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useSeller } from "@/contexts/SellerContext";
 
 interface HeaderProps {
   title: string;
@@ -17,6 +17,8 @@ interface HeaderProps {
 }
 
 export function Header({ title, subtitle }: HeaderProps) {
+  const { sellers, selectedSeller, setSelectedSeller, activeSellers } = useSeller();
+
   return (
     <header className="flex items-center justify-between px-8 py-6 bg-card border-b border-border">
       <div>
@@ -28,9 +30,44 @@ export function Header({ title, subtitle }: HeaderProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-4">
-
-
+      <div className="flex items-center gap-3">
+        {/* Seller Switcher */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="gap-2 h-9 px-3">
+              <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+                <span className="text-[10px] font-bold text-primary">
+                  {selectedSeller.initials}
+                </span>
+              </div>
+              <span className="text-sm font-medium hidden sm:inline">
+                {selectedSeller.name}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel className="flex items-center gap-2 text-xs">
+              <Store className="w-3.5 h-3.5" />
+              Trocar Seller
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {activeSellers.map((seller) => (
+              <DropdownMenuItem
+                key={seller.id}
+                onClick={() => setSelectedSeller(seller.id)}
+                className={seller.id === selectedSeller.id ? "bg-accent" : ""}
+              >
+                <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center mr-2">
+                  <span className="text-[10px] font-bold text-primary">
+                    {seller.initials}
+                  </span>
+                </div>
+                {seller.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Notifications */}
         <Button variant="ghost" size="icon" className="relative hover:bg-transparent">
