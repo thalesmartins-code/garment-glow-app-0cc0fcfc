@@ -5,6 +5,7 @@ import { DailySalesTable } from "@/components/dashboard/DailySalesTable";
 import { DailySalesChart } from "@/components/dashboard/DailySalesChart";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSeller } from "@/contexts/SellerContext";
 import { useSalesData } from "@/contexts/SalesDataContext";
 import { useSellerSalesData, CalculatedDailySale } from "@/hooks/useSellerSalesData";
@@ -209,20 +210,46 @@ const DailySales = () => {
           </div>
         )}
         {/* Action Bar */}
-        <div className="flex items-center justify-end gap-3">
-          <span className="text-xs text-muted-foreground">
-            Atualizado: {formatLastUpdate(lastUpdate)}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isSyncing}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
-            {isSyncing ? "Sincronizando..." : "Atualizar"}
-          </Button>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Select value={selectedMarketplace} onValueChange={setSelectedMarketplace}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue>
+                  {selectedMarketplaceLabel && (
+                    <span className="flex items-center gap-2">
+                      <span>{selectedMarketplaceLabel.logo}</span>
+                      <span>{selectedMarketplaceLabel.label}</span>
+                    </span>
+                  )}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {marketplaceOptions.map((mp) => (
+                  <SelectItem key={mp.value} value={mp.value}>
+                    <span className="flex items-center gap-2">
+                      <span>{mp.logo}</span>
+                      <span>{mp.label}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">
+              Atualizado: {formatLastUpdate(lastUpdate)}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isSyncing}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
+              {isSyncing ? "Sincronizando..." : "Atualizar"}
+            </Button>
+          </div>
         </div>
 
         {/* KPI Cards - Row 1 */}
