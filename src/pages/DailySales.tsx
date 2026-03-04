@@ -66,9 +66,12 @@ const DailySales = () => {
   }, [activeMarketplaces, selectedMarketplace]);
 
   const handleRefresh = useCallback(async () => {
-    await syncAndImport();
+    const spreadsheetId = localStorage.getItem("google_spreadsheet_id") || "";
+    if (spreadsheetId) {
+      await syncAndImport(spreadsheetId, selectedSeller);
+    }
     setLastUpdate(new Date());
-  }, [syncAndImport]);
+  }, [syncAndImport, selectedSeller]);
 
   const formatLastUpdate = (date: Date) => {
     return date.toLocaleString("pt-BR", {
