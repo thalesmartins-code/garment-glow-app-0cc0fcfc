@@ -39,7 +39,7 @@ export function Header({ title, subtitle }: HeaderProps) {
         </div>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative hover:bg-transparent">
           <Bell className="w-5 h-5 text-muted-foreground" />
           <span className="absolute top-2 right-2 w-2 h-2 bg-accent rounded-full" />
         </Button>
