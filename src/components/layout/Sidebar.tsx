@@ -2,26 +2,13 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
-  ShoppingCart,
-  Users,
+  CalendarDays,
+  Upload,
+  Settings,
+  Store,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
-  Shirt,
-  Headphones,
-  ListChecks,
-  UserCheck,
-  Award,
-  CalendarDays,
-  Target,
-  Wallet,
-  Landmark,
-  Receipt,
-  HandCoins,
   PiggyBank,
-  TrendingUp,
-  FileBarChart,
-  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -29,32 +16,18 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
-const financeiroItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/financeiro" },
-  { icon: ShoppingCart, label: "Vendas", path: "/financeiro/vendas" },
-  { icon: HandCoins, label: "Contas a Receber", path: "/financeiro/receber" },
-  { icon: Receipt, label: "Contas a Pagar", path: "/financeiro/pagar" },
-  { icon: Landmark, label: "Caixa e Bancos", path: "/financeiro/caixa" },
-  { icon: TrendingUp, label: "DFC e Projeção", path: "/financeiro/dfc" },
-  { icon: FileBarChart, label: "DRE", path: "/financeiro/dre" },
-  { icon: BarChart3, label: "Relatórios", path: "/financeiro/relatorios" },
-];
-
-const bottomItems = [
-  { icon: Users, label: "Funcionários", path: "/funcionarios" },
-  { icon: Headphones, label: "Suporte", path: "/suporte" },
+const navItems = [
+  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: CalendarDays, label: "Vendas Diárias", path: "/vendas-diarias" },
+  { icon: Upload, label: "Importação", path: "/importacao" },
+  { icon: Settings, label: "Configurações", path: "/configuracoes" },
+  { icon: Store, label: "Sellers", path: "/sellers" },
 ];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const [finOpen, setFinOpen] = useState(true);
 
   const renderLink = (item: { icon: any; label: string; path: string }) => {
     const isActive = location.pathname === item.path;
@@ -97,35 +70,6 @@ export function Sidebar() {
     return linkContent;
   };
 
-  const renderGroup = (
-    label: string,
-    icon: any,
-    items: typeof financeiroItems,
-    open: boolean,
-    setOpen: (v: boolean) => void
-  ) => {
-    const GroupIcon = icon;
-
-    if (collapsed) {
-      return items.map(renderLink);
-    }
-
-    return (
-      <Collapsible open={open} onOpenChange={setOpen}>
-        <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-sidebar-foreground/50 hover:text-sidebar-foreground/80 transition-colors">
-          <div className="flex items-center gap-3">
-            <GroupIcon className="w-4 h-4" />
-            <span className="text-xs font-semibold uppercase tracking-wider">{label}</span>
-          </div>
-          <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", open && "rotate-180")} />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-0.5 mt-1">
-          {items.map(renderLink)}
-        </CollapsibleContent>
-      </Collapsible>
-    );
-  };
-
   return (
     <aside
       className={cn(
@@ -139,15 +83,14 @@ export function Sidebar() {
           <PiggyBank className="w-5 h-5 text-white" />
         </div>
         <div className={cn("transition-all duration-300 ease-in-out overflow-hidden whitespace-nowrap", collapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
-          <h1 className="font-semibold text-lg tracking-tight">FinanceStore</h1>
-          <p className="text-xs text-sidebar-foreground/60">Gestão de Loja</p>
+          <h1 className="font-semibold text-lg tracking-tight">Analytics Pro</h1>
+          <p className="text-xs text-sidebar-foreground/60">Marketplace</p>
         </div>
       </div>
 
       {/* Navigation */}
       <nav className={cn("flex-1 pt-6 pb-4 space-y-1.5 overflow-y-auto", collapsed ? "px-2 flex flex-col items-center" : "px-3")}>
-        {financeiroItems.map(renderLink)}
-        {bottomItems.map(renderLink)}
+        {navItems.map(renderLink)}
       </nav>
 
       {/* Collapse toggle */}
