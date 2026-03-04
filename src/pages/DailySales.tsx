@@ -1,16 +1,18 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { DollarSign, Target, TrendingUp, Percent, Calculator, AlertTriangle, Calendar, Star, CalendarDays, RefreshCw, Loader2 } from "lucide-react";
 import { DailySalesTable } from "@/components/dashboard/DailySalesTable";
 import { DailySalesChart } from "@/components/dashboard/DailySalesChart";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { Button } from "@/components/ui/button";
 import { useSeller } from "@/contexts/SellerContext";
+import { useSalesData } from "@/contexts/SalesDataContext";
 import { useSellerSalesData, CalculatedDailySale } from "@/hooks/useSellerSalesData";
 import { useSyncAndImport } from "@/hooks/useSyncAndImport";
 import { DailySale } from "@/data/mockData";
 
 const DailySales = () => {
   const { selectedSeller, getActiveMarketplaces } = useSeller();
+  const { isLoading } = useSalesData();
   const { 
     getDailySalesData, 
     updateSaleValue, 
@@ -18,26 +20,13 @@ const DailySales = () => {
     getAvailableYears, 
     getAvailableMonths 
   } = useSellerSalesData();
-  const { syncAndImport, loadFromDB, isSyncing } = useSyncAndImport();
+  const { syncAndImport, isSyncing } = useSyncAndImport();
 
   const currentDate = new Date();
   const [selectedMarketplace, setSelectedMarketplace] = useState<string>("all");
   const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth() + 1);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const hasSyncedRef = useRef(false);
-
-  const [initialLoading, setInitialLoading] = useState(true);
-
-  // Load persisted data from DB on first mount (no auto-sync)
-  useEffect(() => {
-    if (!hasSyncedRef.current) {
-      hasSyncedRef.current = true;
-      loadFromDB()
-        .then(() => setLastUpdate(new Date()))
-        .finally(() => setInitialLoading(false));
-    }
-  }, [loadFromDB]);
 
   // Get marketplaces available for this seller
   const activeMarketplaces = getActiveMarketplaces();
@@ -201,11 +190,11 @@ const DailySales = () => {
     return dailySalesData.map(({ isImported, ...rest }) => rest as DailySale);
   }, [dailySalesData]);
 
-  if (initialLoading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        <p className="text-muted-foreground text-sm">Sincronizando dados...</p>
+        <p className="text-muted-foreground text-sm">Carregando dados...</p>
       </div>
     );
   }
