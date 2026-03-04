@@ -35,13 +35,13 @@ const TVMode = () => {
     return () => clearInterval(interval);
   }, [activeSellers, setSelectedSeller]);
 
-  // Auto-refresh every 5 min
+  // Auto-refresh every 5 min (reload page to get fresh data)
   useEffect(() => {
     const interval = setInterval(() => {
-      if (refreshData) refreshData();
+      window.location.reload();
     }, REFRESH_MS);
     return () => clearInterval(interval);
-  }, [refreshData]);
+  }, []);
 
   // Clock update every second
   useEffect(() => {
