@@ -1,74 +1,76 @@
-import {
-  DollarSign,
-  ShoppingBag,
-  Package,
-  TrendingUp,
-} from "lucide-react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { MetricCard } from "@/components/dashboard/MetricCard";
-import { SalesChart } from "@/components/dashboard/SalesChart";
-import { RecentSales } from "@/components/dashboard/RecentSales";
-import { TopProducts } from "@/components/dashboard/TopProducts";
-
-const metrics = [
-  {
-    title: "Vendas do Mês",
-    value: "R$ 24.580",
-    change: { value: "12%", positive: true },
-    icon: DollarSign,
-    variant: "accent" as const,
-  },
-  {
-    title: "Pedidos Hoje",
-    value: "48",
-    change: { value: "8%", positive: true },
-    icon: ShoppingBag,
-    variant: "default" as const,
-  },
-  {
-    title: "Produtos em Estoque",
-    value: "1.284",
-    change: { value: "3%", positive: false },
-    icon: Package,
-    variant: "default" as const,
-  },
-  {
-    title: "Taxa de Conversão",
-    value: "3.2%",
-    change: { value: "0.5%", positive: true },
-    icon: TrendingUp,
-    variant: "default" as const,
-  },
-];
+import { LayoutDashboard, DollarSign, Target, TrendingUp, Users } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Index = () => {
   return (
-    <DashboardLayout
-      title="Dashboard"
-      subtitle="Bem-vinda de volta, Julia! Aqui está o resumo da sua loja."
-    >
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {metrics.map((metric) => (
-          <MetricCard
-            key={metric.title}
-            title={metric.title}
-            value={metric.value}
-            change={metric.change}
-            icon={metric.icon}
-            variant={metric.variant}
-          />
-        ))}
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-accent text-accent-foreground">
+          <LayoutDashboard className="w-6 h-6" />
+        </div>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground text-sm">Visão geral do desempenho de vendas nos marketplaces</p>
+        </div>
       </div>
 
-      {/* Charts and Lists Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <SalesChart />
-        <RecentSales />
-        <TopProducts />
-        <div className="lg:col-span-2" />
+      {/* KPI Cards */}
+      <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Receita Total</CardTitle>
+            <DollarSign className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">R$ 0</div>
+            <p className="text-xs text-muted-foreground">Importe dados para visualizar</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">% da Meta</CardTitle>
+            <Target className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0%</div>
+            <p className="text-xs text-muted-foreground">Configure metas em Configurações</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Crescimento YoY</CardTitle>
+            <TrendingUp className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0%</div>
+            <p className="text-xs text-muted-foreground">vs ano anterior</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Marketplaces</CardTitle>
+            <Users className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">Cadastre sellers para começar</p>
+          </CardContent>
+        </Card>
       </div>
-    </DashboardLayout>
+
+      {/* Empty state */}
+      <Card className="p-8 text-center">
+        <div className="text-6xl mb-4">📊</div>
+        <h3 className="text-xl font-semibold mb-2">Nenhum dado disponível</h3>
+        <p className="text-muted-foreground">
+          Importe dados de vendas para visualizar o dashboard.
+        </p>
+      </Card>
+    </div>
   );
 };
 
