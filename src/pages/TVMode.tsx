@@ -115,7 +115,8 @@ const TVMode = () => {
     })).sort((a, b) => a.dia - b.dia);
   }, [selectedSeller, selectedYear, selectedMonth, getDailySalesData]);
 
-  const metrics = useMemo(() => {
+  // Monthly metrics
+  const monthlyMetrics = useMemo(() => {
     const data = dailySalesData;
     if (data.length === 0) return { metaTotal: 0, vendaTotal: 0, metaPercentage: 0, yoy: 0, gapTotal: 0, totalAnoAnterior: 0 };
     const metaTotal = data.reduce((s, d) => s + d.metaVendas, 0);
@@ -127,6 +128,25 @@ const TVMode = () => {
     return { metaTotal, vendaTotal, metaPercentage, yoy, gapTotal, totalAnoAnterior };
   }, [dailySalesData]);
 
+  // Daily metrics (yesterday / D-1)
+  const dailyMetrics = useMemo(() => {
+    const yesterday = currentDate.getDate() - 1;
+    const isCurrentMonth = selectedYear === currentDate.getFullYear() && selectedMonth === (currentDate.getMonth() + 1);
+    const dayData = isCurrentMonth && yesterday > 0 ? dailySalesData.find((d) => d.dia === yesterday) : null;
+    if (!dayData) return { vendaTotal: 0, metaTotal: 0, metaPercentage: 0, gapTotal: 0, totalAnoAnterior: 0, yoy: 0, dia: yesterday || 1 };
+    return {
+      vendaTotal: dayData.vendaTotal,
+      metaTotal: dayData.metaVendas,
+      metaPercentage: dayData.metaAtingida,
+      gapTotal: dayData.gap,
+      totalAnoAnterior: dayData.vendaAnoAnterior,
+      yoy: dayData.yoyDia,
+      dia: dayData.dia,
+    };
+  }, [dailySalesData, currentDate, selectedYear, selectedMonth]);
+
+  const activeMetrics = viewMode === "diario" ? dailyMetrics : monthlyMetrics;
+
   const chartData: DailySale[] = useMemo(() => dailySalesData.map(({ isImported, ...rest }) => rest as DailySale), [dailySalesData]);
 
   const formatCurrency = (value: number) =>
@@ -136,10 +156,9 @@ const TVMode = () => {
   const formatDate = (date: Date) =>
     date.toLocaleString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
 
-  // Cycle progress bar
+  // Cycle progress bar — resets on every view/seller change
   const [cycleProgress, setCycleProgress] = useState(0);
   useEffect(() => {
-    if (activeSellers.length <= 1) return;
     setCycleProgress(0);
     const cycleMs = sellerCycleSec * 1000;
     const interval = setInterval(() => {
@@ -149,9 +168,12 @@ const TVMode = () => {
       });
     }, 100);
     return () => clearInterval(interval);
-  }, [currentSellerIndex, activeSellers.length, sellerCycleSec]);
+  }, [currentSellerIndex, viewMode, sellerCycleSec]);
 
   const periodLabel = new Date(selectedYear, selectedMonth - 1).toLocaleString("pt-BR", { month: "long", year: "numeric" }).replace(/^\w/, c => c.toUpperCase());
+  const viewLabel = viewMode === "diario"
+    ? `Diário (${String(currentDate.getDate() - 1).padStart(2, "0")}/${String(currentDate.getMonth() + 1).padStart(2, "0")})`
+    : "Mensal";
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6 flex flex-col gap-4 select-none">
