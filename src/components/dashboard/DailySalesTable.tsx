@@ -168,6 +168,7 @@ export function DailySalesTable({
   onUpdateSale,
   onUpdateSaleAprovadaReal,
   isEditable = true,
+  compact = false,
 }: DailySalesTableProps) {
   const mpOptions = customMarketplaceOptions ?? [];
   const [sortBy, setSortBy] = useState<SortField>("dia");
