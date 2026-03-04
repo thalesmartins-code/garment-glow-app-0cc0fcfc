@@ -1,4 +1,4 @@
-import { Calendar as CalendarIcon, Filter, RefreshCw, Check } from "lucide-react";
+import { Calendar as CalendarIcon, Filter, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PeriodFilter, periodLabels } from "@/data/mockData";
 import { format } from "date-fns";
