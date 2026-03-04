@@ -39,7 +39,7 @@ interface UseSellerSalesDataReturn {
   hasAnyData: (year: number, month: number) => boolean;
 }
 
-const diasSemana = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
+const diasSemana = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
 
 export function useSellerSalesData(): UseSellerSalesDataReturn {
   const { selectedSeller, getActiveMarketplaces } = useSeller();
