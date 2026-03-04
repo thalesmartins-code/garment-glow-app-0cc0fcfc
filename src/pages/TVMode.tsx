@@ -156,7 +156,8 @@ const TVMode = () => {
             )}
             <div>
               <h1 className="text-2xl font-bold leading-tight">{selectedSeller.name}</h1>
-            <p className="text-xs text-muted-foreground">{periodLabel} · Todos os marketplaces</p>
+              <p className="text-xs text-muted-foreground">{periodLabel} · Todos os marketplaces</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {activeSellers.map((seller, idx) => (
