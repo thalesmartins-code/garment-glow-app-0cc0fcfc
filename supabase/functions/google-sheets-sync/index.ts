@@ -87,9 +87,12 @@ async function getAccessToken(serviceAccountJsonRaw: string): Promise<string> {
     .replace(/\s/g, "")
     .trim();
 
-  console.log("PEM length:", pemContents.length, "first 20 chars:", pemContents.substring(0, 20));
+  // Ensure proper base64 padding
+  const padded = pemContents + '='.repeat((4 - pemContents.length % 4) % 4);
   
-  const binaryKey = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
+  console.log("PEM length:", pemContents.length, "padded:", padded.length, "first 20 chars:", pemContents.substring(0, 20));
+  
+  const binaryKey = decodeBase64(padded);
 
   const cryptoKey = await crypto.subtle.importKey(
     "pkcs8",
