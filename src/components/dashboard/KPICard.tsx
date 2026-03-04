@@ -102,6 +102,11 @@ export function KPICard({
           </div>
         )}
         </div>
+        {icon && (
+          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", styles.icon)}>
+            {icon}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
