@@ -13,6 +13,6 @@ export const roleAccess: Record<string, AppRole[]> = {
 export function canAccess(role: AppRole | null, path: string): boolean {
   if (!role) return false;
   const allowed = roleAccess[path];
-  if (!allowed) return true; // pages not listed are accessible
+  if (!allowed) return false; // default-deny: unlisted pages are blocked
   return allowed.includes(role);
 }
