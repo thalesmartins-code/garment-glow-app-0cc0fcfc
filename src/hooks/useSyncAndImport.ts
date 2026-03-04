@@ -36,10 +36,10 @@ export function useSyncAndImport() {
     }
   }, [loadSalesFromDB, appendSales]);
 
-  const syncAndImport = useCallback(async () => {
+  const syncAndImport = useCallback(async (spreadsheetId: string, sellerId: string) => {
     setIsSyncing(true);
     try {
-      const result = await sync();
+      const result = await sync(spreadsheetId, sellerId);
       if (result.success && result.sales.length > 0) {
         const importedSales = toImportedSales(result.sales);
 
