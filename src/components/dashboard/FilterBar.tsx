@@ -49,7 +49,26 @@ export function FilterBar({
 
   return (
     <div className="space-y-4">
-      {/* Row 1: Marketplace + Period filters + custom date in one card */}
+      {/* Row 1: Refresh info */}
+      <div className="flex items-center gap-3 justify-end">
+        {lastUpdate && (
+          <span className="text-xs text-muted-foreground">
+            Atualizado: {lastUpdate}
+          </span>
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          className="gap-2"
+        >
+          <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
+          <span className="hidden sm:inline">Atualizar</span>
+        </Button>
+      </div>
+
+      {/* Row 2: Marketplace + Period filters + custom date in one card */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between bg-card rounded-xl p-4 shadow-md">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
           {/* Marketplace Filter */}
