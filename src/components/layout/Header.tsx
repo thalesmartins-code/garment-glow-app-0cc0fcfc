@@ -122,7 +122,7 @@ export function Header({ title, subtitle }: HeaderProps) {
           <DropdownMenuContent align="end" className="w-48 rounded-xl">
             <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/perfil")}>
               <User className="w-4 h-4 mr-2" />
               Perfil
             </DropdownMenuItem>
