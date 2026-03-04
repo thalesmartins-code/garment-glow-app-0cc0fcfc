@@ -19,6 +19,16 @@ interface HeaderProps {
 
 export function Header({ title, subtitle }: HeaderProps) {
   const { selectedSeller, setSelectedSeller, activeSellers } = useSeller();
+  const { profile, role, signOut } = useAuth();
+
+  const displayName = profile?.full_name || "Usuário";
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  const roleLabel = role === "admin" ? "Admin" : role === "editor" ? "Editor" : "Viewer";
 
   return (
     <header className="flex items-center justify-between px-8 py-6 bg-card border-b border-border">
