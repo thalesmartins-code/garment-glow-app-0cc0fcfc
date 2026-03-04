@@ -125,7 +125,7 @@ const DailySales = () => {
     return getDailySalesData(selectedMarketplace, selectedYear, selectedMonth);
   }, [selectedMarketplace, selectedYear, selectedMonth, activeMarketplaces, getDailySalesData]);
 
-  // Calculate metrics from daily sales data
+  // Calculate metrics from daily sales data (monthly)
   const metrics = useMemo(() => {
     const data = dailySalesData;
     
@@ -150,22 +150,50 @@ const DailySales = () => {
     const yoy = totalAnoAnterior > 0 ? ((vendaTotal - totalAnoAnterior) / totalAnoAnterior) * 100 : 0;
     const mediaVendas = data.length > 0 ? vendaTotal / data.length : 0;
     
-    // Find best day
     const melhorDiaData = data.reduce((best, day) => 
       day.vendaTotal > best.vendaTotal ? day : best, data[0]);
     const melhorDia = { dia: melhorDiaData.dia, valor: melhorDiaData.vendaTotal };
 
-    return {
-      metaTotal,
-      vendaTotal,
-      metaPercentage,
-      yoy,
-      mediaVendas,
-      gapTotal,
-      melhorDia,
-      totalAnoAnterior,
-    };
+    return { metaTotal, vendaTotal, metaPercentage, yoy, mediaVendas, gapTotal, melhorDia, totalAnoAnterior };
   }, [dailySalesData]);
+
+  // Calculate metrics for today (daily view)
+  const dailyMetrics = useMemo(() => {
+    const today = currentDate.getDate();
+    const isCurrentMonth = selectedYear === currentDate.getFullYear() && selectedMonth === (currentDate.getMonth() + 1);
+    const dayData = isCurrentMonth
+      ? dailySalesData.find((d) => d.dia === today)
+      : null;
+
+    if (!dayData) {
+      return {
+        vendaTotal: 0, metaVendas: 0, metaPercentage: 0, gap: 0,
+        vendaAnoAnterior: 0, yoy: 0, dia: today,
+      };
+    }
+
+    return {
+      vendaTotal: dayData.vendaTotal,
+      metaVendas: dayData.metaVendas,
+      metaPercentage: dayData.metaAtingida,
+      gap: dayData.gap,
+      vendaAnoAnterior: dayData.vendaAnoAnterior,
+      yoy: dayData.yoyDia,
+      dia: dayData.dia,
+    };
+  }, [dailySalesData, selectedYear, selectedMonth, currentDate]);
+
+  // Active metrics based on viewMode
+  const activeMetrics = viewMode === "diario" ? {
+    vendaTotal: dailyMetrics.vendaTotal,
+    metaTotal: dailyMetrics.metaVendas,
+    metaPercentage: dailyMetrics.metaPercentage,
+    gapTotal: dailyMetrics.gap,
+    yoy: dailyMetrics.yoy,
+    totalAnoAnterior: dailyMetrics.vendaAnoAnterior,
+    mediaVendas: metrics.mediaVendas,
+    melhorDia: metrics.melhorDia,
+  } : metrics;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
