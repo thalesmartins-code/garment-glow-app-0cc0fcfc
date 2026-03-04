@@ -150,8 +150,12 @@ const TVMode = () => {
       <div className="flex items-center justify-between">
         {/* Left: seller name + period + seller pills */}
         <div className="flex items-center gap-5">
-          <div>
-            <h1 className="text-2xl font-bold leading-tight">{selectedSeller.name}</h1>
+          <div className="flex items-center gap-3">
+            {SELLER_LOGOS[selectedSeller.id] && (
+              <img src={SELLER_LOGOS[selectedSeller.id]} alt={selectedSeller.name} className="h-10 w-10 rounded-lg object-cover" />
+            )}
+            <div>
+              <h1 className="text-2xl font-bold leading-tight">{selectedSeller.name}</h1>
             <p className="text-xs text-muted-foreground">{periodLabel} · Todos os marketplaces</p>
           </div>
           <div className="flex items-center gap-2">
