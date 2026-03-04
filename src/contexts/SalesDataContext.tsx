@@ -33,6 +33,7 @@ interface SalesDataContextType {
   updateSaleField: (sellerId: string, marketplace: string, ano: number, mes: number, dia: number, field: string, value: number) => void;
   findDuplicates: (sellerId: string, newData: ImportedSale[]) => DuplicateCheckResult;
   isLoading: boolean;
+  refreshData: () => Promise<void>;
   // Marketplace quantities
   getMarketplaceQuantity: (sellerId: string, marketplace: string, ano: number, mes: number) => number;
   updateMarketplaceQuantity: (sellerId: string, marketplace: string, ano: number, mes: number, qtdVendas: number) => void;
@@ -48,61 +49,65 @@ export function SalesDataProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const hasLoadedRef = useRef(false);
 
+  const loadFromDB = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const allData: ImportedSale[] = [];
+      let from = 0;
+      const pageSize = 1000;
+
+      while (true) {
+        const { data, error } = await supabase
+          .from("sales_data")
+          .select("*")
+          .range(from, from + pageSize - 1);
+
+        if (error) {
+          console.error("Erro ao carregar dados do Supabase:", error.message, error.details);
+          break;
+        }
+        if (!data || data.length === 0) break;
+        console.log(`Carregados ${data.length} registros do Supabase (página ${from / pageSize + 1})`);
+
+        const mapped = data.map((row) => ({
+          sellerId: row.seller_id,
+          marketplace: row.marketplace,
+          ano: row.ano,
+          mes: row.mes,
+          dia: row.dia,
+          vendaTotal: Number(row.venda_total),
+          vendaAprovadaReal: row.venda_aprovada_real ? Number(row.venda_aprovada_real) : undefined,
+          qtdVendas: row.qtd_vendas ? Number(row.qtd_vendas) : undefined,
+          pmt: row.pmt ? Number(row.pmt) : undefined,
+          metaVendas: row.meta_vendas ? Number(row.meta_vendas) : undefined,
+          vendaAnoAnterior: row.venda_ano_anterior ? Number(row.venda_ano_anterior) : undefined,
+        }));
+
+        allData.push(...mapped);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+
+      if (allData.length > 0) {
+        setSalesData(allData);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar dados:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Load from Supabase on mount (once)
   useEffect(() => {
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
-
-    async function loadFromDB() {
-      try {
-        const allData: ImportedSale[] = [];
-        let from = 0;
-        const pageSize = 1000;
-
-        while (true) {
-          const { data, error } = await supabase
-            .from("sales_data")
-            .select("*")
-            .range(from, from + pageSize - 1);
-
-          if (error) {
-            console.error("Erro ao carregar dados do Supabase:", error.message, error.details);
-            break;
-          }
-          if (!data || data.length === 0) break;
-          console.log(`Carregados ${data.length} registros do Supabase (página ${from / pageSize + 1})`);
-
-          const mapped = data.map((row) => ({
-            sellerId: row.seller_id,
-            marketplace: row.marketplace,
-            ano: row.ano,
-            mes: row.mes,
-            dia: row.dia,
-            vendaTotal: Number(row.venda_total),
-            vendaAprovadaReal: row.venda_aprovada_real ? Number(row.venda_aprovada_real) : undefined,
-            qtdVendas: row.qtd_vendas ? Number(row.qtd_vendas) : undefined,
-            pmt: row.pmt ? Number(row.pmt) : undefined,
-            metaVendas: row.meta_vendas ? Number(row.meta_vendas) : undefined,
-            vendaAnoAnterior: row.venda_ano_anterior ? Number(row.venda_ano_anterior) : undefined,
-          }));
-
-          allData.push(...mapped);
-          if (data.length < pageSize) break;
-          from += pageSize;
-        }
-
-        if (allData.length > 0) {
-          setSalesData(allData);
-        }
-      } catch (err) {
-        console.error("Erro ao carregar dados:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
     loadFromDB();
-  }, []);
+  }, [loadFromDB]);
+
+  const refreshData = useCallback(async () => {
+    await loadFromDB();
+  }, [loadFromDB]);
 
   // Load quantities from localStorage
   useEffect(() => {
@@ -380,6 +385,7 @@ export function SalesDataProvider({ children }: { children: React.ReactNode }) {
         updateSaleField,
         findDuplicates,
         isLoading,
+        refreshData,
         getMarketplaceQuantity,
         updateMarketplaceQuantity,
       }}
