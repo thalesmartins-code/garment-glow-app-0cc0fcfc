@@ -103,7 +103,7 @@ export function KPICard({
         )}
         </div>
         {icon && (
-          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", styles.icon)}>
+          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 self-center", styles.icon)}>
             {icon}
           </div>
         )}
