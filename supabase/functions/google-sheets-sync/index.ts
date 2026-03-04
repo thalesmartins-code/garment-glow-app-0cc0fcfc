@@ -259,9 +259,46 @@ serve(async (req) => {
   }
 
   try {
-    const { spreadsheetId, sellerId, year, tabs } = await req.json();
+    // --- Auth guard: require authenticated user with admin or editor role ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Não autenticado" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    if (!spreadsheetId || !sellerId) {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const anonClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user: caller } } = await anonClient.auth.getUser();
+    if (!caller) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Não autenticado" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check role: only admin or editor can sync
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const { data: roleData } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", caller.id)
+      .single();
+
+    if (!roleData || !["admin", "editor"].includes(roleData.role)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Acesso negado" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { spreadsheetId, sellerId, year, tabs } = await req.json();
       return new Response(
         JSON.stringify({ success: false, error: "spreadsheetId and sellerId are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
