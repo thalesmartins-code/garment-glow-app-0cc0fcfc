@@ -135,54 +135,86 @@ function parseTabData(
   rows: string[][],
   month: number,
   year: number,
-  sellerId: string
+  _sellerId: string
 ): SheetRow[] {
-  if (rows.length < 2) return [];
+  if (rows.length < 3) return [];
 
   const results: SheetRow[] = [];
-  const headers = rows[0].map((h) => h?.toString().trim().toLowerCase() || "");
-  console.log("Tab headers:", JSON.stringify(headers));
-  // Also log first data row for reference
-  if (rows.length > 1) console.log("First data row:", JSON.stringify(rows[1]));
+  
+  // Row 0: seller names spanning column groups
+  const sellerRow = rows[0];
+  // Row 1: column headers (repeated for each seller)
+  const headerRow = rows[1];
+  
+  console.log("Tab headers:", JSON.stringify(sellerRow.slice(0, 20)));
+  console.log("Column headers:", JSON.stringify(headerRow.slice(0, 20)));
+  if (rows.length > 2) console.log("First data row:", JSON.stringify(rows[2]?.slice(0, 20)));
 
-  // Try to find column indices by header name
-  const colMap: Record<string, number> = {};
-  const knownHeaders = [
-    "dia", "marketplace", "pmt", "meta", "meta vendas", "venda total",
-    "venda aprovada", "venda aprovada real", "venda ano anterior",
-  ];
+  // Detect seller column groups
+  // Find all seller sections by looking at non-empty cells in row 0
+  const sellerSections: Array<{ sellerId: string; startCol: number; endCol: number }> = [];
+  
+  for (let i = 0; i < sellerRow.length; i++) {
+    const cell = sellerRow[i]?.toString().trim();
+    if (cell) {
+      // Find where this seller's section ends (next non-empty cell or end)
+      let endCol = sellerRow.length - 1;
+      for (let j = i + 1; j < sellerRow.length; j++) {
+        if (sellerRow[j]?.toString().trim()) {
+          endCol = j - 1;
+          break;
+        }
+      }
+      sellerSections.push({ sellerId: cell.toLowerCase(), startCol: i, endCol });
+    }
+  }
 
-  headers.forEach((h, i) => {
-    for (const known of knownHeaders) {
-      if (h.includes(known)) {
-        colMap[known] = i;
-        break;
+  console.log("Seller sections:", JSON.stringify(sellerSections));
+
+  // For each seller section, map columns by header names
+  for (const section of sellerSections) {
+    const colMap: Record<string, number> = {};
+    
+    for (let i = section.startCol; i <= section.endCol && i < headerRow.length; i++) {
+      const h = headerRow[i]?.toString().trim().toLowerCase().replace(/\n/g, ' ') || "";
+      if (h.includes("dia")) colMap["dia"] = i;
+      else if (h.includes("pmt") && !h.includes("acum")) colMap["pmt"] = i;
+      else if (h.includes("pmt acum")) colMap["pmt_acum"] = i;
+      else if (h.includes("meta venda") || h === "meta") colMap["meta"] = i;
+      else if (h.includes("venda aprovada real")) colMap["venda_aprovada_real"] = i;
+      else if (h.includes("venda bruta")) colMap["venda_bruta"] = i;
+      else if (h.includes("venda 2025") || h.includes("venda ano anterior")) {
+        // Could appear twice - first one is "VENDA 2025" before meta, second is after
+        if (!colMap["venda_ano_anterior_1"]) colMap["venda_ano_anterior_1"] = i;
+        else colMap["venda_ano_anterior_2"] = i;
       }
     }
-  });
+    
+    console.log(`Seller ${section.sellerId} colMap:`, JSON.stringify(colMap));
+    
+    if (!colMap["dia"]) continue;
 
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    if (!row || row.length < 2) continue;
+    // Parse data rows (start at row 2)
+    for (let i = 2; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length <= section.startCol) continue;
 
-    const diaVal = parseNumber(row[colMap["dia"] ?? 0]);
-    if (diaVal < 1 || diaVal > 31) continue;
+      const diaVal = parseNumber(row[colMap["dia"]]);
+      if (diaVal < 1 || diaVal > 31) continue;
 
-    const marketplace = row[colMap["marketplace"] ?? 1]?.toString().trim();
-    if (!marketplace) continue;
-
-    results.push({
-      sellerId,
-      marketplace,
-      ano: year,
-      mes: month,
-      dia: diaVal,
-      pmt: parseNumber(row[colMap["pmt"] ?? 2]),
-      metaVendas: parseNumber(row[colMap["meta vendas"] ?? colMap["meta"] ?? 3]),
-      vendaTotal: parseNumber(row[colMap["venda total"] ?? 4]),
-      vendaAprovadaReal: parseNumber(row[colMap["venda aprovada real"] ?? colMap["venda aprovada"] ?? 5]),
-      vendaAnoAnterior: parseNumber(row[colMap["venda ano anterior"] ?? 6]),
-    });
+      results.push({
+        sellerId: section.sellerId,
+        marketplace: "Total", // This sheet has total/consolidated data
+        ano: year,
+        mes: month,
+        dia: diaVal,
+        pmt: parseNumber(row[colMap["pmt"]]),
+        metaVendas: parseNumber(row[colMap["meta"]]),
+        vendaTotal: parseNumber(row[colMap["venda_bruta"]]),
+        vendaAprovadaReal: parseNumber(row[colMap["venda_aprovada_real"]]),
+        vendaAnoAnterior: parseNumber(row[colMap["venda_ano_anterior_2"] ?? colMap["venda_ano_anterior_1"]]),
+      });
+    }
   }
 
   return results;
