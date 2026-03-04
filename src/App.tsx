@@ -15,6 +15,7 @@ import Import from "./pages/Import";
 import Settings from "./pages/Settings";
 import Sellers from "./pages/Sellers";
 import UserManagement from "./pages/UserManagement";
+import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
