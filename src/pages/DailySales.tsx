@@ -342,7 +342,7 @@ const DailySales = () => {
             delta={activeMetrics.yoy}
             deltaLabel="vs ano anterior"
             icon={<DollarSign className="w-5 h-5" />}
-            variant="orange"
+            variant="purple"
           />
           <KPICard
             title={viewMode === "diario" ? "Meta do dia" : "Meta do mês"}
@@ -351,7 +351,7 @@ const DailySales = () => {
             valuePrefix="R$ "
             subtitle={new Date(selectedYear, selectedMonth - 1).toLocaleString("pt-BR", { month: "long", year: "numeric" }).replace(/^\w/, c => c.toUpperCase())}
             icon={<Target className="w-5 h-5" />}
-            variant="purple"
+            variant="orange"
           />
           <KPICard
             title={viewMode === "diario" ? "% da meta (Dia)" : "% da meta"}
