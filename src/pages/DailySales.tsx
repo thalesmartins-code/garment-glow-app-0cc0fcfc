@@ -373,6 +373,7 @@ const DailySales = () => {
             delta={activeMetrics.metaTotal > 0 ? (activeMetrics.gapTotal >= 0 ? Math.abs(activeMetrics.gapTotal / activeMetrics.metaTotal * 100) : -Math.abs(activeMetrics.gapTotal / activeMetrics.metaTotal * 100)) : 0}
             deltaLabel={activeMetrics.gapTotal >= 0 ? "acima da meta" : "abaixo da meta"}
             icon={<AlertTriangle className="w-5 h-5" />}
+            variant={activeMetrics.gapTotal >= 0 ? "success" : "danger"}
           />
           {viewMode === "diario" ? (
             <KPICard
