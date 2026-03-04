@@ -337,41 +337,14 @@ export function DailySalesTable({
   return (
     <Card>
       <CardHeader className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-primary" />
-            <CardTitle className="text-lg font-semibold">Vendas Diárias</CardTitle>
-            {isEditable && selectedMarketplace !== "all" && (
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                Clique para editar
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Marketplace:</span>
-            <Select value={selectedMarketplace} onValueChange={setSelectedMarketplace}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue>
-                  {selectedMarketplaceLabel && (
-                    <span className="flex items-center gap-2">
-                      <span>{selectedMarketplaceLabel.logo}</span>
-                      <span>{selectedMarketplaceLabel.label}</span>
-                    </span>
-                  )}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {mpOptions.map((mp) => (
-                  <SelectItem key={mp.value} value={mp.value}>
-                    <span className="flex items-center gap-2">
-                      <span>{mp.logo}</span>
-                      <span>{mp.label}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-primary" />
+          <CardTitle className="text-lg font-semibold">Vendas Diárias</CardTitle>
+          {isEditable && selectedMarketplace !== "all" && (
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+              Clique para editar
+            </span>
+          )}
         </div>
 
         {/* Month and Year Filters */}
