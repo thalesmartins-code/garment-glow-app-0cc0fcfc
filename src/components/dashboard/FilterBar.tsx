@@ -60,7 +60,7 @@ export function FilterBar({
                 <SelectValue placeholder="Todos os marketplaces" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos os Marketplaces</SelectItem>
+                <SelectItem value="all">Marketplaces (todos)</SelectItem>
                 {marketplaceOptions.map((mp) => (
                   <SelectItem key={mp.value} value={mp.value}>
                     <span className="flex items-center gap-2">
