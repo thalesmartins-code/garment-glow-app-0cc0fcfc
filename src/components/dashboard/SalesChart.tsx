@@ -20,7 +20,7 @@ const data = [
 
 export function SalesChart() {
   return (
-    <Card className="col-span-full lg:col-span-2 border-0 shadow-md">
+    <Card className="col-span-full lg:col-span-2">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold">
           Vendas Mensais
