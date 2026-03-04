@@ -237,5 +237,6 @@ export function SalesTable({
           </tfoot>
         </Table>
       </div>
-    </div>;
+      </CardContent>
+    </Card>;
 }
