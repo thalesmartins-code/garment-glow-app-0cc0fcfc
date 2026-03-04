@@ -160,11 +160,17 @@ const DailySales = () => {
     const yoy = totalAnoAnterior > 0 ? ((vendaTotal - totalAnoAnterior) / totalAnoAnterior) * 100 : 0;
     const mediaVendas = data.length > 0 ? vendaTotal / data.length : 0;
     
+    // Média de atingimento de meta: média dos % de meta dos dias com venda > 0
+    const diasComVenda = data.filter((d) => d.vendaTotal > 0 && d.metaVendas > 0);
+    const mediaAtingimentoMeta = diasComVenda.length > 0
+      ? diasComVenda.reduce((sum, d) => sum + d.metaAtingida, 0) / diasComVenda.length
+      : 0;
+
     const melhorDiaData = data.reduce((best, day) => 
       day.vendaTotal > best.vendaTotal ? day : best, data[0]);
     const melhorDia = { dia: melhorDiaData.dia, valor: melhorDiaData.vendaTotal };
 
-    return { metaTotal, vendaTotal, metaPercentage, yoy, mediaVendas, gapTotal, melhorDia, totalAnoAnterior };
+    return { metaTotal, vendaTotal, metaPercentage, yoy, mediaVendas, gapTotal, melhorDia, totalAnoAnterior, mediaAtingimentoMeta };
   }, [dailySalesData]);
 
   // Calculate metrics for today (daily view)
