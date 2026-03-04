@@ -185,7 +185,9 @@ export function SalesTable({
                   <TableCell className="text-right text-muted-foreground">
                     {formatCurrency(mp.meta)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className={cn(
+                    mp.metaPercentage >= 100 ? "bg-success/10" : "bg-warning/10"
+                  )}>
                     <ProgressBar value={mp.metaPercentage} showLabel size="sm" />
                   </TableCell>
                   <TableCell className="text-right">
