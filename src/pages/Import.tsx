@@ -45,7 +45,8 @@ export default function Import() {
   } = useSalesData();
   const { saveTarget } = useSettings();
   const { toast } = useToast();
-  const { loading: syncLoading, syncResult, inspect, sync, toImportedSales } = useGoogleSheetsSync();
+  const { loading: syncLoading, syncResult, sync, toImportedSales } = useGoogleSheetsSync();
+  const [spreadsheetId, setSpreadsheetId] = useState(() => localStorage.getItem("google_spreadsheet_id") || "");
   
   // State for duplicate detection dialog
   const [duplicateInfo, setDuplicateInfo] = useState<DuplicateCheckResult | null>(null);
