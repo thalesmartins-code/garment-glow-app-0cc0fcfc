@@ -342,7 +342,7 @@ const DailySales = () => {
             delta={activeMetrics.yoy}
             deltaLabel="vs ano anterior"
             icon={<DollarSign className="w-5 h-5" />}
-            variant="success"
+            variant="info"
           />
           <KPICard
             title={viewMode === "diario" ? "Meta do dia" : "Meta do mês"}
@@ -383,6 +383,7 @@ const DailySales = () => {
               value={formatCurrency(activeMetrics.totalAnoAnterior)}
               rawValue={activeMetrics.totalAnoAnterior}
               valuePrefix="R$ "
+              subtitle={`${String(currentDate.getDate() - 1).padStart(2, "0")}/${String(currentDate.getMonth() + 1).padStart(2, "0")}/${currentDate.getFullYear() - 1}`}
               icon={<Calendar className="w-5 h-5" />}
               variant="default"
             />
