@@ -1,6 +1,5 @@
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useCountAnimation } from "@/hooks/useCountAnimation";
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -50,21 +49,7 @@ export function KPICard({
   valueSuffix = "",
   valueDecimals = 0,
 }: KPICardProps) {
-  const animatedRawValue = useCountAnimation(
-    animateValue && rawValue !== undefined ? rawValue : 0,
-    { duration: 800 }
-  );
-
-  const displayValue = useMemo(() => {
-    if (!animateValue || rawValue === undefined) {
-      return value;
-    }
-    const formattedNumber = new Intl.NumberFormat("pt-BR", {
-      minimumFractionDigits: valueDecimals,
-      maximumFractionDigits: valueDecimals,
-    }).format(animatedRawValue);
-    return `${valuePrefix}${formattedNumber}${valueSuffix}`;
-  }, [animateValue, rawValue, value, animatedRawValue, valuePrefix, valueSuffix, valueDecimals]);
+  const displayValue = value;
 
   const styles = variantStyles[variant];
 
