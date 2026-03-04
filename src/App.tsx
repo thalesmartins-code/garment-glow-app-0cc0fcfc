@@ -9,6 +9,7 @@ import { SettingsProvider } from "@/contexts/SettingsContext";
 import { SalesDataProvider } from "@/contexts/SalesDataContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { RoleRoute } from "@/components/auth/RoleRoute";
 import Index from "./pages/Index";
 import DailySales from "./pages/DailySales";
 import Import from "./pages/Import";

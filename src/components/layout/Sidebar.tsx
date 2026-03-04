@@ -12,6 +12,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { canAccess } from "@/config/roleAccess";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
