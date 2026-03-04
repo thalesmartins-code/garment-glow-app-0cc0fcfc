@@ -25,25 +25,24 @@ const MONTH_NAMES: Record<string, number> = {
 };
 
 async function getAccessToken(serviceAccountJsonRaw: string): Promise<string> {
-  // The secret may have literal \n that need to become actual newlines for JSON.parse
-  // Try parsing as-is first, then try fixing escaped characters
+  // Supabase secrets can mangle the private_key \n escaping
+  // Strategy: replace all literal \n inside the string with actual newlines,
+  // except those that are part of JSON structure
   let sa: Record<string, string>;
   try {
     sa = JSON.parse(serviceAccountJsonRaw);
   } catch {
-    // Replace literal backslash-n with actual newline in the private_key area
-    const fixed = serviceAccountJsonRaw
-      .replace(/\\\\/g, '\\')  // double backslash -> single
-      .replace(/\\n/g, '\n');   // literal \n -> newline
-    // Now we need to re-escape newlines inside JSON string values
-    // Actually, let's try a different approach: extract and fix
-    try {
-      sa = JSON.parse(fixed);
-    } catch {
-      // Last resort: the private key has literal \n that break JSON
-      // Try to parse by normalizing the string
-      const normalized = serviceAccountJsonRaw.replace(/(?<!\\)\\n/g, '\\\\n');
-      sa = JSON.parse(normalized);
+    // The private_key field likely has unescaped newlines
+    // Use regex to find the private_key value and fix it
+    const privateKeyMatch = serviceAccountJsonRaw.match(/"private_key"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    if (privateKeyMatch) {
+      // The private key value has bad escaping - rebuild with proper escaping  
+      const rawKey = privateKeyMatch[1];
+      const fixedKey = rawKey.replace(/\n/g, '\\n');
+      const fixedJson = serviceAccountJsonRaw.replace(privateKeyMatch[0], `"private_key":"${fixedKey}"`);
+      sa = JSON.parse(fixedJson);
+    } else {
+      throw new Error("Could not parse service account JSON or find private_key field");
     }
   }
   const now = Math.floor(Date.now() / 1000);
