@@ -330,36 +330,36 @@ const DailySales = () => {
         {/* KPI Cards - Row 1 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <KPICard
-            title="Venda bruta aprovada"
-            value={formatCurrency(metrics.vendaTotal)}
-            rawValue={metrics.vendaTotal}
+            title={viewMode === "diario" ? "Venda bruta aprovada (Hoje)" : "Venda bruta aprovada"}
+            value={formatCurrency(activeMetrics.vendaTotal)}
+            rawValue={activeMetrics.vendaTotal}
             valuePrefix="R$ "
-            delta={metrics.yoy}
+            delta={activeMetrics.yoy}
             deltaLabel="vs ano anterior"
             icon={<DollarSign className="w-5 h-5" />}
           />
           <KPICard
-            title="Meta do mês"
-            value={formatCurrency(metrics.metaTotal)}
-            rawValue={metrics.metaTotal}
+            title={viewMode === "diario" ? "Meta do dia" : "Meta do mês"}
+            value={formatCurrency(activeMetrics.metaTotal)}
+            rawValue={activeMetrics.metaTotal}
             valuePrefix="R$ "
             icon={<Target className="w-5 h-5" />}
           />
           <KPICard
-            title="% da meta"
-            value={`${metrics.metaPercentage.toFixed(1)}%`}
-            rawValue={metrics.metaPercentage}
+            title={viewMode === "diario" ? "% da meta (Dia)" : "% da meta"}
+            value={`${activeMetrics.metaPercentage.toFixed(1)}%`}
+            rawValue={activeMetrics.metaPercentage}
             valueSuffix="%"
             valueDecimals={1}
             icon={<Percent className="w-5 h-5" />}
           />
           <KPICard
-            title="GAP"
-            value={formatCurrency(Math.abs(metrics.gapTotal))}
-            rawValue={Math.abs(metrics.gapTotal)}
-            valuePrefix={metrics.gapTotal >= 0 ? "R$ +" : "R$ -"}
-            delta={metrics.metaTotal > 0 ? (metrics.gapTotal >= 0 ? Math.abs(metrics.gapTotal / metrics.metaTotal * 100) : -Math.abs(metrics.gapTotal / metrics.metaTotal * 100)) : 0}
-            deltaLabel={metrics.gapTotal >= 0 ? "acima da meta" : "abaixo da meta"}
+            title={viewMode === "diario" ? "GAP (Dia)" : "GAP"}
+            value={formatCurrency(Math.abs(activeMetrics.gapTotal))}
+            rawValue={Math.abs(activeMetrics.gapTotal)}
+            valuePrefix={activeMetrics.gapTotal >= 0 ? "R$ +" : "R$ -"}
+            delta={activeMetrics.metaTotal > 0 ? (activeMetrics.gapTotal >= 0 ? Math.abs(activeMetrics.gapTotal / activeMetrics.metaTotal * 100) : -Math.abs(activeMetrics.gapTotal / activeMetrics.metaTotal * 100)) : 0}
+            deltaLabel={activeMetrics.gapTotal >= 0 ? "acima da meta" : "abaixo da meta"}
             icon={<AlertTriangle className="w-5 h-5" />}
           />
         </div>
@@ -368,31 +368,31 @@ const DailySales = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <KPICard
             title="Melhor dia"
-            value={`Dia ${metrics.melhorDia.dia}`}
-            rawValue={metrics.melhorDia.dia}
+            value={`Dia ${activeMetrics.melhorDia.dia}`}
+            rawValue={activeMetrics.melhorDia.dia}
             valuePrefix="Dia "
-            subtitle={formatCurrency(metrics.melhorDia.valor)}
+            subtitle={formatCurrency(activeMetrics.melhorDia.valor)}
             icon={<Star className="w-5 h-5" />}
           />
           <KPICard
             title="Média diária"
-            value={formatCurrency(metrics.mediaVendas)}
-            rawValue={metrics.mediaVendas}
+            value={formatCurrency(activeMetrics.mediaVendas)}
+            rawValue={activeMetrics.mediaVendas}
             valuePrefix="R$ "
             icon={<Calculator className="w-5 h-5" />}
           />
           <KPICard
-            title="Total ano anterior"
-            value={formatCurrency(metrics.totalAnoAnterior)}
-            rawValue={metrics.totalAnoAnterior}
+            title={viewMode === "diario" ? "Ano anterior (Dia)" : "Total ano anterior"}
+            value={formatCurrency(activeMetrics.totalAnoAnterior)}
+            rawValue={activeMetrics.totalAnoAnterior}
             valuePrefix="R$ "
             icon={<Calendar className="w-5 h-5" />}
           />
           <KPICard
             title="% YoY"
-            value={`${metrics.yoy >= 0 ? "+" : ""}${metrics.yoy.toFixed(1)}%`}
-            rawValue={Math.abs(metrics.yoy)}
-            delta={metrics.yoy}
+            value={`${activeMetrics.yoy >= 0 ? "+" : ""}${activeMetrics.yoy.toFixed(1)}%`}
+            rawValue={Math.abs(activeMetrics.yoy)}
+            delta={activeMetrics.yoy}
             deltaLabel="crescimento"
             icon={<TrendingUp className="w-5 h-5" />}
           />
