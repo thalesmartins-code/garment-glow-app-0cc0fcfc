@@ -48,7 +48,7 @@ export function DailySalesChart({ data, loading = false, selectedMarketplace = "
 
   if (loading) {
     return (
-      <Card className="border-0 shadow-md">
+      <Card>
         <CardHeader>
           <div className="h-6 bg-muted rounded w-48 animate-pulse" />
         </CardHeader>
