@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGoogleSheetsSync } from "@/hooks/useGoogleSheetsSync";
+import { useSalesDataDB } from "@/hooks/useSalesDataDB";
 
 export default function Import() {
   const [parseResult, setParseResult] = useState<ImportResult | null>(null);
@@ -46,6 +47,7 @@ export default function Import() {
   const { saveTarget } = useSettings();
   const { toast } = useToast();
   const { loading: syncLoading, syncResult, sync, toImportedSales } = useGoogleSheetsSync();
+  const { saveSalesToDB } = useSalesDataDB();
   const [spreadsheetId, setSpreadsheetId] = useState(() => localStorage.getItem("google_spreadsheet_id") || "");
   
   // State for duplicate detection dialog
@@ -286,6 +288,13 @@ export default function Import() {
                                 });
                               }
                             }
+                          }
+                          
+                          // Save to Supabase DB
+                          try {
+                            await saveSalesToDB(importedSales);
+                          } catch (e) {
+                            console.error("Erro ao persistir no banco:", e);
                           }
                           
                           toast({
