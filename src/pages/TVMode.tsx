@@ -30,7 +30,7 @@ function getStoredNumber(key: string, fallback: number) {
 
 const TVMode = () => {
   const { activeSellers, setSelectedSeller, selectedSeller } = useSeller();
-  useSalesData();
+  const { refreshData } = useSalesData();
   const { getDailySalesData } = useSellerSalesData();
 
   const currentDate = new Date();
