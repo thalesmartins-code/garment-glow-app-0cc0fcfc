@@ -92,39 +92,12 @@ export function FilterBar({
           </Select>
         </div>
 
-        {/* Period Filter - Checklist style on desktop */}
-        <div className="hidden sm:flex items-center gap-1.5">
-          <CalendarIcon className="w-4 h-4 text-muted-foreground mr-1" />
-          {periods.map((period) => (
-            <button
-              key={period}
-              onClick={() => onPeriodChange(period)}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm transition-colors",
-                selectedPeriod === period
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-muted-foreground hover:bg-muted"
-              )}
-            >
-              <div className={cn(
-                "w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors",
-                selectedPeriod === period
-                  ? "bg-primary border-primary"
-                  : "border-muted-foreground/30"
-              )}>
-                {selectedPeriod === period && <Check className="w-3 h-3 text-primary-foreground" />}
-              </div>
-              {periodLabels[period]}
-            </button>
-          ))}
-        </div>
-
-        {/* Mobile Period Select */}
-        <div className="sm:hidden w-full">
+        {/* Period Filter - Single Select */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <Select value={selectedPeriod} onValueChange={(v) => onPeriodChange(v as PeriodFilter)}>
-            <SelectTrigger className="w-full">
-              <CalendarIcon className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Selecione o período" />
+            <SelectTrigger className="w-full sm:w-[160px] h-9 text-sm">
+              <CalendarIcon className="w-4 h-4 mr-1.5 shrink-0 text-muted-foreground" />
+              <SelectValue placeholder="Período" />
             </SelectTrigger>
             <SelectContent>
               {periods.map((period) => (
