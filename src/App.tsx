@@ -35,7 +35,9 @@ const App = () => (
               <BrowserRouter>
                 <Routes>
                   <Route path="/login" element={<Login />} />
-                  <Route element={<ProtectedRoute />}>
+                  <Route path="/tv" element={<ProtectedRoute />}>
+                    <Route index element={<TVMode />} />
+                  </Route>
                     <Route element={<AppLayout />}>
                       <Route path="/" element={<Index />} />
                       <Route path="/vendas-diarias" element={<DailySales />} />
