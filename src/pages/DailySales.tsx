@@ -59,6 +59,16 @@ const DailySales = () => {
     }
   }, [activeMarketplaces, selectedMarketplace]);
 
+  // Check if selected period is current month
+  const isCurrentMonth = selectedYear === currentDate.getFullYear() && selectedMonth === (currentDate.getMonth() + 1);
+
+  // Auto-switch to mensal when not current month
+  useMemo(() => {
+    if (!isCurrentMonth && viewMode === "diario") {
+      setViewMode("mensal");
+    }
+  }, [isCurrentMonth, viewMode]);
+
   const handleRefresh = useCallback(async () => {
     const spreadsheetId = localStorage.getItem("google_spreadsheet_id") || "";
     if (spreadsheetId) {
