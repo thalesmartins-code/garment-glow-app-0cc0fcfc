@@ -171,24 +171,6 @@ export function FilterBar({
         </div>
       </div>
 
-      {/* Row 2: Refresh info - no card */}
-      <div className="flex items-center gap-3 justify-end">
-        {lastUpdate && (
-          <span className="text-xs text-muted-foreground">
-            Atualizado: {lastUpdate}
-          </span>
-        )}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onRefresh}
-          disabled={isRefreshing}
-          className="gap-2"
-        >
-          <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
-          <span className="hidden sm:inline">Atualizar</span>
-        </Button>
-      </div>
     </div>
   );
 }
