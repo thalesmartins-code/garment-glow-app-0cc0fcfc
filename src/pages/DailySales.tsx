@@ -256,7 +256,7 @@ const DailySales = () => {
               <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "diario" | "mensal")}>
                 <TabsList className="h-9">
                   <TabsTrigger value="diario" className="text-sm px-3 py-1.5" disabled={!isCurrentMonth}>
-                    Diário {viewMode === "diario" && isCurrentMonth ? `(Dia ${currentDate.getDate() - 1})` : ""}
+                    Diário {viewMode === "diario" && isCurrentMonth ? `(${String(currentDate.getDate() - 1).padStart(2, "0")}/${String(currentDate.getMonth() + 1).padStart(2, "0")})` : ""}
                   </TabsTrigger>
                   <TabsTrigger value="mensal" className="text-sm px-3 py-1.5">Mensal</TabsTrigger>
                 </TabsList>
