@@ -32,9 +32,8 @@ export function Sidebar() {
   const location = useLocation();
   const { role } = useAuth();
 
-  const navItems = role === "admin"
-    ? [...baseNavItems, { icon: ShieldCheck, label: "Usuários", path: "/usuarios" }]
-    : baseNavItems;
+  const allNavItems = [...baseNavItems, { icon: ShieldCheck, label: "Usuários", path: "/usuarios" }];
+  const navItems = allNavItems.filter((item) => canAccess(role, item.path));
 
   const renderLink = (item: { icon: any; label: string; path: string }) => {
     const isActive = location.pathname === item.path;
