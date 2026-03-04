@@ -25,7 +25,7 @@ export function MetricCard({
         "relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:shadow-lg",
         variant === "accent"
           ? "bg-gradient-primary text-white"
-          : "bg-card border-0 shadow-md"
+          : "bg-card"
       )}
     >
       <div className="flex items-start justify-between">

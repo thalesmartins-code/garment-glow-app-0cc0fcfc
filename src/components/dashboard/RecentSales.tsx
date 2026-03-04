@@ -46,7 +46,7 @@ const recentSales = [
 
 export function RecentSales() {
   return (
-    <Card className="border-0 shadow-md">
+    <Card>
       <CardHeader className="pb-4">
         <CardTitle className="text-lg font-semibold">Vendas Recentes</CardTitle>
         <p className="text-sm text-muted-foreground">

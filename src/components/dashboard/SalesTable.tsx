@@ -78,7 +78,7 @@ export function SalesTable({
     return sortDirection === "asc" ? <ChevronUp className="w-4 h-4 text-primary" /> : <ChevronDown className="w-4 h-4 text-primary" />;
   };
   if (loading) {
-    return <Card className="border-0 shadow-md animate-pulse">
+    return <Card className="animate-pulse">
         <CardHeader>
           <div className="h-6 bg-muted rounded w-48" />
         </CardHeader>
@@ -87,7 +87,7 @@ export function SalesTable({
         </CardContent>
       </Card>;
   }
-  return <Card className="border-0 shadow-md">
+  return <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-base">Vendas por Marketplace</CardTitle>
         <span className="text-sm text-muted-foreground">
