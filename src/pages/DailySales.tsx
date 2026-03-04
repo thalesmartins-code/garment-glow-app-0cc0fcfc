@@ -5,6 +5,7 @@ import { DailySalesTable } from "@/components/dashboard/DailySalesTable";
 import { DailySalesChart } from "@/components/dashboard/DailySalesChart";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSeller } from "@/contexts/SellerContext";
 import { useSalesData } from "@/contexts/SalesDataContext";
@@ -209,49 +210,83 @@ const DailySales = () => {
             <Progress value={undefined} className="h-1 w-full [&>div]:animate-[indeterminate_1.5s_ease-in-out_infinite] [&>div]:w-1/3" />
           </div>
         )}
-        {/* Action Bar */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Marketplace:</span>
-            <Select value={selectedMarketplace} onValueChange={setSelectedMarketplace}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue>
-                  {selectedMarketplaceLabel && (
-                    <span className="flex items-center gap-2">
-                      <span>{selectedMarketplaceLabel.logo}</span>
-                      <span>{selectedMarketplaceLabel.label}</span>
-                    </span>
-                  )}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {marketplaceOptions.map((mp) => (
-                  <SelectItem key={mp.value} value={mp.value}>
-                    <span className="flex items-center gap-2">
-                      <span>{mp.logo}</span>
-                      <span>{mp.label}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Filter Bar */}
+        <Card className="p-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Marketplace:</span>
+                <Select value={selectedMarketplace} onValueChange={setSelectedMarketplace}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue>
+                      {selectedMarketplaceLabel && (
+                        <span className="flex items-center gap-2">
+                          <span>{selectedMarketplaceLabel.logo}</span>
+                          <span>{selectedMarketplaceLabel.label}</span>
+                        </span>
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {marketplaceOptions.map((mp) => (
+                      <SelectItem key={mp.value} value={mp.value}>
+                        <span className="flex items-center gap-2">
+                          <span>{mp.logo}</span>
+                          <span>{mp.label}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Mês:</span>
+                <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableMonths.map((m) => (
+                      <SelectItem key={m} value={String(m)}>
+                        {new Date(2000, m - 1).toLocaleString("pt-BR", { month: "long" }).replace(/^\w/, c => c.toUpperCase())}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Ano:</span>
+                <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableYears.map((ano) => (
+                      <SelectItem key={ano} value={String(ano)}>
+                        {ano}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground">
+                Atualizado: {formatLastUpdate(lastUpdate)}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isSyncing}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
+                {isSyncing ? "Sincronizando..." : "Atualizar"}
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground">
-              Atualizado: {formatLastUpdate(lastUpdate)}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isSyncing}
-              className="gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
-              {isSyncing ? "Sincronizando..." : "Atualizar"}
-            </Button>
-          </div>
-        </div>
+        </Card>
 
         {/* KPI Cards - Row 1 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

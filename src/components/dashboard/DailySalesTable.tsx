@@ -336,7 +336,7 @@ export function DailySalesTable({
 
   return (
     <Card>
-      <CardHeader className="flex flex-col gap-4">
+      <CardHeader>
         <div className="flex items-center gap-2">
           <Calendar className="w-5 h-5 text-primary" />
           <CardTitle className="text-lg font-semibold">Vendas Diárias</CardTitle>
@@ -345,43 +345,6 @@ export function DailySalesTable({
               Clique para editar
             </span>
           )}
-        </div>
-
-        {/* Month and Year Filters */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Mês:</span>
-            <Select value={String(selectedMonth)} onValueChange={(v) => onMonthChange(Number(v))}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {meses.filter((m) => availableMonths.includes(m.value)).map((mes) => (
-                  <SelectItem key={mes.value} value={String(mes.value)}>
-                    {mes.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Ano:</span>
-            <Select value={String(selectedYear)} onValueChange={(v) => onYearChange(Number(v))}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {availableYears.map((ano) => (
-                  <SelectItem key={ano} value={String(ano)}>
-                    {ano}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <span className="text-xs text-muted-foreground ml-auto">
-            Período: {meses.find((m) => m.value === selectedMonth)?.label} de {selectedYear}
-          </span>
         </div>
       </CardHeader>
       <CardContent>
