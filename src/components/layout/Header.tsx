@@ -1,4 +1,4 @@
-import { Bell, Check, ChevronDown, Store, User } from "lucide-react";
+import { Bell, Check, ChevronDown, Store, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSeller } from "@/contexts/SellerContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface HeaderProps {
   title: string;
