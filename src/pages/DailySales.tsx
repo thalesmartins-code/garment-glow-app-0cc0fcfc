@@ -256,7 +256,7 @@ const DailySales = () => {
               <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "diario" | "mensal")}>
                 <TabsList className="h-9">
                   <TabsTrigger value="diario" className="text-sm px-3 py-1.5" disabled={!isCurrentMonth}>
-                    Diário {viewMode === "diario" && isCurrentMonth ? `(Dia ${currentDate.getDate() - 1})` : ""}
+                    Diário {viewMode === "diario" && isCurrentMonth ? `(${String(currentDate.getDate() - 1).padStart(2, "0")}/${String(currentDate.getMonth() + 1).padStart(2, "0")})` : ""}
                   </TabsTrigger>
                   <TabsTrigger value="mensal" className="text-sm px-3 py-1.5">Mensal</TabsTrigger>
                 </TabsList>
@@ -329,7 +329,7 @@ const DailySales = () => {
         {/* KPI Cards - Row 1 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <KPICard
-            title={viewMode === "diario" ? "Venda bruta aprovada (Hoje)" : "Venda bruta aprovada"}
+            title={viewMode === "diario" ? `Venda bruta aprovada (${String(currentDate.getDate() - 1).padStart(2, "0")}/${String(currentDate.getMonth() + 1).padStart(2, "0")})` : "Venda bruta aprovada"}
             value={formatCurrency(activeMetrics.vendaTotal)}
             rawValue={activeMetrics.vendaTotal}
             valuePrefix="R$ "
