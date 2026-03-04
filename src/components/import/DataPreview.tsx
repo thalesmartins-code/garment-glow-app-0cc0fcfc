@@ -41,16 +41,16 @@ export function DataPreview({ result, maxRows = 10 }: DataPreviewProps) {
           <span className="text-sm text-muted-foreground">Total de linhas:</span>
           <span className="text-sm font-medium">{result.totalRows}</span>
         </div>
-        <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 rounded-lg">
-          <CheckCircle2 className="w-4 h-4 text-green-500" />
+        <div className="flex items-center gap-2 px-3 py-2 bg-success/10 rounded-lg">
+          <CheckCircle2 className="w-4 h-4 text-success" />
           <span className="text-sm text-muted-foreground">Válidas:</span>
-          <span className="text-sm font-medium text-green-600">{result.validRows}</span>
+          <span className="text-sm font-medium text-success">{result.validRows}</span>
         </div>
         {result.errors.length > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 rounded-lg">
-            <XCircle className="w-4 h-4 text-red-500" />
+          <div className="flex items-center gap-2 px-3 py-2 bg-destructive/10 rounded-lg">
+            <XCircle className="w-4 h-4 text-destructive" />
             <span className="text-sm text-muted-foreground">Com erros:</span>
-            <span className="text-sm font-medium text-red-600">{result.errors.length}</span>
+            <span className="text-sm font-medium text-destructive">{result.errors.length}</span>
           </div>
         )}
       </div>
