@@ -187,7 +187,24 @@ const TVMode = () => {
             )}
             <div>
               <h1 className="text-2xl font-bold leading-tight">{selectedSeller.name}</h1>
-              <p className="text-xs text-muted-foreground">{periodLabel} · {viewLabel} · Todos os marketplaces</p>
+              <p className="text-xs text-muted-foreground">{periodLabel} · Todos os marketplaces</p>
+            </div>
+          </div>
+          {/* View mode pills */}
+          <div className="flex items-center gap-1.5">
+            <div className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-500 ${
+              viewMode === "diario"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground opacity-50"
+            }`}>
+              Diário {`${String(currentDate.getDate() - 1).padStart(2, "0")}/${String(currentDate.getMonth() + 1).padStart(2, "0")}`}
+            </div>
+            <div className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-500 ${
+              viewMode === "mensal"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground opacity-50"
+            }`}>
+              Mensal
             </div>
           </div>
           <div className="flex items-center gap-2">
