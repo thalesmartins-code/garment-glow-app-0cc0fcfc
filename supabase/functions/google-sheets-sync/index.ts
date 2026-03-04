@@ -25,11 +25,38 @@ const MONTH_NAMES: Record<string, number> = {
 };
 
 async function getAccessToken(serviceAccountJsonRaw: string): Promise<string> {
-  // Supabase secrets often store the JSON with actual newlines in the private_key
-  // which breaks JSON.parse. Fix by replacing all real newlines inside string values.
-  // Simple approach: replace all actual newlines with \\n before parsing
-  const fixedJson = serviceAccountJsonRaw.replace(/\r?\n/g, '\\n');
-  const sa = JSON.parse(fixedJson);
+  // Debug: log around the problematic position
+  console.log("JSON length:", serviceAccountJsonRaw.length);
+  console.log("Chars around pos 1440:", JSON.stringify(serviceAccountJsonRaw.substring(1435, 1455)));
+  
+  // Try parsing as-is first
+  let sa: Record<string, string>;
+  try {
+    sa = JSON.parse(serviceAccountJsonRaw);
+  } catch (e1) {
+    console.log("First parse failed:", (e1 as Error).message);
+    // Replace actual newlines with \n escape
+    const fixedJson = serviceAccountJsonRaw.replace(/\r?\n/g, '\\n');
+    console.log("Fixed chars around pos 1440:", JSON.stringify(fixedJson.substring(1435, 1455)));
+    try {
+      sa = JSON.parse(fixedJson);
+    } catch (e2) {
+      console.log("Second parse failed:", (e2 as Error).message);
+      // Try: the private key may have \n that are already escaped but there might be other bad escapes
+      // Use a very permissive approach: extract fields individually
+      const clientEmail = serviceAccountJsonRaw.match(/"client_email"\s*:\s*"([^"]+)"/)?.[1];
+      const privateKeyRaw = serviceAccountJsonRaw.match(/"private_key"\s*:\s*"([\s\S]*?)(?:"|",)/)?.[1];
+      
+      if (!clientEmail || !privateKeyRaw) {
+        throw new Error(`Could not extract credentials from service account JSON. Parse error: ${(e2 as Error).message}`);
+      }
+      
+      sa = {
+        client_email: clientEmail,
+        private_key: privateKeyRaw.replace(/\\n/g, '\n'),
+      };
+    }
+  }
   const now = Math.floor(Date.now() / 1000);
 
   const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
