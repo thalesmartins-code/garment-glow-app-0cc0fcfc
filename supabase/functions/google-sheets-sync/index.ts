@@ -25,26 +25,11 @@ const MONTH_NAMES: Record<string, number> = {
 };
 
 async function getAccessToken(serviceAccountJsonRaw: string): Promise<string> {
-  // Supabase secrets can mangle the private_key \n escaping
-  // Strategy: replace all literal \n inside the string with actual newlines,
-  // except those that are part of JSON structure
-  let sa: Record<string, string>;
-  try {
-    sa = JSON.parse(serviceAccountJsonRaw);
-  } catch {
-    // The private_key field likely has unescaped newlines
-    // Use regex to find the private_key value and fix it
-    const privateKeyMatch = serviceAccountJsonRaw.match(/"private_key"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-    if (privateKeyMatch) {
-      // The private key value has bad escaping - rebuild with proper escaping  
-      const rawKey = privateKeyMatch[1];
-      const fixedKey = rawKey.replace(/\n/g, '\\n');
-      const fixedJson = serviceAccountJsonRaw.replace(privateKeyMatch[0], `"private_key":"${fixedKey}"`);
-      sa = JSON.parse(fixedJson);
-    } else {
-      throw new Error("Could not parse service account JSON or find private_key field");
-    }
-  }
+  // Supabase secrets often store the JSON with actual newlines in the private_key
+  // which breaks JSON.parse. Fix by replacing all real newlines inside string values.
+  // Simple approach: replace all actual newlines with \\n before parsing
+  const fixedJson = serviceAccountJsonRaw.replace(/\r?\n/g, '\\n');
+  const sa = JSON.parse(fixedJson);
   const now = Math.floor(Date.now() / 1000);
 
   const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
