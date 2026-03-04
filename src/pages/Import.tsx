@@ -45,7 +45,8 @@ export default function Import() {
   } = useSalesData();
   const { saveTarget } = useSettings();
   const { toast } = useToast();
-  const { loading: syncLoading, syncResult, inspect, sync, toImportedSales } = useGoogleSheetsSync();
+  const { loading: syncLoading, syncResult, sync, toImportedSales } = useGoogleSheetsSync();
+  const [spreadsheetId, setSpreadsheetId] = useState(() => localStorage.getItem("google_spreadsheet_id") || "");
   
   // State for duplicate detection dialog
   const [duplicateInfo, setDuplicateInfo] = useState<DuplicateCheckResult | null>(null);
@@ -213,19 +214,33 @@ export default function Import() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label>ID da Planilha Google</Label>
+                    <input
+                      type="text"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      placeholder="Ex: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
+                      value={spreadsheetId}
+                      onChange={(e) => {
+                        setSpreadsheetId(e.target.value);
+                        localStorage.setItem("google_spreadsheet_id", e.target.value);
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Encontre o ID na URL da planilha: docs.google.com/spreadsheets/d/<strong>ID_AQUI</strong>/edit
+                    </p>
+                  </div>
+                </div>
                 <div className="flex flex-wrap gap-3">
                   <Button
-                    variant="outline"
-                    onClick={() => inspect()}
-                    disabled={syncLoading}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    {syncLoading ? "Carregando..." : "Inspecionar"}
-                  </Button>
-                  <Button
                     onClick={async () => {
+                      if (!spreadsheetId.trim()) {
+                        toast({ title: "Informe o ID da planilha", variant: "destructive" });
+                        return;
+                      }
                       try {
-                        const result = await sync();
+                        const result = await sync(spreadsheetId.trim(), selectedSeller);
                         if (result.success && result.sales.length > 0) {
                           const importedSales = toImportedSales(result.sales);
                           
