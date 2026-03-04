@@ -165,7 +165,7 @@ export function SalesDataProvider({ children }: { children: React.ReactNode }) {
       setSalesData((prev) => prev.filter((s) => s.sellerId !== sellerId));
     } else {
       setSalesData([]);
-      localStorage.removeItem(STORAGE_KEY);
+      // cleared in memory; DB managed separately
     }
   }, []);
 
