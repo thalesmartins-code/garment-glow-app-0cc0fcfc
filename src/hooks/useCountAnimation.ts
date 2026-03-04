@@ -6,14 +6,14 @@ interface UseCountAnimationOptions {
   easing?: (t: number) => number;
 }
 
-// Easing function for smooth deceleration
-const easeOutQuart = (t: number): number => 1 - Math.pow(1 - t, 4);
+// Smooth deceleration with gentle ease-out
+const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
 
 export function useCountAnimation(
   endValue: number,
   options: UseCountAnimationOptions = {}
 ): number {
-  const { duration = 1500, delay = 0, easing = easeOutQuart } = options;
+  const { duration = 600, delay = 0, easing = easeOutCubic } = options;
   const [currentValue, setCurrentValue] = useState(0);
   const startTimeRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
