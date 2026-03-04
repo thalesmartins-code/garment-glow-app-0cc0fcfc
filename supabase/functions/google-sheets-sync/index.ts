@@ -91,7 +91,7 @@ async function getAccessToken(serviceAccountJsonRaw: string): Promise<string> {
     pemContents += "=";
   }
 
-  console.log("PEM length:", pemContents.length, "first 20:", pemContents.substring(0, 20));
+  console.log("PEM length:", pemContents.length, "first 20:", pemContents.substring(0, 20), "last 20:", pemContents.substring(pemContents.length - 20));
   
   // Manual base64 decode to avoid atob issues in Deno edge runtime
   const lookup = new Uint8Array(256);
