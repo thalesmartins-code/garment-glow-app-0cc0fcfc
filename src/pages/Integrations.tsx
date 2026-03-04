@@ -181,7 +181,7 @@ export default function Integrations() {
     <div className="space-y-6">
       <PageHeader
         title="Integrações"
-        description="Conecte suas contas de marketplaces para sincronizar dados de vendas automaticamente."
+        subtitle="Conecte suas contas de marketplaces para sincronizar dados de vendas automaticamente."
       />
 
       {/* Summary */}
