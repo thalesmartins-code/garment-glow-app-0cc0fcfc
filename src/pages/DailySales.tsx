@@ -393,6 +393,7 @@ const DailySales = () => {
               rawValue={metrics.mediaAtingimentoMeta}
               valueSuffix="%"
               valueDecimals={1}
+              subtitle={new Date(selectedYear, selectedMonth - 1).toLocaleString("pt-BR", { month: "long", year: "numeric" }).replace(/^\w/, c => c.toUpperCase())}
               icon={<Calculator className="w-5 h-5" />}
               variant="default"
             />
