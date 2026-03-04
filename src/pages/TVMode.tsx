@@ -9,6 +9,13 @@ import { DailySale } from "@/data/mockData";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import logoSandrini from "@/assets/logo-sandrini.jpg";
+import logoBuyclock from "@/assets/logo-buyclock.jpg";
+
+const SELLER_LOGOS: Record<string, string> = {
+  sandrini: logoSandrini,
+  buyclock: logoBuyclock,
+};
 
 const STORAGE_KEY_CYCLE = "tv_seller_cycle_s";
 const STORAGE_KEY_REFRESH = "tv_refresh_min";
@@ -143,9 +150,14 @@ const TVMode = () => {
       <div className="flex items-center justify-between">
         {/* Left: seller name + period + seller pills */}
         <div className="flex items-center gap-5">
-          <div>
-            <h1 className="text-2xl font-bold leading-tight">{selectedSeller.name}</h1>
-            <p className="text-xs text-muted-foreground">{periodLabel} · Todos os marketplaces</p>
+          <div className="flex items-center gap-3">
+            {SELLER_LOGOS[selectedSeller.id] && (
+              <img src={SELLER_LOGOS[selectedSeller.id]} alt={selectedSeller.name} className="h-10 w-10 rounded-lg object-cover" />
+            )}
+            <div>
+              <h1 className="text-2xl font-bold leading-tight">{selectedSeller.name}</h1>
+              <p className="text-xs text-muted-foreground">{periodLabel} · Todos os marketplaces</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {activeSellers.map((seller, idx) => (
