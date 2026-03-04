@@ -9,7 +9,9 @@ import {
   ChevronLeft,
   ChevronRight,
   AreaChart,
+  ShieldCheck,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
