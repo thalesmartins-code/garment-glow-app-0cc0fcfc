@@ -106,6 +106,7 @@ export function KPICard({
             )}
           </div>
         )}
+        </div>
       </CardContent>
     </Card>
   );
