@@ -151,7 +151,7 @@ const TVMode = () => {
 
   const activeMetrics = viewMode === "diario" ? dailyMetrics : monthlyMetrics;
 
-  const chartData: DailySale[] = useMemo(() => dailySalesData.map(({ isImported, ...rest }) => rest as DailySale), [dailySalesData]);
+  
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
