@@ -214,7 +214,7 @@ export function SalesTable({
               <td className="px-4 py-4 text-right">
                 {formatNumber(totals.vendas)}
               </td>
-              <td className="px-4 py-4 text-right text-primary">
+              <td className="px-4 py-4 text-right font-semibold bg-success/10 text-success">
                 {formatCurrency(totals.vendaTotal)}
               </td>
               <td className="px-4 py-4 text-right text-primary">
