@@ -40,20 +40,29 @@ const TVMode = () => {
   const [sellerCycleSec, setSellerCycleSec] = useState(() => getStoredNumber(STORAGE_KEY_CYCLE, 15));
   const [refreshMin, setRefreshMin] = useState(() => getStoredNumber(STORAGE_KEY_REFRESH, 5));
   const [currentSellerIndex, setCurrentSellerIndex] = useState(0);
+  const [viewMode, setViewMode] = useState<"diario" | "mensal">("diario");
   const [clock, setClock] = useState(new Date());
 
   // Persist settings
   useEffect(() => { localStorage.setItem(STORAGE_KEY_CYCLE, String(sellerCycleSec)); }, [sellerCycleSec]);
   useEffect(() => { localStorage.setItem(STORAGE_KEY_REFRESH, String(refreshMin)); }, [refreshMin]);
 
-  // Cycle sellers
+  // Cycle: diário → mensal → next seller diário → mensal → ...
   useEffect(() => {
-    if (activeSellers.length <= 1) return;
     const interval = setInterval(() => {
-      setCurrentSellerIndex((prev) => {
-        const next = (prev + 1) % activeSellers.length;
-        setSelectedSeller(activeSellers[next].id);
-        return next;
+      setViewMode((prev) => {
+        if (prev === "diario") {
+          return "mensal";
+        }
+        // After mensal, advance to next seller (if multiple)
+        if (activeSellers.length > 1) {
+          setCurrentSellerIndex((prevIdx) => {
+            const next = (prevIdx + 1) % activeSellers.length;
+            setSelectedSeller(activeSellers[next].id);
+            return next;
+          });
+        }
+        return "diario";
       });
     }, sellerCycleSec * 1000);
     return () => clearInterval(interval);
@@ -106,7 +115,8 @@ const TVMode = () => {
     })).sort((a, b) => a.dia - b.dia);
   }, [selectedSeller, selectedYear, selectedMonth, getDailySalesData]);
 
-  const metrics = useMemo(() => {
+  // Monthly metrics
+  const monthlyMetrics = useMemo(() => {
     const data = dailySalesData;
     if (data.length === 0) return { metaTotal: 0, vendaTotal: 0, metaPercentage: 0, yoy: 0, gapTotal: 0, totalAnoAnterior: 0 };
     const metaTotal = data.reduce((s, d) => s + d.metaVendas, 0);
@@ -118,6 +128,25 @@ const TVMode = () => {
     return { metaTotal, vendaTotal, metaPercentage, yoy, gapTotal, totalAnoAnterior };
   }, [dailySalesData]);
 
+  // Daily metrics (yesterday / D-1)
+  const dailyMetrics = useMemo(() => {
+    const yesterday = currentDate.getDate() - 1;
+    const isCurrentMonth = selectedYear === currentDate.getFullYear() && selectedMonth === (currentDate.getMonth() + 1);
+    const dayData = isCurrentMonth && yesterday > 0 ? dailySalesData.find((d) => d.dia === yesterday) : null;
+    if (!dayData) return { vendaTotal: 0, metaTotal: 0, metaPercentage: 0, gapTotal: 0, totalAnoAnterior: 0, yoy: 0, dia: yesterday || 1 };
+    return {
+      vendaTotal: dayData.vendaTotal,
+      metaTotal: dayData.metaVendas,
+      metaPercentage: dayData.metaAtingida,
+      gapTotal: dayData.gap,
+      totalAnoAnterior: dayData.vendaAnoAnterior,
+      yoy: dayData.yoyDia,
+      dia: dayData.dia,
+    };
+  }, [dailySalesData, currentDate, selectedYear, selectedMonth]);
+
+  const activeMetrics = viewMode === "diario" ? dailyMetrics : monthlyMetrics;
+
   const chartData: DailySale[] = useMemo(() => dailySalesData.map(({ isImported, ...rest }) => rest as DailySale), [dailySalesData]);
 
   const formatCurrency = (value: number) =>
@@ -127,10 +156,9 @@ const TVMode = () => {
   const formatDate = (date: Date) =>
     date.toLocaleString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
 
-  // Cycle progress bar
+  // Cycle progress bar — resets on every view/seller change
   const [cycleProgress, setCycleProgress] = useState(0);
   useEffect(() => {
-    if (activeSellers.length <= 1) return;
     setCycleProgress(0);
     const cycleMs = sellerCycleSec * 1000;
     const interval = setInterval(() => {
@@ -140,9 +168,12 @@ const TVMode = () => {
       });
     }, 100);
     return () => clearInterval(interval);
-  }, [currentSellerIndex, activeSellers.length, sellerCycleSec]);
+  }, [currentSellerIndex, viewMode, sellerCycleSec]);
 
   const periodLabel = new Date(selectedYear, selectedMonth - 1).toLocaleString("pt-BR", { month: "long", year: "numeric" }).replace(/^\w/, c => c.toUpperCase());
+  const viewLabel = viewMode === "diario"
+    ? `Diário (${String(currentDate.getDate() - 1).padStart(2, "0")}/${String(currentDate.getMonth() + 1).padStart(2, "0")})`
+    : "Mensal";
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6 flex flex-col gap-4 select-none">
@@ -156,7 +187,7 @@ const TVMode = () => {
             )}
             <div>
               <h1 className="text-2xl font-bold leading-tight">{selectedSeller.name}</h1>
-              <p className="text-xs text-muted-foreground">{periodLabel} · Todos os marketplaces</p>
+              <p className="text-xs text-muted-foreground">{periodLabel} · {viewLabel} · Todos os marketplaces</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -190,7 +221,7 @@ const TVMode = () => {
             </PopoverTrigger>
             <PopoverContent className="w-72 space-y-5" align="end">
               <div className="space-y-3">
-                <Label className="text-sm font-medium">Alternar sellers: {sellerCycleSec}s</Label>
+                <Label className="text-sm font-medium">Alternar visão: {sellerCycleSec}s</Label>
                 <Slider value={[sellerCycleSec]} onValueChange={([v]) => setSellerCycleSec(v)} min={5} max={60} step={5} />
                 <div className="flex justify-between text-xs text-muted-foreground"><span>5s</span><span>60s</span></div>
               </div>
@@ -208,21 +239,19 @@ const TVMode = () => {
         </div>
       </div>
 
-      {/* Seller cycle progress */}
-      {activeSellers.length > 1 && (
-        <div className="w-full h-0.5 bg-muted rounded-full overflow-hidden">
-          <div className="h-full bg-primary transition-all duration-100 ease-linear" style={{ width: `${cycleProgress}%` }} />
-        </div>
-      )}
+      {/* Cycle progress */}
+      <div className="w-full h-0.5 bg-muted rounded-full overflow-hidden">
+        <div className="h-full bg-primary transition-all duration-100 ease-linear" style={{ width: `${cycleProgress}%` }} />
+      </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <KPICard title="Venda bruta aprovada" value={formatCurrency(metrics.vendaTotal)} rawValue={metrics.vendaTotal} valuePrefix="R$ " delta={metrics.yoy} deltaLabel="vs ano anterior" icon={<DollarSign className="w-5 h-5" />} />
-        <KPICard title="Meta do mês" value={formatCurrency(metrics.metaTotal)} rawValue={metrics.metaTotal} valuePrefix="R$ " icon={<Target className="w-5 h-5" />} />
-        <KPICard title="% da meta" value={`${metrics.metaPercentage.toFixed(1)}%`} rawValue={metrics.metaPercentage} valueSuffix="%" valueDecimals={1} icon={<Percent className="w-5 h-5" />} />
-        <KPICard title="GAP" value={formatCurrency(Math.abs(metrics.gapTotal))} rawValue={Math.abs(metrics.gapTotal)} valuePrefix={metrics.gapTotal >= 0 ? "R$ +" : "R$ -"} delta={metrics.metaTotal > 0 ? (metrics.gapTotal >= 0 ? Math.abs(metrics.gapTotal / metrics.metaTotal * 100) : -Math.abs(metrics.gapTotal / metrics.metaTotal * 100)) : 0} deltaLabel={metrics.gapTotal >= 0 ? "acima da meta" : "abaixo da meta"} icon={<AlertTriangle className="w-5 h-5" />} />
-        <KPICard title="Ano anterior" value={formatCurrency(metrics.totalAnoAnterior)} rawValue={metrics.totalAnoAnterior} valuePrefix="R$ " icon={<Calendar className="w-5 h-5" />} />
-        <KPICard title="% YoY" value={`${metrics.yoy >= 0 ? "+" : ""}${metrics.yoy.toFixed(1)}%`} rawValue={Math.abs(metrics.yoy)} delta={metrics.yoy} deltaLabel="crescimento" icon={<TrendingUp className="w-5 h-5" />} />
+        <KPICard title={viewMode === "diario" ? "Venda bruta (Dia)" : "Venda bruta aprovada"} value={formatCurrency(activeMetrics.vendaTotal)} rawValue={activeMetrics.vendaTotal} valuePrefix="R$ " delta={activeMetrics.yoy} deltaLabel="vs ano anterior" icon={<DollarSign className="w-5 h-5" />} />
+        <KPICard title={viewMode === "diario" ? "Meta do dia" : "Meta do mês"} value={formatCurrency(activeMetrics.metaTotal)} rawValue={activeMetrics.metaTotal} valuePrefix="R$ " icon={<Target className="w-5 h-5" />} />
+        <KPICard title={viewMode === "diario" ? "% da meta (Dia)" : "% da meta"} value={`${activeMetrics.metaPercentage.toFixed(1)}%`} rawValue={activeMetrics.metaPercentage} valueSuffix="%" valueDecimals={1} icon={<Percent className="w-5 h-5" />} />
+        <KPICard title={viewMode === "diario" ? "GAP (Dia)" : "GAP"} value={formatCurrency(Math.abs(activeMetrics.gapTotal))} rawValue={Math.abs(activeMetrics.gapTotal)} valuePrefix={activeMetrics.gapTotal >= 0 ? "R$ +" : "R$ -"} delta={activeMetrics.metaTotal > 0 ? (activeMetrics.gapTotal >= 0 ? Math.abs(activeMetrics.gapTotal / activeMetrics.metaTotal * 100) : -Math.abs(activeMetrics.gapTotal / activeMetrics.metaTotal * 100)) : 0} deltaLabel={activeMetrics.gapTotal >= 0 ? "acima da meta" : "abaixo da meta"} icon={<AlertTriangle className="w-5 h-5" />} />
+        <KPICard title={viewMode === "diario" ? "Ano anterior (Dia)" : "Ano anterior"} value={formatCurrency(activeMetrics.totalAnoAnterior)} rawValue={activeMetrics.totalAnoAnterior} valuePrefix="R$ " icon={<Calendar className="w-5 h-5" />} />
+        <KPICard title="% YoY" value={`${activeMetrics.yoy >= 0 ? "+" : ""}${activeMetrics.yoy.toFixed(1)}%`} rawValue={Math.abs(activeMetrics.yoy)} delta={activeMetrics.yoy} deltaLabel="crescimento" icon={<TrendingUp className="w-5 h-5" />} />
       </div>
 
       {/* Chart */}
