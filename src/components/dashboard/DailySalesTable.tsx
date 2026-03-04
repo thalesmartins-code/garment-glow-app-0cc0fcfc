@@ -46,6 +46,7 @@ interface DailySalesTableProps {
   onUpdateSale?: (day: number, vendaTotal: number) => void;
   onUpdateSaleAprovadaReal?: (day: number, vendaAprovadaReal: number) => void;
   isEditable?: boolean;
+  compact?: boolean;
 }
 
 interface MarketplaceBreakdown {
@@ -167,6 +168,7 @@ export function DailySalesTable({
   onUpdateSale,
   onUpdateSaleAprovadaReal,
   isEditable = true,
+  compact = false,
 }: DailySalesTableProps) {
   const mpOptions = customMarketplaceOptions ?? [];
   const [sortBy, setSortBy] = useState<SortField>("dia");
@@ -338,8 +340,8 @@ export function DailySalesTable({
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-primary" />
-          <CardTitle className="text-lg font-semibold">Vendas Diárias</CardTitle>
+          <Calendar className={cn("text-primary", compact ? "w-4 h-4" : "w-5 h-5")} />
+          <CardTitle className={cn(compact ? "text-sm font-medium" : "text-lg font-semibold")}>Vendas Diárias</CardTitle>
           {isEditable && selectedMarketplace !== "all" && (
             <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
               Clique para editar
