@@ -21,11 +21,11 @@ interface DailySalesChartProps {
 }
 
 export function DailySalesChart({ data, loading = false, selectedMarketplace = "all" }: DailySalesChartProps) {
-  const [isOpen, setIsOpen] = useState(selectedMarketplace !== "all");
+  const [isOpen, setIsOpen] = useState(true);
 
-  // Auto-collapse when "all" is selected, auto-open when specific marketplace
+  // Auto-open when specific marketplace selected
   useEffect(() => {
-    setIsOpen(selectedMarketplace !== "all");
+    if (selectedMarketplace !== "all") setIsOpen(true);
   }, [selectedMarketplace]);
 
   const chartData = useMemo(() => {
