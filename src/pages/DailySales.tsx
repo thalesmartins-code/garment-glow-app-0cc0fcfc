@@ -200,11 +200,9 @@ const DailySales = () => {
 
   if (initialLoading) {
     return (
-      <div className="dashboard-container">
-        <div className="max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[60vh] gap-4">
-          <Loader2 className="w-10 h-10 animate-spin text-primary" />
-          <p className="text-muted-foreground text-sm">Sincronizando dados...</p>
-        </div>
+      <div className="max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <p className="text-muted-foreground text-sm">Sincronizando dados...</p>
       </div>
     );
   }
