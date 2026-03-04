@@ -279,9 +279,20 @@ const TVMode = () => {
         <KPICard title="% YoY" value={`${activeMetrics.yoy >= 0 ? "+" : ""}${activeMetrics.yoy.toFixed(1)}%`} rawValue={Math.abs(activeMetrics.yoy)} delta={activeMetrics.yoy} deltaLabel="crescimento" icon={<TrendingUp className="w-5 h-5" />} />
       </div>
 
-      {/* Chart */}
-      <div className="flex-1 min-h-[300px]">
-        <DailySalesChart data={chartData} selectedMarketplace="all" />
+      {/* Daily Sales Table */}
+      <div className="flex-1 overflow-auto">
+        <DailySalesTable
+          dailySalesData={dailySalesData}
+          loading={false}
+          selectedMarketplace="all"
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+          onMonthChange={() => {}}
+          onYearChange={() => {}}
+          availableMonths={[selectedMonth]}
+          availableYears={[selectedYear]}
+          isEditable={false}
+        />
       </div>
 
       {/* Footer */}
