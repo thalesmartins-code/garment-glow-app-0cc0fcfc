@@ -59,6 +59,16 @@ const DailySales = () => {
     }
   }, [activeMarketplaces, selectedMarketplace]);
 
+  // Check if selected period is current month
+  const isCurrentMonth = selectedYear === currentDate.getFullYear() && selectedMonth === (currentDate.getMonth() + 1);
+
+  // Auto-switch to mensal when not current month
+  useMemo(() => {
+    if (!isCurrentMonth && viewMode === "diario") {
+      setViewMode("mensal");
+    }
+  }, [isCurrentMonth, viewMode]);
+
   const handleRefresh = useCallback(async () => {
     const spreadsheetId = localStorage.getItem("google_spreadsheet_id") || "";
     if (spreadsheetId) {
@@ -159,16 +169,15 @@ const DailySales = () => {
 
   // Calculate metrics for today (daily view)
   const dailyMetrics = useMemo(() => {
-    const today = currentDate.getDate();
-    const isCurrentMonth = selectedYear === currentDate.getFullYear() && selectedMonth === (currentDate.getMonth() + 1);
-    const dayData = isCurrentMonth
-      ? dailySalesData.find((d) => d.dia === today)
+    const yesterday = currentDate.getDate() - 1;
+    const dayData = isCurrentMonth && yesterday > 0
+      ? dailySalesData.find((d) => d.dia === yesterday)
       : null;
 
     if (!dayData) {
       return {
         vendaTotal: 0, metaVendas: 0, metaPercentage: 0, gap: 0,
-        vendaAnoAnterior: 0, yoy: 0, dia: today,
+        vendaAnoAnterior: 0, yoy: 0, dia: yesterday || 1,
       };
     }
 
@@ -246,7 +255,7 @@ const DailySales = () => {
             <div className="flex items-center gap-4">
               <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "diario" | "mensal")}>
                 <TabsList className="h-9">
-                  <TabsTrigger value="diario" className="text-sm px-3 py-1.5">Diário</TabsTrigger>
+                  <TabsTrigger value="diario" className="text-sm px-3 py-1.5" disabled={!isCurrentMonth}>Diário</TabsTrigger>
                   <TabsTrigger value="mensal" className="text-sm px-3 py-1.5">Mensal</TabsTrigger>
                 </TabsList>
               </Tabs>
