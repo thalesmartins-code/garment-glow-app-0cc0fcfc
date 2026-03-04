@@ -13,7 +13,7 @@ export function useCountAnimation(
   endValue: number,
   options: UseCountAnimationOptions = {}
 ): number {
-  const { duration = 600, delay = 0, easing = easeOutCubic } = options;
+  const { duration = 300, delay = 0, easing = easeOutCubic } = options;
   const [currentValue, setCurrentValue] = useState(0);
   const startTimeRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
