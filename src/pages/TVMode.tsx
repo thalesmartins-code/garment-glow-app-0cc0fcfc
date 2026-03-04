@@ -9,6 +9,13 @@ import { DailySale } from "@/data/mockData";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import logoSandrini from "@/assets/logo-sandrini.jpg";
+import logoBuyclock from "@/assets/logo-buyclock.jpg";
+
+const SELLER_LOGOS: Record<string, string> = {
+  sandrini: logoSandrini,
+  buyclock: logoBuyclock,
+};
 
 const STORAGE_KEY_CYCLE = "tv_seller_cycle_s";
 const STORAGE_KEY_REFRESH = "tv_refresh_min";
