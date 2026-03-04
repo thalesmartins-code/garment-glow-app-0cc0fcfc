@@ -40,20 +40,29 @@ const TVMode = () => {
   const [sellerCycleSec, setSellerCycleSec] = useState(() => getStoredNumber(STORAGE_KEY_CYCLE, 15));
   const [refreshMin, setRefreshMin] = useState(() => getStoredNumber(STORAGE_KEY_REFRESH, 5));
   const [currentSellerIndex, setCurrentSellerIndex] = useState(0);
+  const [viewMode, setViewMode] = useState<"diario" | "mensal">("diario");
   const [clock, setClock] = useState(new Date());
 
   // Persist settings
   useEffect(() => { localStorage.setItem(STORAGE_KEY_CYCLE, String(sellerCycleSec)); }, [sellerCycleSec]);
   useEffect(() => { localStorage.setItem(STORAGE_KEY_REFRESH, String(refreshMin)); }, [refreshMin]);
 
-  // Cycle sellers
+  // Cycle: diário → mensal → next seller diário → mensal → ...
   useEffect(() => {
-    if (activeSellers.length <= 1) return;
     const interval = setInterval(() => {
-      setCurrentSellerIndex((prev) => {
-        const next = (prev + 1) % activeSellers.length;
-        setSelectedSeller(activeSellers[next].id);
-        return next;
+      setViewMode((prev) => {
+        if (prev === "diario") {
+          return "mensal";
+        }
+        // After mensal, advance to next seller (if multiple)
+        if (activeSellers.length > 1) {
+          setCurrentSellerIndex((prevIdx) => {
+            const next = (prevIdx + 1) % activeSellers.length;
+            setSelectedSeller(activeSellers[next].id);
+            return next;
+          });
+        }
+        return "diario";
       });
     }, sellerCycleSec * 1000);
     return () => clearInterval(interval);
