@@ -245,6 +245,15 @@ const DailySales = () => {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Visão:</span>
+                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "diario" | "mensal")}>
+                  <TabsList>
+                    <TabsTrigger value="diario">Diário</TabsTrigger>
+                    <TabsTrigger value="mensal">Mensal</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+              <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Marketplace:</span>
                 <Select value={selectedMarketplace} onValueChange={setSelectedMarketplace}>
                   <SelectTrigger className="w-[180px]">
