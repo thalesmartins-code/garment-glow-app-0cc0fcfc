@@ -169,10 +169,9 @@ const DailySales = () => {
 
   // Calculate metrics for today (daily view)
   const dailyMetrics = useMemo(() => {
-    const today = currentDate.getDate();
-    const isCurrentMonth = selectedYear === currentDate.getFullYear() && selectedMonth === (currentDate.getMonth() + 1);
-    const dayData = isCurrentMonth
-      ? dailySalesData.find((d) => d.dia === today)
+    const yesterday = currentDate.getDate() - 1;
+    const dayData = isCurrentMonth && yesterday > 0
+      ? dailySalesData.find((d) => d.dia === yesterday)
       : null;
 
     if (!dayData) {
