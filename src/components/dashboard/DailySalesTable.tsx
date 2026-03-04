@@ -319,7 +319,7 @@ export function DailySalesTable({
 
   if (loading) {
     return (
-      <Card className="dashboard-card">
+      <Card className="dashboard-card border-0 shadow-md">
         <CardHeader>
           <div className="h-6 bg-muted rounded animate-pulse w-48" />
         </CardHeader>
