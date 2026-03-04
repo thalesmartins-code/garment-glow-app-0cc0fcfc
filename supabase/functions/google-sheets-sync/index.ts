@@ -246,6 +246,7 @@ function parseTabData(
         vendaAnoAnterior: parseNumber(row[colMap["venda_ano_anterior_2"] ?? colMap["venda_ano_anterior_1"]]),
       });
     }
+    console.log(`${section.sellerId}: ${parsedCount} parsed, ${skippedCount} skipped`);
   }
 
   return results;
