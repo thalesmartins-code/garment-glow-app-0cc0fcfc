@@ -1,28 +1,17 @@
 import { Outlet } from "react-router-dom";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "./AppSidebar";
-import { ThemeToggle } from "./ThemeToggle";
-import { Breadcrumbs } from "./Breadcrumbs";
+import { Sidebar } from "./Sidebar";
+import { FloatingChat } from "@/components/chat/FloatingChat";
 
 export function AppLayout() {
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <main className="flex-1 flex flex-col">
-          <header className="h-14 flex items-center justify-between gap-4 border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 px-4 sticky top-0 z-10 shadow-sm">
-            <div className="flex items-center gap-4">
-              <Breadcrumbs />
-            </div>
-            <div className="flex items-center gap-3">
-              <ThemeToggle />
-            </div>
-          </header>
-          <div className="flex-1 animate-fade-in">
-            <Outlet />
-          </div>
+    <div className="flex h-screen bg-background">
+      <Sidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 overflow-auto">
+          <Outlet />
         </main>
       </div>
-    </SidebarProvider>
+      <FloatingChat />
+    </div>
   );
 }

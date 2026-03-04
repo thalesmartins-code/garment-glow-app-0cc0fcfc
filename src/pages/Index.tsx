@@ -1,79 +1,74 @@
-import { LayoutDashboard, DollarSign, Target, TrendingUp, Users, FileUp, Settings } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import {
+  DollarSign,
+  ShoppingBag,
+  Package,
+  TrendingUp,
+} from "lucide-react";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { MetricCard } from "@/components/dashboard/MetricCard";
+import { SalesChart } from "@/components/dashboard/SalesChart";
+import { RecentSales } from "@/components/dashboard/RecentSales";
+import { TopProducts } from "@/components/dashboard/TopProducts";
 
-const kpis = [
-  { title: "Receita Total", value: "R$ 0", subtitle: "Importe dados para visualizar", icon: DollarSign },
-  { title: "% da Meta", value: "0%", subtitle: "Configure metas em Configurações", icon: Target },
-  { title: "Crescimento YoY", value: "0%", subtitle: "vs ano anterior", icon: TrendingUp },
-  { title: "Marketplaces", value: "0", subtitle: "Cadastre sellers para começar", icon: Users },
+const metrics = [
+  {
+    title: "Vendas do Mês",
+    value: "R$ 24.580",
+    change: { value: "12%", positive: true },
+    icon: DollarSign,
+    variant: "accent" as const,
+  },
+  {
+    title: "Pedidos Hoje",
+    value: "48",
+    change: { value: "8%", positive: true },
+    icon: ShoppingBag,
+    variant: "default" as const,
+  },
+  {
+    title: "Produtos em Estoque",
+    value: "1.284",
+    change: { value: "3%", positive: false },
+    icon: Package,
+    variant: "default" as const,
+  },
+  {
+    title: "Taxa de Conversão",
+    value: "3.2%",
+    change: { value: "0.5%", positive: true },
+    icon: TrendingUp,
+    variant: "default" as const,
+  },
 ];
 
 const Index = () => {
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-primary shadow-glow">
-            <LayoutDashboard className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground text-sm">Visão geral do desempenho de vendas nos marketplaces</p>
-          </div>
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-4">
-        {kpis.map((kpi) => (
-          <Card key={kpi.title} className="relative overflow-hidden border border-border/50 shadow-md hover:shadow-lg transition-shadow duration-300">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.title}</CardTitle>
-              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-                <kpi.icon className="w-4 h-4 text-accent" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpi.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">{kpi.subtitle}</p>
-            </CardContent>
-          </Card>
+    <DashboardLayout
+      title="Dashboard"
+      subtitle="Bem-vinda de volta, Julia! Aqui está o resumo da sua loja."
+    >
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {metrics.map((metric) => (
+          <MetricCard
+            key={metric.title}
+            title={metric.title}
+            value={metric.value}
+            change={metric.change}
+            icon={metric.icon}
+            variant={metric.variant}
+          />
         ))}
       </div>
 
-      {/* Empty state */}
-      <Card className="border border-border/50 shadow-md">
-        <CardContent className="p-10 text-center">
-          <div className="text-6xl mb-4">📊</div>
-          <h3 className="text-xl font-semibold mb-2">Nenhum dado disponível</h3>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            Importe dados de vendas para visualizar o dashboard com KPIs, gráficos e tabelas.
-          </p>
-          <div className="flex justify-center gap-3">
-            <Button asChild className="bg-gradient-primary shadow-glow hover:opacity-90 transition-opacity">
-              <Link to="/importacao">
-                <FileUp className="w-4 h-4 mr-2" />
-                Importar Dados
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/configuracoes">
-                <Settings className="w-4 h-4 mr-2" />
-                Configurar Metas
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Footer */}
-      <footer className="text-center py-6 text-sm text-muted-foreground">
-        <p>Dashboard Executivo de Vendas • Dados baseados em importações</p>
-      </footer>
-    </div>
+      {/* Charts and Lists Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <SalesChart />
+        <RecentSales />
+        <TopProducts />
+        <div className="lg:col-span-2" />
+      </div>
+    </DashboardLayout>
   );
 };
 
