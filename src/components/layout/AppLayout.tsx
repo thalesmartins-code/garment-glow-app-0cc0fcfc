@@ -24,7 +24,7 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
-      <FloatingChat />
+      
     </div>
   );
 }
