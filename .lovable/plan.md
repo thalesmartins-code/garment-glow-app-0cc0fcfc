@@ -1,60 +1,59 @@
 
 
-## Plan: Replace pages with Marketplace Analytics Pro content
+# Mudanca de Paleta de Cores para Tema Financeiro
 
-### Summary
-Remove the current financial pages (FinanceiroDashboard, FinanceiroReceber, FinanceiroPagar, FinanceiroCaixa, FinanceiroDFC, FinanceiroDRE, FinanceiroRelatorios, Vendas, PDV, Funcionarios, Suporte) and replace them with 5 pages from the source project: **Dashboard**, **Vendas Diarias**, **Importacao**, **Configuracoes**, and **Sellers**. The existing Sidebar, AppLayout, Header, and FloatingChat will be preserved and adapted.
+## Objetivo
+Substituir a paleta atual (rose gold / moda) por uma paleta corporativa financeira baseada em **azul escuro (navy)** com acentos em **verde esmeralda**, transmitindo confianca, profissionalismo e solidez.
 
-### Pages to create
-| Route | Page | Source |
-|-------|------|--------|
-| `/` | Dashboard (KPIs, marketplace summary, sales table) | Index.tsx |
-| `/vendas-diarias` | Vendas Diarias (daily sales chart + table) | DailySales.tsx |
-| `/importacao` | Importacao (CSV/Excel upload, Google Sheets sync) | Import.tsx |
-| `/configuracoes` | Configuracoes (targets + PMT config) | Settings.tsx |
-| `/sellers` | Sellers (CRUD seller management) | Sellers.tsx |
+## Nova Paleta
 
-### Dependencies to copy from source project (~30 files)
+| Elemento | Atual (Rose Gold) | Novo (Financeiro) |
+|---|---|---|
+| Accent | Rosa dourado (HSL 15 45% 65%) | Azul navy (HSL 217 70% 45%) |
+| Sidebar BG | Cinza escuro quente | Azul muito escuro |
+| Gradient principal | Rosa para rosa escuro | Azul navy para azul royal |
+| Shadow glow | Rosa translucido | Azul translucido |
+| Success | Verde (mantido) | Verde (mantido) |
 
-**Contexts** (3 files):
-- `SellerContext.tsx` - seller state management
-- `SettingsContext.tsx` - targets/PMT settings
-- `SalesDataContext.tsx` - sales data storage
+## Arquivos a Alterar
 
-**Hooks** (6 files):
-- `useDashboardData.ts`, `useSellerSalesData.ts`, `useSyncAndImport.ts`, `useGoogleSheetsSync.ts`, `useSalesDataDB.ts`, `useCountAnimation.ts`
+### 1. `src/index.css` - Variaveis CSS (arquivo principal)
+- Trocar comentario do design system de "Fashion Store" para "Financial Management SaaS"
+- **:root (light mode)**:
+  - `--accent`: de `15 45% 65%` para `217 70% 45%` (azul corporativo)
+  - `--ring`: de `15 45% 65%` para `217 70% 45%`
+  - `--sidebar-background`: de `24 10% 8%` para `217 50% 10%`
+  - `--sidebar-primary`: de `15 45% 65%` para `217 70% 45%`
+  - `--sidebar-accent`: de `24 10% 15%` para `217 40% 18%`
+  - `--sidebar-border`: de `24 10% 18%` para `217 30% 22%`
+  - `--sidebar-ring`: de `15 45% 65%` para `217 70% 45%`
+  - `--gradient-rose` renomear para `--gradient-primary`: gradiente azul navy
+  - `--shadow-glow`: tom azul translucido
+- **Dark mode**: mesmas mudancas adaptadas para tons escuros
 
-**Types** (3 files):
-- `seller.ts`, `settings.ts`, `import.ts`
+### 2. `src/index.css` - Classes utilitarias
+- Renomear `.text-gradient` para usar novo gradiente
+- Renomear `.bg-gradient-rose` para `.bg-gradient-primary` (manter `.bg-gradient-rose` como alias para nao quebrar)
+- Atualizar gradientes para tons azuis
 
-**Data** (1 file):
-- `mockData.ts`
+### 3. `tailwind.config.ts`
+- Sem alteracoes estruturais necessarias (ja usa variaveis CSS)
 
-**Utils** (1 file):
-- `csvParser.ts`
+### 4. Componentes que usam `bg-gradient-rose` e `shadow-glow` (atualizacao de referencia)
+Arquivos que referenciam a classe antiga:
+- `src/components/dashboard/MetricCard.tsx` - trocar `bg-gradient-rose` por `bg-gradient-primary`
+- `src/components/dashboard/RecentSales.tsx` - trocar `bg-gradient-rose`
+- `src/components/chat/FloatingChat.tsx` - trocar `bg-gradient-rose` (4 ocorrencias)
+- `src/components/layout/Sidebar.tsx` - trocar `bg-gradient-rose`
+- `src/pages/FinanceiroDashboard.tsx` - verificar e atualizar se necessario
+- Demais paginas que usem a classe
 
-**Dashboard components** (8 files):
-- `KPICard.tsx`, `SalesTable.tsx`, `DashboardHeader.tsx`, `FilterBar.tsx`, `ProgressBar.tsx`, `EditableQuantityCell.tsx`, `DailySalesChart.tsx`, `DailySalesTable.tsx`
+### 5. Graficos (`src/pages/FinanceiroDashboard.tsx`, `FinanceiroDRE.tsx`, `FinanceiroDFC.tsx`)
+- Atualizar cores dos graficos (bars, areas, pies) de tons rosados para tons azuis/verdes corporativos
 
-**Import components** (4 files):
-- `FileUploader.tsx`, `DataPreview.tsx`, `CSVTemplate.tsx`, `ImportHistory.tsx`
-
-**Settings components** (2 files):
-- `TargetForm.tsx`, `PMTTable.tsx`
-
-### Changes to existing files
-
-1. **Sidebar** - Update nav items to: Dashboard (`/`), Vendas Diarias (`/vendas-diarias`), Importacao (`/importacao`), Configuracoes (`/configuracoes`), Sellers (`/sellers`)
-
-2. **App.tsx** - Replace routes, wrap with `SellerProvider`, `SettingsProvider`, `SalesDataProvider`
-
-3. **Pages to use `PageHeader`** - Each copied page will be adapted to use the existing `PageHeader` component instead of inline headers, maintaining visual consistency
-
-### Files to delete
-All current page-specific files: `FinanceiroDashboard.tsx`, `FinanceiroReceber.tsx`, `FinanceiroPagar.tsx`, `FinanceiroCaixa.tsx`, `FinanceiroDFC.tsx`, `FinanceiroDRE.tsx`, `FinanceiroRelatorios.tsx`, `Vendas.tsx`, `PDV.tsx`, `Funcionarios.tsx`, `Suporte.tsx`, and their associated components (`src/components/financeiro/*`, `src/components/dashboard/*`, `src/lib/financial-data.ts`, `src/lib/notifications-data.ts`)
-
-### Notes
-- Google Sheets sync features will be included but won't work without Supabase edge functions configured
-- The `useSalesDataDB` hook likely depends on Supabase -- will need to be adjusted to use localStorage fallback
-- Source project uses `dashboard-container` CSS class -- will need to add that or replace with existing patterns
+## Resultado Esperado
+- Sidebar em azul escuro profissional
+- Gradientes e botoes de destaque em azul corporativo
+- Graficos com paleta azul/verde/cinza
+- Visual coerente com um sistema financeiro serio e confiavel
 
