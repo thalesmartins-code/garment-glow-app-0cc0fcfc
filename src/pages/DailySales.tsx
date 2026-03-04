@@ -68,7 +68,7 @@ const DailySales = () => {
   const handleRefresh = useCallback(async () => {
     const spreadsheetId = localStorage.getItem("google_spreadsheet_id") || "";
     if (spreadsheetId) {
-      await syncAndImport(spreadsheetId, selectedSeller);
+      await syncAndImport(spreadsheetId, selectedSeller.id);
     }
     setLastUpdate(new Date());
   }, [syncAndImport, selectedSeller]);
