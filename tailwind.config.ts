@@ -68,6 +68,16 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        kpi: {
+          positive: "hsl(var(--kpi-positive))",
+          negative: "hsl(var(--kpi-negative))",
+          neutral: "hsl(var(--kpi-neutral))",
+        },
+        table: {
+          stripe: "hsl(var(--table-stripe))",
+          hover: "hsl(var(--table-hover))",
+          header: "hsl(var(--table-header))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
