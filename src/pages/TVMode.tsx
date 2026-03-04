@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { DollarSign, Target, TrendingUp, Percent, AlertTriangle, Calendar, Maximize2, Settings2, Calculator } from "lucide-react";
 import { KPICard } from "@/components/dashboard/KPICard";
-import { DailySalesChart } from "@/components/dashboard/DailySalesChart";
+import { DailySalesTable } from "@/components/dashboard/DailySalesTable";
 import { useSeller } from "@/contexts/SellerContext";
 import { useSalesData } from "@/contexts/SalesDataContext";
 import { useSellerSalesData, CalculatedDailySale } from "@/hooks/useSellerSalesData";
