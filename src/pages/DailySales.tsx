@@ -342,6 +342,7 @@ const DailySales = () => {
             delta={activeMetrics.yoy}
             deltaLabel="vs ano anterior"
             icon={<DollarSign className="w-5 h-5" />}
+            variant="success"
           />
           <KPICard
             title={viewMode === "diario" ? "Meta do dia" : "Meta do mês"}
