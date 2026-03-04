@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -179,10 +178,6 @@ export default function Integrations() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Integrações"
-        subtitle="Conecte suas contas de marketplaces para sincronizar dados de vendas automaticamente."
-      />
 
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
