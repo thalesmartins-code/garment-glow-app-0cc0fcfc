@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
-import { DollarSign, Target, TrendingUp, Percent, Calculator, AlertTriangle, Calendar, Star, CalendarDays, RefreshCw, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { DollarSign, Target, TrendingUp, Percent, Calculator, AlertTriangle, Calendar, Star, CalendarDays, RefreshCw, Loader2, Monitor } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { DailySalesTable } from "@/components/dashboard/DailySalesTable";
@@ -15,6 +16,7 @@ import { useSyncAndImport } from "@/hooks/useSyncAndImport";
 import { DailySale } from "@/data/mockData";
 
 const DailySales = () => {
+  const navigate = useNavigate();
   const { selectedSeller, getActiveMarketplaces } = useSeller();
   const { isLoading } = useSalesData();
   const { 
@@ -318,6 +320,15 @@ const DailySales = () => {
               <span className="text-xs text-muted-foreground hidden lg:inline">
                 {formatLastUpdate(lastUpdate)}
               </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/tv")}
+                className="gap-1.5 h-9 text-sm"
+              >
+                <Monitor className="h-4 w-4" />
+                <span className="hidden sm:inline">Modo TV</span>
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
