@@ -323,6 +323,15 @@ const DailySales = () => {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => navigate("/tv")}
+                className="gap-1.5 h-9 text-sm"
+              >
+                <Monitor className="h-4 w-4" />
+                <span className="hidden sm:inline">Modo TV</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleRefresh}
                 disabled={isSyncing}
                 className="gap-1.5 h-9 text-sm"
