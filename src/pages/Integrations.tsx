@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useSeller } from "@/contexts/SellerContext";
 import { Seller } from "@/types/seller";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -135,20 +137,106 @@ const statusConfig = {
 export default function Integrations() {
   const { selectedSeller } = useSeller();
   const { toast } = useToast();
-  const [integrations, setIntegrations] = useState(MARKETPLACE_INTEGRATIONS);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [integrations, setIntegrations] = useState(() => {
+    const saved = localStorage.getItem("ml_integration_status");
+    if (saved) {
+      const statuses = JSON.parse(saved) as Record<string, string>;
+      return MARKETPLACE_INTEGRATIONS.map((i) => ({
+        ...i,
+        status: (statuses[i.id] as MarketplaceIntegration["status"]) || i.status,
+      }));
+    }
+    return MARKETPLACE_INTEGRATIONS;
+  });
   const [connectDialog, setConnectDialog] = useState<MarketplaceIntegration | null>(null);
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [connecting, setConnecting] = useState(false);
 
-  const handleConnect = (integration: MarketplaceIntegration) => {
+  // Persist integration statuses
+  const updateIntegrationStatus = (id: string, status: MarketplaceIntegration["status"]) => {
+    setIntegrations((prev) => {
+      const updated = prev.map((i) => (i.id === id ? { ...i, status } : i));
+      const statuses: Record<string, string> = {};
+      updated.forEach((i) => (statuses[i.id] = i.status));
+      localStorage.setItem("ml_integration_status", JSON.stringify(statuses));
+      return updated;
+    });
+  };
+
+  // Handle ML OAuth callback
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (!code) return;
+
+    const exchangeCode = async () => {
+      setConnecting(true);
+      const redirectUri = `${window.location.origin}/integracoes`;
+
+      const { data, error } = await supabase.functions.invoke("ml-oauth", {
+        body: { action: "exchange_code", code, redirect_uri: redirectUri },
+      });
+
+      if (error || !data?.success) {
+        toast({
+          title: "Erro ao conectar Mercado Livre",
+          description: data?.error || error?.message || "Falha na troca do código de autorização.",
+          variant: "destructive",
+        });
+      } else {
+        // Store tokens securely in localStorage (in production, use a secure backend store)
+        localStorage.setItem("ml_tokens", JSON.stringify({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+          expires_at: Date.now() + data.expires_in * 1000,
+          user_id: data.user_id,
+        }));
+        updateIntegrationStatus("ml", "connected");
+        toast({
+          title: "Mercado Livre conectado!",
+          description: `Conta conectada com sucesso (User ID: ${data.user_id}).`,
+        });
+      }
+
+      // Clean up URL params
+      setSearchParams({}, { replace: true });
+      setConnecting(false);
+    };
+
+    exchangeCode();
+  }, [searchParams]);
+
+  const handleConnect = async (integration: MarketplaceIntegration) => {
+    if (integration.id === "ml") {
+      // Real ML OAuth flow
+      const redirectUri = `${window.location.origin}/integracoes`;
+      const { data, error } = await supabase.functions.invoke("ml-oauth", {
+        body: { action: "get_auth_url", redirect_uri: redirectUri },
+      });
+
+      if (error || !data?.success) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível gerar a URL de autorização.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      window.location.href = data.auth_url;
+      return;
+    }
+
+    // Other marketplaces: show dialog
     setConnectDialog(integration);
     setApiKeyInput("");
   };
 
   const handleDisconnect = (integrationId: string) => {
-    setIntegrations((prev) =>
-      prev.map((i) => (i.id === integrationId ? { ...i, status: "disconnected" as const } : i))
-    );
+    updateIntegrationStatus(integrationId, "disconnected");
+    if (integrationId === "ml") {
+      localStorage.removeItem("ml_tokens");
+    }
     toast({
       title: "Marketplace desconectado",
       description: "A integração foi removida com sucesso.",
@@ -159,12 +247,10 @@ export default function Integrations() {
     if (!connectDialog) return;
     setConnecting(true);
 
-    // Simulate connection (real implementation would call Edge Function)
+    // Simulate connection for non-ML marketplaces
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    setIntegrations((prev) =>
-      prev.map((i) => (i.id === connectDialog.id ? { ...i, status: "connected" as const } : i))
-    );
+    updateIntegrationStatus(connectDialog.id, "connected");
 
     setConnecting(false);
     setConnectDialog(null);
