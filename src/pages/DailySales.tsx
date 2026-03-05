@@ -16,6 +16,7 @@ import { useSyncAndImport } from "@/hooks/useSyncAndImport";
 import { DailySale } from "@/data/mockData";
 
 const DailySales = () => {
+  const navigate = useNavigate();
   const { selectedSeller, getActiveMarketplaces } = useSeller();
   const { isLoading } = useSalesData();
   const { 
