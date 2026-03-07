@@ -483,7 +483,7 @@ export default function Integrations() {
 
       {/* Marketplace cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {integrations.map((integration) => {
+        {filteredIntegrations.map((integration) => {
           const statusInfo = statusConfig[integration.status];
           const StatusIcon = statusInfo.icon;
           const isConnected = integration.status === "connected";
