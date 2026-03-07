@@ -410,9 +410,17 @@ export default function Integrations() {
                         <Link2Off className="w-4 h-4 mr-1.5" />
                         Desconectar
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <RefreshCw className="w-4 h-4" />
-                      </Button>
+                      {integration.id === "ml" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleSyncML}
+                          disabled={syncing}
+                          title="Sincronizar pedidos e vendas"
+                        >
+                          <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
+                        </Button>
+                      )}
                     </>
                   ) : (
                     <>
