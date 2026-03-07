@@ -153,6 +153,8 @@ export default function Integrations() {
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [mlCodeDialog, setMlCodeDialog] = useState(false);
+  const [mlCodeInput, setMlCodeInput] = useState("");
 
   // Persist integration statuses
   const updateIntegrationStatus = (id: string, status: MarketplaceIntegration["status"]) => {
@@ -303,6 +305,40 @@ export default function Integrations() {
     }
   };
 
+  const handleManualCodeExchange = async () => {
+    if (!mlCodeInput.trim()) return;
+    setConnecting(true);
+    const redirectUri = "https://alcavie.com/";
+
+    const { data, error } = await supabase.functions.invoke("ml-oauth", {
+      body: { action: "exchange_code", code: mlCodeInput.trim(), redirect_uri: redirectUri },
+    });
+
+    if (error || !data?.success) {
+      toast({
+        title: "Erro ao trocar código",
+        description: data?.error || error?.message || "Falha na troca do código de autorização.",
+        variant: "destructive",
+      });
+    } else {
+      localStorage.setItem("ml_tokens", JSON.stringify({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_at: Date.now() + data.expires_in * 1000,
+        user_id: data.user_id,
+      }));
+      updateIntegrationStatus("ml", "connected");
+      toast({
+        title: "Mercado Livre conectado!",
+        description: `Conta conectada com sucesso (User ID: ${data.user_id}).`,
+      });
+    }
+
+    setConnecting(false);
+    setMlCodeDialog(false);
+    setMlCodeInput("");
+  };
+
   const connectedCount = integrations.filter((i) => i.status === "connected").length;
 
   return (
@@ -411,15 +447,17 @@ export default function Integrations() {
                         Desconectar
                       </Button>
                       {integration.id === "ml" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleSyncML}
-                          disabled={syncing}
-                          title="Sincronizar pedidos e vendas"
-                        >
-                          <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
-                        </Button>
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleSyncML}
+                            disabled={syncing}
+                            title="Sincronizar pedidos e vendas"
+                          >
+                            <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
+                          </Button>
+                        </>
                       )}
                     </>
                   ) : (
@@ -432,6 +470,16 @@ export default function Integrations() {
                         <Link2 className="w-4 h-4 mr-1.5" />
                         Conectar
                       </Button>
+                      {integration.id === "ml" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setMlCodeDialog(true)}
+                          title="Colar código manualmente"
+                        >
+                          📋
+                        </Button>
+                      )}
                       <Button variant="ghost" size="sm" asChild>
                         <a href={integration.docsUrl} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="w-4 h-4" />
@@ -513,6 +561,52 @@ export default function Integrations() {
                 <>
                   <Link2 className="w-4 h-4 mr-1.5" />
                   Salvar e conectar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ML Manual Code Dialog */}
+      <Dialog open={mlCodeDialog} onOpenChange={setMlCodeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              🟡 Colar código do Mercado Livre
+            </DialogTitle>
+            <DialogDescription>
+              Cole o código de autorização que apareceu na URL após autorizar o acesso no Mercado Livre (parâmetro <code>?code=</code>).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="ml-code">Código de autorização</Label>
+              <Input
+                id="ml-code"
+                placeholder="TG-xxxxx..."
+                value={mlCodeInput}
+                onChange={(e) => setMlCodeInput(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMlCodeDialog(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleManualCodeExchange}
+              disabled={connecting || !mlCodeInput.trim()}
+            >
+              {connecting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-1.5 animate-spin" />
+                  Trocando...
+                </>
+              ) : (
+                <>
+                  <Link2 className="w-4 h-4 mr-1.5" />
+                  Trocar por token
                 </>
               )}
             </Button>
