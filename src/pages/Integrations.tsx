@@ -159,6 +159,23 @@ export default function Integrations() {
   const [syncing, setSyncing] = useState(false);
   const [mlCodeDialog, setMlCodeDialog] = useState(false);
   const [mlCodeInput, setMlCodeInput] = useState("");
+  const [mlMetrics, setMlMetrics] = useState<{
+    total_revenue: number;
+    approved_revenue: number;
+    total_orders: number;
+    cancelled_orders: number;
+    shipped_orders: number;
+    active_listings: number;
+    avg_ticket: number;
+    period: string;
+  } | null>(() => {
+    const saved = localStorage.getItem("ml_metrics");
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [mlUser, setMlUser] = useState<{ nickname: string } | null>(() => {
+    const saved = localStorage.getItem("ml_user");
+    return saved ? JSON.parse(saved) : null;
+  });
 
   // Persist integration statuses
   const updateIntegrationStatus = (id: string, status: MarketplaceIntegration["status"]) => {
