@@ -310,6 +310,10 @@ export default function Integrations() {
           variant: "destructive",
         });
       } else {
+        setMlMetrics(data.metrics);
+        setMlUser(data.user);
+        localStorage.setItem("ml_metrics", JSON.stringify(data.metrics));
+        localStorage.setItem("ml_user", JSON.stringify(data.user));
         toast({
           title: "Sincronização concluída!",
           description: `Dados do Mercado Livre importados com sucesso.`,
