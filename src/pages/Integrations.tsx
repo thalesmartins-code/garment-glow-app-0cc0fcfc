@@ -260,6 +260,10 @@ export default function Integrations() {
     updateIntegrationStatus(integrationId, "disconnected");
     if (integrationId === "ml") {
       localStorage.removeItem("ml_tokens");
+      localStorage.removeItem("ml_metrics");
+      localStorage.removeItem("ml_user");
+      setMlMetrics(null);
+      setMlUser(null);
     }
     toast({
       title: "Marketplace desconectado",
