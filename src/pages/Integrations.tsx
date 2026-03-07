@@ -305,6 +305,40 @@ export default function Integrations() {
     }
   };
 
+  const handleManualCodeExchange = async () => {
+    if (!mlCodeInput.trim()) return;
+    setConnecting(true);
+    const redirectUri = "https://alcavie.com/";
+
+    const { data, error } = await supabase.functions.invoke("ml-oauth", {
+      body: { action: "exchange_code", code: mlCodeInput.trim(), redirect_uri: redirectUri },
+    });
+
+    if (error || !data?.success) {
+      toast({
+        title: "Erro ao trocar código",
+        description: data?.error || error?.message || "Falha na troca do código de autorização.",
+        variant: "destructive",
+      });
+    } else {
+      localStorage.setItem("ml_tokens", JSON.stringify({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_at: Date.now() + data.expires_in * 1000,
+        user_id: data.user_id,
+      }));
+      updateIntegrationStatus("ml", "connected");
+      toast({
+        title: "Mercado Livre conectado!",
+        description: `Conta conectada com sucesso (User ID: ${data.user_id}).`,
+      });
+    }
+
+    setConnecting(false);
+    setMlCodeDialog(false);
+    setMlCodeInput("");
+  };
+
   const connectedCount = integrations.filter((i) => i.status === "connected").length;
 
   return (
