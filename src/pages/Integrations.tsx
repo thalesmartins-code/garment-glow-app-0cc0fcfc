@@ -261,6 +261,48 @@ export default function Integrations() {
     });
   };
 
+  const handleSyncML = async () => {
+    setSyncing(true);
+    try {
+      const tokens = localStorage.getItem("ml_tokens");
+      if (!tokens) {
+        toast({
+          title: "Erro",
+          description: "Nenhum token do Mercado Livre encontrado. Conecte-se primeiro.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { access_token } = JSON.parse(tokens);
+
+      const { data, error } = await supabase.functions.invoke("mercado-libre-integration", {
+        body: { access_token },
+      });
+
+      if (error || !data?.success) {
+        toast({
+          title: "Erro ao sincronizar",
+          description: data?.error || error?.message || "Falha ao buscar dados do Mercado Livre.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Sincronização concluída!",
+          description: `Dados do Mercado Livre importados com sucesso.`,
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Erro",
+        description: err.message || "Erro inesperado na sincronização.",
+        variant: "destructive",
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const connectedCount = integrations.filter((i) => i.status === "connected").length;
 
   return (
