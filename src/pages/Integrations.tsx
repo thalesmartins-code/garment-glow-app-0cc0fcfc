@@ -152,6 +152,7 @@ export default function Integrations() {
   const [connectDialog, setConnectDialog] = useState<MarketplaceIntegration | null>(null);
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [connecting, setConnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   // Persist integration statuses
   const updateIntegrationStatus = (id: string, status: MarketplaceIntegration["status"]) => {
@@ -258,6 +259,48 @@ export default function Integrations() {
       title: "Marketplace conectado!",
       description: `${connectDialog.name} foi integrado com sucesso para ${selectedSeller?.name ?? "o seller ativo"}.`,
     });
+  };
+
+  const handleSyncML = async () => {
+    setSyncing(true);
+    try {
+      const tokens = localStorage.getItem("ml_tokens");
+      if (!tokens) {
+        toast({
+          title: "Erro",
+          description: "Nenhum token do Mercado Livre encontrado. Conecte-se primeiro.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { access_token } = JSON.parse(tokens);
+
+      const { data, error } = await supabase.functions.invoke("mercado-libre-integration", {
+        body: { access_token },
+      });
+
+      if (error || !data?.success) {
+        toast({
+          title: "Erro ao sincronizar",
+          description: data?.error || error?.message || "Falha ao buscar dados do Mercado Livre.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Sincronização concluída!",
+          description: `Dados do Mercado Livre importados com sucesso.`,
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Erro",
+        description: err.message || "Erro inesperado na sincronização.",
+        variant: "destructive",
+      });
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const connectedCount = integrations.filter((i) => i.status === "connected").length;
@@ -367,9 +410,17 @@ export default function Integrations() {
                         <Link2Off className="w-4 h-4 mr-1.5" />
                         Desconectar
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <RefreshCw className="w-4 h-4" />
-                      </Button>
+                      {integration.id === "ml" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleSyncML}
+                          disabled={syncing}
+                          title="Sincronizar pedidos e vendas"
+                        >
+                          <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
+                        </Button>
+                      )}
                     </>
                   ) : (
                     <>
