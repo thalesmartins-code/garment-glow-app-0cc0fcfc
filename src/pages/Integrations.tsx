@@ -266,7 +266,7 @@ export default function Integrations() {
     }
 
     if (integration.id === "magalu") {
-      const redirectUri = "https://alcavie.com/";
+      const redirectUri = "https://analytics.alcavie.com/integracoes";
       const { data, error } = await supabase.functions.invoke("magalu-oauth", {
         body: { action: "get_auth_url", redirect_uri: redirectUri },
       });
