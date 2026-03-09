@@ -159,6 +159,8 @@ export default function Integrations() {
   const [syncing, setSyncing] = useState(false);
   const [mlCodeDialog, setMlCodeDialog] = useState(false);
   const [mlCodeInput, setMlCodeInput] = useState("");
+  const [magaluCodeDialog, setMagaluCodeDialog] = useState(false);
+  const [magaluCodeInput, setMagaluCodeInput] = useState("");
   const [mlMetrics, setMlMetrics] = useState<{
     total_revenue: number;
     approved_revenue: number;
@@ -174,6 +176,18 @@ export default function Integrations() {
   });
   const [mlUser, setMlUser] = useState<{ nickname: string } | null>(() => {
     const saved = localStorage.getItem("ml_user");
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [magaluMetrics, setMagaluMetrics] = useState<{
+    total_revenue: number;
+    approved_revenue: number;
+    total_orders: number;
+    cancelled_orders: number;
+    shipped_orders: number;
+    avg_ticket: number;
+    period: string;
+  } | null>(() => {
+    const saved = localStorage.getItem("magalu_metrics");
     return saved ? JSON.parse(saved) : null;
   });
 
