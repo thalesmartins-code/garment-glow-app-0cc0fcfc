@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -137,46 +137,6 @@ const statusConfig = {
     color: "text-destructive",
   },
 };
-
-function MagaluConsentWidget() {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    
-    // Clear any previous content
-    containerRef.current.innerHTML = "";
-    
-    // Create the consent div with required attributes
-    const consentDiv = document.createElement("div");
-    consentDiv.className = "magalu-consent-content";
-    consentDiv.setAttribute("client-id", "BhbJFTFdYejGKGzhxIvv36p4YCeikcjvF5XGCz6y-4k");
-    consentDiv.setAttribute("redirect-uri", "https://analytics.alcavie.com/integracoes");
-    consentDiv.setAttribute("state", "magalu");
-    consentDiv.setAttribute("scope", "open:portfolio:read open:order-order:read");
-    containerRef.current.appendChild(consentDiv);
-
-    // Re-load the Magalu script to pick up the new element
-    const existingScript = document.querySelector('script[src="https://openapi.magalu.com/script/script.js"]');
-    if (existingScript) {
-      existingScript.remove();
-    }
-    const script = document.createElement("script");
-    script.src = "https://openapi.magalu.com/script/script.js";
-    script.type = "module";
-    script.async = true;
-    document.head.appendChild(script);
-
-    return () => {
-      // Cleanup on unmount
-      if (containerRef.current) {
-        containerRef.current.innerHTML = "";
-      }
-    };
-  }, []);
-
-  return <div ref={containerRef} className="flex-1" />;
-}
 
 export default function Integrations() {
   const { selectedSeller } = useSeller();
@@ -746,18 +706,14 @@ export default function Integrations() {
                     </>
                   ) : (
                     <>
-                      {integration.id === "magalu" ? (
-                        <MagaluConsentWidget />
-                      ) : (
-                        <Button
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleConnect(integration)}
-                        >
-                          <Link2 className="w-4 h-4 mr-1.5" />
-                          Conectar
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleConnect(integration)}
+                      >
+                        <Link2 className="w-4 h-4 mr-1.5" />
+                        Conectar
+                      </Button>
                       {(integration.id === "ml") && (
                         <Button variant="outline" size="sm" onClick={() => setMlCodeDialog(true)} title="Colar código manualmente">
                           📋
