@@ -264,7 +264,7 @@ export default function Integrations() {
       setConnecting(true);
       try {
         const magaluClient = await createMagaluClient({
-          client_id: "f994feec-d5df-46c3-80a5-0a97f7e12893",
+          client_id: "BhbJFTFdYejGKGzhxIvv36p4YCeikcjvF5XGCz6y-4k",
           redirect_uri: "https://analytics.alcavie.com/integracoes",
         });
 
