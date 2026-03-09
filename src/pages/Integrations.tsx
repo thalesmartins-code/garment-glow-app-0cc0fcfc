@@ -406,6 +406,57 @@ export default function Integrations() {
     setMlCodeInput("");
   };
 
+  // Magalu sync handler
+  const handleSyncMagalu = async () => {
+    setSyncing(true);
+    try {
+      const tokens = localStorage.getItem("magalu_tokens");
+      if (!tokens) {
+        toast({ title: "Erro", description: "Nenhum token da Magazine Luiza encontrado. Conecte-se primeiro.", variant: "destructive" });
+        return;
+      }
+      const { access_token } = JSON.parse(tokens);
+      const { data, error } = await supabase.functions.invoke("magalu-integration", {
+        body: { access_token, action: "dashboard" },
+      });
+      if (error || !data?.success) {
+        toast({ title: "Erro ao sincronizar", description: data?.error || error?.message || "Falha ao buscar dados da Magazine Luiza.", variant: "destructive" });
+      } else {
+        setMagaluMetrics(data.metrics);
+        localStorage.setItem("magalu_metrics", JSON.stringify(data.metrics));
+        toast({ title: "Sincronização concluída!", description: "Dados da Magazine Luiza importados com sucesso." });
+      }
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message || "Erro inesperado na sincronização.", variant: "destructive" });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  // Magalu manual code exchange
+  const handleMagaluManualCodeExchange = async () => {
+    if (!magaluCodeInput.trim()) return;
+    setConnecting(true);
+    const redirectUri = "https://alcavie.com/";
+    const { data, error } = await supabase.functions.invoke("magalu-oauth", {
+      body: { action: "exchange_code", code: magaluCodeInput.trim(), redirect_uri: redirectUri },
+    });
+    if (error || !data?.success) {
+      toast({ title: "Erro ao trocar código", description: data?.error || error?.message || "Falha na troca do código da Magazine Luiza.", variant: "destructive" });
+    } else {
+      localStorage.setItem("magalu_tokens", JSON.stringify({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_at: Date.now() + data.expires_in * 1000,
+      }));
+      updateIntegrationStatus("magalu", "connected");
+      toast({ title: "Magazine Luiza conectada!", description: "Conta conectada com sucesso." });
+    }
+    setConnecting(false);
+    setMagaluCodeDialog(false);
+    setMagaluCodeInput("");
+  };
+
   // Filter integrations by seller's active marketplaces (exclude "total")
   const sellerMarketplaces = selectedSeller?.activeMarketplaces?.filter((id) => id !== "total") || [];
   const filteredIntegrations = integrations.filter((i) => sellerMarketplaces.includes(i.id));
