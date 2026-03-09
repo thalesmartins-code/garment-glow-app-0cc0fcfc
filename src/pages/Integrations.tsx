@@ -56,6 +56,16 @@ const MARKETPLACE_INTEGRATIONS: MarketplaceIntegration[] = [
     features: ["Pedidos", "Vendas", "Métricas", "Anúncios"],
   },
   {
+    id: "magalu",
+    name: "Magazine Luiza",
+    logo: "🔵",
+    description: "Conecte via API Key para importar pedidos e vendas do Magalu Marketplace.",
+    status: "disconnected",
+    authType: "api_key",
+    docsUrl: "https://developers.magalu.com",
+    features: ["Pedidos", "Vendas", "Entregas", "Métricas"],
+  },
+  {
     id: "amz",
     name: "Amazon",
     logo: "📦",
@@ -166,6 +176,18 @@ export default function Integrations() {
     const saved = localStorage.getItem("ml_user");
     return saved ? JSON.parse(saved) : null;
   });
+  const [magaluMetrics, setMagaluMetrics] = useState<{
+    total_revenue: number;
+    approved_revenue: number;
+    total_orders: number;
+    cancelled_orders: number;
+    shipped_orders: number;
+    avg_ticket: number;
+    period: string;
+  } | null>(() => {
+    const saved = localStorage.getItem("magalu_metrics");
+    return saved ? JSON.parse(saved) : null;
+  });
 
   // Persist integration statuses
   const updateIntegrationStatus = (id: string, status: MarketplaceIntegration["status"]) => {
@@ -236,6 +258,31 @@ export default function Integrations() {
     }
 
 
+    if (integration.id === "magalu") {
+      // Magalu uses server-side API Key — just test connection
+      setConnecting(true);
+      const { data, error } = await supabase.functions.invoke("magalu-integration", {
+        body: { action: "test_connection" },
+      });
+      setConnecting(false);
+
+      if (error || !data?.success) {
+        toast({
+          title: "Erro ao conectar Magazine Luiza",
+          description: data?.error || error?.message || "Falha ao testar a conexão.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      updateIntegrationStatus("magalu", "connected");
+      toast({
+        title: "Magazine Luiza conectada!",
+        description: "API Key validada com sucesso.",
+      });
+      return;
+    }
+
     // Other marketplaces: show dialog
     setConnectDialog(integration);
     setApiKeyInput("");
@@ -249,6 +296,10 @@ export default function Integrations() {
       localStorage.removeItem("ml_user");
       setMlMetrics(null);
       setMlUser(null);
+    }
+    if (integrationId === "magalu") {
+      localStorage.removeItem("magalu_metrics");
+      setMagaluMetrics(null);
     }
     toast({
       title: "Marketplace desconectado",
@@ -353,8 +404,39 @@ export default function Integrations() {
     setMlCodeInput("");
   };
 
+  const handleSyncMagalu = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("magalu-integration", {
+        body: { action: "get_orders" },
+      });
 
-  // Filter integrations by seller's active marketplaces (exclude "total")
+      if (error || !data?.success) {
+        toast({
+          title: "Erro ao sincronizar Magalu",
+          description: data?.error || error?.message || "Falha ao buscar dados da Magazine Luiza.",
+          variant: "destructive",
+        });
+      } else {
+        setMagaluMetrics(data.metrics);
+        localStorage.setItem("magalu_metrics", JSON.stringify(data.metrics));
+        toast({
+          title: "Sincronização concluída!",
+          description: "Dados da Magazine Luiza importados com sucesso.",
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Erro",
+        description: err.message || "Erro inesperado na sincronização.",
+        variant: "destructive",
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+
   const sellerMarketplaces = selectedSeller?.activeMarketplaces?.filter((id) => id !== "total") || [];
   const filteredIntegrations = integrations.filter((i) => sellerMarketplaces.includes(i.id));
   const connectedCount = filteredIntegrations.filter((i) => i.status === "connected").length;
@@ -467,6 +549,64 @@ export default function Integrations() {
         </Card>
       )}
 
+      {/* Magalu Metrics */}
+      {magaluMetrics && integrations.find((i) => i.id === "magalu")?.status === "connected" && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                🔵 Métricas da Magazine Luiza
+              </CardTitle>
+              <span className="text-xs text-muted-foreground">{magaluMetrics.period}</span>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-border/5">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+                  <DollarSign className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Receita Aprovada</p>
+                  <p className="text-lg font-bold">
+                    {magaluMetrics.approved_revenue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-border/5">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+                  <ShoppingCart className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Pedidos</p>
+                  <p className="text-lg font-bold">{magaluMetrics.total_orders}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-border/5">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+                  <TrendingUp className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Ticket Médio</p>
+                  <p className="text-lg font-bold">
+                    {magaluMetrics.avg_ticket.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-border/5">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+                  <ShoppingCart className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Enviados</p>
+                  <p className="text-lg font-bold">{magaluMetrics.shipped_orders}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filteredIntegrations.map((integration) => {
@@ -525,6 +665,11 @@ export default function Integrations() {
                       </Button>
                       {integration.id === "ml" && (
                         <Button variant="ghost" size="sm" onClick={handleSyncML} disabled={syncing} title="Sincronizar pedidos e vendas">
+                          <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
+                        </Button>
+                      )}
+                      {integration.id === "magalu" && (
+                        <Button variant="ghost" size="sm" onClick={handleSyncMagalu} disabled={syncing} title="Sincronizar pedidos e vendas">
                           <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
                         </Button>
                       )}
