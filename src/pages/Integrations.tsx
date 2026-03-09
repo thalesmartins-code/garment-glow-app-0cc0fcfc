@@ -404,8 +404,39 @@ export default function Integrations() {
     setMlCodeInput("");
   };
 
+  const handleSyncMagalu = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("magalu-integration", {
+        body: { action: "get_orders" },
+      });
 
-  // Filter integrations by seller's active marketplaces (exclude "total")
+      if (error || !data?.success) {
+        toast({
+          title: "Erro ao sincronizar Magalu",
+          description: data?.error || error?.message || "Falha ao buscar dados da Magazine Luiza.",
+          variant: "destructive",
+        });
+      } else {
+        setMagaluMetrics(data.metrics);
+        localStorage.setItem("magalu_metrics", JSON.stringify(data.metrics));
+        toast({
+          title: "Sincronização concluída!",
+          description: "Dados da Magazine Luiza importados com sucesso.",
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Erro",
+        description: err.message || "Erro inesperado na sincronização.",
+        variant: "destructive",
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+
   const sellerMarketplaces = selectedSeller?.activeMarketplaces?.filter((id) => id !== "total") || [];
   const filteredIntegrations = integrations.filter((i) => sellerMarketplaces.includes(i.id));
   const connectedCount = filteredIntegrations.filter((i) => i.status === "connected").length;
