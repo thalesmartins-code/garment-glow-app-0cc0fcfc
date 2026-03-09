@@ -258,6 +258,31 @@ export default function Integrations() {
     }
 
 
+    if (integration.id === "magalu") {
+      // Magalu uses server-side API Key — just test connection
+      setConnecting(true);
+      const { data, error } = await supabase.functions.invoke("magalu-integration", {
+        body: { action: "test_connection" },
+      });
+      setConnecting(false);
+
+      if (error || !data?.success) {
+        toast({
+          title: "Erro ao conectar Magazine Luiza",
+          description: data?.error || error?.message || "Falha ao testar a conexão.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      updateIntegrationStatus("magalu", "connected");
+      toast({
+        title: "Magazine Luiza conectada!",
+        description: "API Key validada com sucesso.",
+      });
+      return;
+    }
+
     // Other marketplaces: show dialog
     setConnectDialog(integration);
     setApiKeyInput("");
@@ -272,9 +297,14 @@ export default function Integrations() {
       setMlMetrics(null);
       setMlUser(null);
     }
+    if (integrationId === "magalu") {
+      localStorage.removeItem("magalu_metrics");
+      setMagaluMetrics(null);
+    }
     toast({
       title: "Marketplace desconectado",
       description: "A integração foi removida com sucesso.",
+    });
     });
   };
 
