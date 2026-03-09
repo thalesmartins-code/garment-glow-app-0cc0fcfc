@@ -440,8 +440,20 @@ export default function Integrations() {
   const handleSyncMagalu = async () => {
     setSyncing(true);
     try {
+      const tokens = localStorage.getItem("magalu_tokens");
+      if (!tokens) {
+        toast({
+          title: "Erro",
+          description: "Nenhum token da Magalu encontrado. Conecte-se primeiro.",
+          variant: "destructive",
+        });
+        setSyncing(false);
+        return;
+      }
+      const { access_token } = JSON.parse(tokens);
+
       const { data, error } = await supabase.functions.invoke("magalu-integration", {
-        body: { action: "get_orders" },
+        body: { action: "get_orders", access_token },
       });
 
       if (error || !data?.success) {
