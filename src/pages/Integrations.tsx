@@ -731,6 +731,3 @@ export default function Integrations() {
     </div>
   );
 }
-    </div>
-  );
-}
