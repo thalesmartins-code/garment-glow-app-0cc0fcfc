@@ -706,9 +706,14 @@ export default function Integrations() {
                     </>
                   ) : (
                     <>
-                      {integration.id === "magalu" ? (
-                        <MagaluConsentWidget />
-                      ) : (
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleConnect(integration)}
+                      >
+                        <Link2 className="w-4 h-4 mr-1.5" />
+                        Conectar
+                      </Button>
                         <Button
                           size="sm"
                           className="flex-1"
