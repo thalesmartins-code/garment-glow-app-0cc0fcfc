@@ -706,14 +706,31 @@ export default function Integrations() {
                     </>
                   ) : (
                     <>
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleConnect(integration)}
-                      >
-                        <Link2 className="w-4 h-4 mr-1.5" />
-                        Conectar
-                      </Button>
+                      {integration.id === "magalu" ? (
+                        <div className="flex-1 flex flex-col gap-2">
+                          <div
+                            className="magalu-consent-content"
+                            dangerouslySetInnerHTML={{ __html: "" }}
+                            ref={(el) => {
+                              if (el) {
+                                el.setAttribute("client-id", "BhbJFTFdYejGKGzhxIvv36p4YCeikcjvF5XGCz6y-4k");
+                                el.setAttribute("redirect-uri", "https://analytics.alcavie.com/integracoes");
+                                el.setAttribute("state", "magalu");
+                                el.setAttribute("scope", "open:portfolio:read open:order-order:read");
+                              }
+                            }}
+                          ></div>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleConnect(integration)}
+                        >
+                          <Link2 className="w-4 h-4 mr-1.5" />
+                          Conectar
+                        </Button>
+                      )}
                       {(integration.id === "ml") && (
                         <Button variant="outline" size="sm" onClick={() => setMlCodeDialog(true)} title="Colar código manualmente">
                           📋
