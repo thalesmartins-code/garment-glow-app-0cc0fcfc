@@ -149,8 +149,6 @@ export default function Integrations() {
   const [syncing, setSyncing] = useState(false);
   const [mlCodeDialog, setMlCodeDialog] = useState(false);
   const [mlCodeInput, setMlCodeInput] = useState("");
-  const [magaluCodeDialog, setMagaluCodeDialog] = useState(false);
-  const [magaluCodeInput, setMagaluCodeInput] = useState("");
   const [mlMetrics, setMlMetrics] = useState<{
     total_revenue: number;
     approved_revenue: number;
