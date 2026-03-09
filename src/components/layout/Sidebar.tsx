@@ -4,7 +4,6 @@ import {
   BarChart3,
   TrendingUp,
   FileUp,
-  SlidersHorizontal,
   Users,
   ChevronLeft,
   ChevronRight,

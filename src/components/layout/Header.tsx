@@ -1,4 +1,4 @@
-import { Bell, Check, ChevronDown, Store, User, LogOut } from "lucide-react";
+import { Bell, Check, ChevronDown, Store, User, LogOut, SlidersHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
