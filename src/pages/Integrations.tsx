@@ -178,7 +178,7 @@ function MagaluConsentWidget() {
   return <div ref={containerRef} className="flex-1" />;
 }
 
-
+export default function Integrations() {
   const { selectedSeller } = useSeller();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
