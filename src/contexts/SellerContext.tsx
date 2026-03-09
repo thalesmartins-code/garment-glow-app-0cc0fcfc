@@ -15,6 +15,8 @@ interface SellerContextType {
 }
 
 const STORAGE_KEY = "sellers_data";
+const STORAGE_VERSION_KEY = "sellers_data_version";
+const CURRENT_VERSION = "2";
 const SELECTED_SELLER_KEY = "selected_seller_id";
 
 const SellerContext = createContext<SellerContextType | undefined>(undefined);
