@@ -1,4 +1,4 @@
-import { Bell, Check, ChevronDown, Store, User, LogOut } from "lucide-react";
+import { Bell, Check, ChevronDown, Store, User, LogOut, SlidersHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -127,7 +127,10 @@ export function Header({ title, subtitle }: HeaderProps) {
               <User className="w-4 h-4 mr-2" />
               Perfil
             </DropdownMenuItem>
-            <DropdownMenuItem>Configurações</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/configuracoes")}>
+              <SlidersHorizontal className="w-4 h-4 mr-2" />
+              Configurações
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive" onClick={signOut}>
               <LogOut className="w-4 h-4 mr-2" />

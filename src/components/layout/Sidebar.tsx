@@ -4,7 +4,6 @@ import {
   BarChart3,
   TrendingUp,
   FileUp,
-  SlidersHorizontal,
   Users,
   ChevronLeft,
   ChevronRight,
@@ -25,7 +24,6 @@ const baseNavItems = [
   { icon: BarChart3, label: "Dashboard", path: "/" },
   { icon: TrendingUp, label: "Vendas", path: "/vendas-diarias" },
   { icon: FileUp, label: "Importação", path: "/importacao" },
-  { icon: SlidersHorizontal, label: "Configurações", path: "/configuracoes" },
   { icon: Users, label: "Sellers", path: "/sellers" },
   { icon: Plug, label: "Integrações", path: "/integracoes" },
 ];
