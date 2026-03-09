@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSeller } from "@/contexts/SellerContext";
 import { Seller } from "@/types/seller";
 import { supabase } from "@/integrations/supabase/client";
+import createMagaluClient from "@magalucloud/sdk-idmagalu-js";
 import {
   Dialog,
   DialogContent,
