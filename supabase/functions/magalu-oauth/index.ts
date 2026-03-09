@@ -27,7 +27,8 @@ serve(async (req) => {
     // 1. Generate authorization URL
     if (action === "get_auth_url") {
       const scopes = scope || "open:portfolio:read open:order-order:read";
-      const authUrl = `https://id.magalu.com/login?client_id=${MAGALU_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect_uri)}&scope=${encodeURIComponent(scopes)}&response_type=code`;
+      const stateParam = "magalu";
+      const authUrl = `https://id.magalu.com/login?client_id=${MAGALU_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect_uri)}&scope=${encodeURIComponent(scopes)}&response_type=code&state=${stateParam}`;
       return new Response(
         JSON.stringify({ success: true, auth_url: authUrl }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }

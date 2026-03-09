@@ -203,43 +203,38 @@ export default function Integrations() {
   };
 
   // Handle ML OAuth callback
+  // Handle OAuth callback — use "state" param to identify provider
   useEffect(() => {
     const code = searchParams.get("code");
+    const state = searchParams.get("state");
     if (!code) return;
 
     const exchangeCode = async () => {
       setConnecting(true);
 
-      // Try Magalu first (since redirect is to /integracoes which is the Magalu redirect URI)
-      const magaluRedirectUri = "https://analytics.alcavie.com/integracoes";
-      const { data: magaluData, error: magaluError } = await supabase.functions.invoke("magalu-oauth", {
-        body: { action: "exchange_code", code, redirect_uri: magaluRedirectUri },
-      });
-
-      if (!magaluError && magaluData?.success) {
-        localStorage.setItem("magalu_tokens", JSON.stringify({
-          access_token: magaluData.access_token,
-          refresh_token: magaluData.refresh_token,
-          expires_at: Date.now() + magaluData.expires_in * 1000,
-        }));
-        updateIntegrationStatus("magalu", "connected");
-        toast({
-          title: "Magazine Luiza conectada!",
-          description: "Conta conectada com sucesso.",
+      if (state === "magalu") {
+        const redirectUri = "https://analytics.alcavie.com/integracoes";
+        const { data, error } = await supabase.functions.invoke("magalu-oauth", {
+          body: { action: "exchange_code", code, redirect_uri: redirectUri },
         });
-      } else {
-        // Fallback: try ML OAuth
-        const mlRedirectUri = "https://alcavie.com/";
-        const { data, error } = await supabase.functions.invoke("ml-oauth", {
-          body: { action: "exchange_code", code, redirect_uri: mlRedirectUri },
-        });
-
         if (error || !data?.success) {
-          toast({
-            title: "Erro ao conectar",
-            description: data?.error || error?.message || "Falha na troca do código de autorização.",
-            variant: "destructive",
-          });
+          toast({ title: "Erro ao conectar Magazine Luiza", description: data?.error || error?.message || "Falha na troca do código.", variant: "destructive" });
+        } else {
+          localStorage.setItem("magalu_tokens", JSON.stringify({
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+            expires_at: Date.now() + data.expires_in * 1000,
+          }));
+          updateIntegrationStatus("magalu", "connected");
+          toast({ title: "Magazine Luiza conectada!", description: "Conta conectada com sucesso." });
+        }
+      } else {
+        const redirectUri = "https://alcavie.com/";
+        const { data, error } = await supabase.functions.invoke("ml-oauth", {
+          body: { action: "exchange_code", code, redirect_uri: redirectUri },
+        });
+        if (error || !data?.success) {
+          toast({ title: "Erro ao conectar Mercado Livre", description: data?.error || error?.message || "Falha na troca do código.", variant: "destructive" });
         } else {
           localStorage.setItem("ml_tokens", JSON.stringify({
             access_token: data.access_token,
@@ -248,10 +243,7 @@ export default function Integrations() {
             user_id: data.user_id,
           }));
           updateIntegrationStatus("ml", "connected");
-          toast({
-            title: "Mercado Livre conectado!",
-            description: `Conta conectada com sucesso (User ID: ${data.user_id}).`,
-          });
+          toast({ title: "Mercado Livre conectado!", description: `Conta conectada com sucesso (User ID: ${data.user_id}).` });
         }
       }
 
