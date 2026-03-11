@@ -23,6 +23,82 @@ async function mlFetch(path: string, accessToken: string) {
   return data;
 }
 
+/**
+ * Fetch all orders for a single day, paginating with offset.
+ * Daily volume should be well under 10k, so offset works fine.
+ */
+async function fetchOrdersForDay(
+  sellerId: number,
+  dayStart: string,
+  dayEnd: string,
+  accessToken: string
+): Promise<any[]> {
+  const PAGE_SIZE = 50;
+  const MAX_OFFSET = 10000;
+  let allOrders: any[] = [];
+  let offset = 0;
+
+  while (offset < MAX_OFFSET) {
+    const url = `/orders/search?seller=${sellerId}&order.date_created.from=${dayStart}&order.date_created.to=${dayEnd}&sort=date_desc&limit=${PAGE_SIZE}&offset=${offset}`;
+    const data = await mlFetch(url, accessToken);
+    const results = data.results || [];
+    allOrders = allOrders.concat(results);
+    const total = data.paging?.total || 0;
+    offset += PAGE_SIZE;
+
+    if (results.length < PAGE_SIZE || offset >= total) break;
+  }
+
+  return allOrders;
+}
+
+/**
+ * Generate day boundaries as ISO strings for each day in the period.
+ */
+function getDayIntervals(periodDays: number): Array<{ start: string; end: string; label: string }> {
+  const intervals: Array<{ start: string; end: string; label: string }> = [];
+  const now = new Date();
+
+  for (let i = 0; i < periodDays; i++) {
+    const dayStart = new Date(now);
+    dayStart.setDate(now.getDate() - i);
+    dayStart.setHours(0, 0, 0, 0);
+
+    const dayEnd = new Date(dayStart);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    intervals.push({
+      start: dayStart.toISOString(),
+      end: dayEnd.toISOString(),
+      label: dayStart.toISOString().substring(0, 10),
+    });
+  }
+
+  return intervals;
+}
+
+/**
+ * Run async tasks with a concurrency limit.
+ */
+async function parallelLimit<T>(
+  tasks: Array<() => Promise<T>>,
+  concurrency: number
+): Promise<T[]> {
+  const results: T[] = new Array(tasks.length);
+  let idx = 0;
+
+  async function worker() {
+    while (idx < tasks.length) {
+      const i = idx++;
+      results[i] = await tasks[i]();
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, tasks.length) }, () => worker());
+  await Promise.all(workers);
+  return results;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -43,63 +119,28 @@ serve(async (req) => {
     const user = await mlFetch("/users/me", access_token);
     const sellerId = user.id;
 
-    // 2. Fetch ALL orders using cursor-based pagination (from_id)
-    // This avoids the 10,000 offset limit of the ML API
-    const dateFrom = new Date();
-    dateFrom.setDate(dateFrom.getDate() - periodDays);
-    const dateFromStr = dateFrom.toISOString();
+    // 2. Generate day intervals and fetch orders in parallel (5 concurrent)
+    const intervals = getDayIntervals(periodDays);
+    const CONCURRENCY = 5;
 
-    const PAGE_SIZE = 50;
-    const MAX_ITERATIONS = 500; // safety cap: 25,000 orders max
-    let allOrders: any[] = [];
-    let totalAvailable = 0;
-    let lastOrderId: number | null = null;
+    const tasks = intervals.map((interval) => () =>
+      fetchOrdersForDay(sellerId, interval.start, interval.end, access_token)
+    );
 
-    for (let i = 0; i < MAX_ITERATIONS; i++) {
-      // Build URL: first page uses offset=0, subsequent pages use the last order ID
-      // to fetch only older orders (date_created.to) avoiding offset limits
-      let url: string;
-      if (i === 0) {
-        url = `/orders/search?seller=${sellerId}&order.date_created.from=${dateFromStr}&sort=date_desc&limit=${PAGE_SIZE}`;
-      } else {
-        // Use offset-based for first 10k, then fall back to date-range slicing
-        const currentOffset = i * PAGE_SIZE;
-        if (currentOffset < 10000) {
-          url = `/orders/search?seller=${sellerId}&order.date_created.from=${dateFromStr}&sort=date_desc&limit=${PAGE_SIZE}&offset=${currentOffset}`;
-        } else {
-          // Beyond offset limit: slice by date using the last order's creation date
-          const lastOrder = allOrders[allOrders.length - 1];
-          const lastDate = lastOrder?.date_created;
-          if (!lastDate) break;
-          url = `/orders/search?seller=${sellerId}&order.date_created.from=${dateFromStr}&order.date_created.to=${lastDate}&sort=date_desc&limit=${PAGE_SIZE}`;
-        }
-      }
+    const ordersPerDay = await parallelLimit(tasks, CONCURRENCY);
+    const allOrders = ordersPerDay.flat();
 
-      const ordersData = await mlFetch(url, access_token);
-      const results = ordersData.results || [];
+    // Deduplicate by order ID (edge case: orders spanning midnight)
+    const seen = new Set<number>();
+    const orders = allOrders.filter((o) => {
+      if (seen.has(o.id)) return false;
+      seen.add(o.id);
+      return true;
+    });
 
-      if (i === 0) {
-        totalAvailable = ordersData.paging?.total || 0;
-      }
-
-      if (results.length === 0) break;
-
-      // For date-range slicing beyond 10k, deduplicate by order ID
-      const existingIds = new Set(allOrders.map((o: any) => o.id));
-      const newResults = results.filter((o: any) => !existingIds.has(o.id));
-
-      if (newResults.length === 0) break;
-
-      allOrders = allOrders.concat(newResults);
-
-      // Stop if we got all or page wasn't full
-      if (results.length < PAGE_SIZE || allOrders.length >= totalAvailable) {
-        break;
-      }
-    }
-
-    const orders = allOrders;
-    console.log(`Fetched ${orders.length} orders of ${totalAvailable} total (period: ${periodDays} days)`);
+    console.log(
+      `Fetched ${orders.length} unique orders across ${periodDays} days (${intervals.length} day-intervals, concurrency: ${CONCURRENCY})`
+    );
 
     // 3. Aggregate metrics
     let totalRevenue = 0;
@@ -174,7 +215,7 @@ serve(async (req) => {
         period: `last_${periodDays}_days`,
       },
       daily_breakdown: dailyBreakdown,
-      paging: { total: totalAvailable, fetched: orders.length },
+      paging: { total: totalOrders, fetched: totalOrders },
     };
 
     return new Response(JSON.stringify(response), {
