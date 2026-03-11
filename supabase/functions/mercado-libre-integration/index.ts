@@ -124,7 +124,7 @@ serve(async (req) => {
         shipped_orders: shippedOrders,
         active_listings: activeListings,
         avg_ticket: totalOrders > 0 ? totalRevenue / totalOrders : 0,
-        period: "last_30_days",
+        period: `last_${periodDays}_days`,
       },
       daily_breakdown: dailyBreakdown,
       paging: ordersData.paging || {},
