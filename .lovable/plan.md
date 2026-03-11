@@ -1,59 +1,32 @@
 
 
-# Mudanca de Paleta de Cores para Tema Financeiro
+## Plano: Reestruturar cards de KPI na página Vendas
 
-## Objetivo
-Substituir a paleta atual (rose gold / moda) por uma paleta corporativa financeira baseada em **azul escuro (navy)** com acentos em **verde esmeralda**, transmitindo confianca, profissionalismo e solidez.
+### Resumo
 
-## Nova Paleta
+Juntar o card "GAP" com o card "% da meta" em um unico card, e criar um novo card "% Meta vs PMT Acum." que mostra a porcentagem da meta atingida considerando apenas os dias ate o dia atual (baseado no PMT acumulado).
 
-| Elemento | Atual (Rose Gold) | Novo (Financeiro) |
-|---|---|---|
-| Accent | Rosa dourado (HSL 15 45% 65%) | Azul navy (HSL 217 70% 45%) |
-| Sidebar BG | Cinza escuro quente | Azul muito escuro |
-| Gradient principal | Rosa para rosa escuro | Azul navy para azul royal |
-| Shadow glow | Rosa translucido | Azul translucido |
-| Success | Verde (mantido) | Verde (mantido) |
+### O que muda
 
-## Arquivos a Alterar
+**Row 1 — Card 3: "% da meta" passa a incluir o GAP**
+- Mantém o valor principal como `% da meta` (ex: 85.3%)
+- Adiciona o GAP como informação secundária abaixo (ex: "GAP: R$ -12.500" ou "GAP: R$ +5.000"), com cor verde/vermelha conforme positivo/negativo
+- Mantém a barra de progresso existente
 
-### 1. `src/index.css` - Variaveis CSS (arquivo principal)
-- Trocar comentario do design system de "Fashion Store" para "Financial Management SaaS"
-- **:root (light mode)**:
-  - `--accent`: de `15 45% 65%` para `217 70% 45%` (azul corporativo)
-  - `--ring`: de `15 45% 65%` para `217 70% 45%`
-  - `--sidebar-background`: de `24 10% 8%` para `217 50% 10%`
-  - `--sidebar-primary`: de `15 45% 65%` para `217 70% 45%`
-  - `--sidebar-accent`: de `24 10% 15%` para `217 40% 18%`
-  - `--sidebar-border`: de `24 10% 18%` para `217 30% 22%`
-  - `--sidebar-ring`: de `15 45% 65%` para `217 70% 45%`
-  - `--gradient-rose` renomear para `--gradient-primary`: gradiente azul navy
-  - `--shadow-glow`: tom azul translucido
-- **Dark mode**: mesmas mudancas adaptadas para tons escuros
+**Row 2 — Novo card: "% Meta vs PMT Acum."**
+- No lugar do antigo card GAP
+- Calcula: soma das vendas até o dia atual / soma das metas até o dia atual (proporcional ao PMT acumulado)
+- Exemplo: se o PMT acumulado até dia 15 é 52%, a meta proporcional é 52% da meta total. Se vendemos R$ 60k de uma meta proporcional de R$ 52k, o atingimento é 115.4%
+- Usa barra de progresso e cores (verde >= 100%, amarelo >= 80%, vermelho < 80%)
+- Na visão diária, mostra o mesmo cálculo até D-1
 
-### 2. `src/index.css` - Classes utilitarias
-- Renomear `.text-gradient` para usar novo gradiente
-- Renomear `.bg-gradient-rose` para `.bg-gradient-primary` (manter `.bg-gradient-rose` como alias para nao quebrar)
-- Atualizar gradientes para tons azuis
+### Alterações técnicas
 
-### 3. `tailwind.config.ts`
-- Sem alteracoes estruturais necessarias (ja usa variaveis CSS)
+1. **`src/pages/DailySales.tsx`**
+   - Adicionar no `metrics` o cálculo de `metaVsPmtAcum`: filtra dias até hoje (ou até D-1 no modo diário), soma vendaTotal e metaVendas desses dias, calcula a porcentagem
+   - Card "% da meta" (Row 1, posição 3): adicionar prop `subtitle` com o texto do GAP formatado e colorido
+   - Substituir o card GAP (Row 2, posição 1) pelo novo card "% Meta vs PMT Acum."
 
-### 4. Componentes que usam `bg-gradient-rose` e `shadow-glow` (atualizacao de referencia)
-Arquivos que referenciam a classe antiga:
-- `src/components/dashboard/MetricCard.tsx` - trocar `bg-gradient-rose` por `bg-gradient-primary`
-- `src/components/dashboard/RecentSales.tsx` - trocar `bg-gradient-rose`
-- `src/components/chat/FloatingChat.tsx` - trocar `bg-gradient-rose` (4 ocorrencias)
-- `src/components/layout/Sidebar.tsx` - trocar `bg-gradient-rose`
-- `src/pages/FinanceiroDashboard.tsx` - verificar e atualizar se necessario
-- Demais paginas que usem a classe
-
-### 5. Graficos (`src/pages/FinanceiroDashboard.tsx`, `FinanceiroDRE.tsx`, `FinanceiroDFC.tsx`)
-- Atualizar cores dos graficos (bars, areas, pies) de tons rosados para tons azuis/verdes corporativos
-
-## Resultado Esperado
-- Sidebar em azul escuro profissional
-- Gradientes e botoes de destaque em azul corporativo
-- Graficos com paleta azul/verde/cinza
-- Visual coerente com um sistema financeiro serio e confiavel
+2. **`src/components/dashboard/KPICard.tsx`**
+   - Adicionar suporte a `subtitleNode` (ReactNode) para permitir texto colorido no subtitle (para o GAP com cor dinâmica)
 
