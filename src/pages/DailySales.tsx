@@ -178,12 +178,13 @@ const DailySales = () => {
     const vendaAteHoje = dataAteHoje.reduce((sum, d) => sum + d.vendaTotal, 0);
     const metaAteHoje = dataAteHoje.reduce((sum, d) => sum + d.metaVendas, 0);
     const metaVsPmtAcum = metaAteHoje > 0 ? (vendaAteHoje / metaAteHoje) * 100 : 0;
+    const gapPmtAcum = vendaAteHoje - metaAteHoje;
 
     const melhorDiaData = data.reduce((best, day) => 
       day.vendaTotal > best.vendaTotal ? day : best, data[0]);
     const melhorDia = { dia: melhorDiaData.dia, valor: melhorDiaData.vendaTotal };
 
-    return { metaTotal, vendaTotal, metaPercentage, yoy, mediaVendas, gapTotal, melhorDia, totalAnoAnterior, mediaAtingimentoMeta, metaVsPmtAcum };
+    return { metaTotal, vendaTotal, metaPercentage, yoy, mediaVendas, gapTotal, melhorDia, totalAnoAnterior, mediaAtingimentoMeta, metaVsPmtAcum, gapPmtAcum };
   }, [dailySalesData, currentDate, isCurrentMonth]);
 
   // Calculate metrics for today (daily view)
