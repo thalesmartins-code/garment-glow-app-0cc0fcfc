@@ -143,6 +143,19 @@ export default function MercadoLivre() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-lg border border-border bg-muted/30 p-0.5">
+            {PERIOD_OPTIONS.map((opt) => (
+              <Button
+                key={opt.value}
+                variant={period === opt.value ? "default" : "ghost"}
+                size="sm"
+                className="h-7 px-3 text-xs"
+                onClick={() => setPeriod(opt.value)}
+              >
+                {opt.label}
+              </Button>
+            ))}
+          </div>
           {mlUser?.permalink && (
             <Button variant="outline" size="sm" asChild>
               <a href={mlUser.permalink} target="_blank" rel="noopener noreferrer">
