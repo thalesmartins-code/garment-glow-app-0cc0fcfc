@@ -147,7 +147,7 @@ serve(async (req) => {
         period: `last_${periodDays}_days`,
       },
       daily_breakdown: dailyBreakdown,
-      paging: ordersData.paging || {},
+      paging: { total: totalAvailable, fetched: orders.length },
     };
 
     return new Response(JSON.stringify(response), {
