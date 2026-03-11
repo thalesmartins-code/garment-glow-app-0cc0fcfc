@@ -10,6 +10,7 @@ interface KPICardProps {
   value: string;
   rawValue?: number;
   subtitle?: string;
+  subtitleNode?: React.ReactNode;
   delta?: number;
   deltaLabel?: string;
   icon?: React.ReactNode;
