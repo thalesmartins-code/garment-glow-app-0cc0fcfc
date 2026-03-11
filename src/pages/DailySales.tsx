@@ -395,7 +395,7 @@ const DailySales = () => {
         {/* KPI Cards - Row 2 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <KPICard
-            title={viewMode === "diario" ? "Ating. vs PMT Acum. (D-1)" : "Ating. vs PMT Acum."}
+            title={viewMode === "diario" ? "Meta vs PMT Acum. (D-1)" : "Meta vs PMT Acum."}
             value={`${metrics.metaVsPmtAcum.toFixed(1)}%`}
             rawValue={metrics.metaVsPmtAcum}
             valueSuffix="%"
