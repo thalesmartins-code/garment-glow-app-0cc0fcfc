@@ -29,7 +29,8 @@ serve(async (req) => {
   }
 
   try {
-    const { access_token } = await req.json();
+    const { access_token, days = 30 } = await req.json();
+    const periodDays = Math.min(Math.max(Number(days) || 30, 1), 90);
 
     if (!access_token) {
       return new Response(
