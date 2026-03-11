@@ -177,7 +177,7 @@ export default function MercadoLivre() {
           icon={<DollarSign className="w-5 h-5" />}
           variant="info"
           loading={loading}
-          subtitle="Últimos 30 dias"
+          subtitle={`Últimos ${period} dias`}
         />
         <KPICard
           title="Receita Aprovada"
