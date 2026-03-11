@@ -45,6 +45,12 @@ interface DailyBreakdown {
 const currencyFmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+const PERIOD_OPTIONS = [
+  { label: "7 dias", value: 7 },
+  { label: "15 dias", value: 15 },
+  { label: "30 dias", value: 30 },
+] as const;
+
 export default function MercadoLivre() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -54,6 +60,7 @@ export default function MercadoLivre() {
   const [metrics, setMetrics] = useState<MLMetrics | null>(null);
   const [mlUser, setMlUser] = useState<MLUser | null>(null);
   const [daily, setDaily] = useState<DailyBreakdown[]>([]);
+  const [period, setPeriod] = useState(30);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
@@ -87,15 +94,8 @@ export default function MercadoLivre() {
 
       // 2. Call edge function
       const { data, error } = await supabase.functions.invoke("mercado-libre-integration", {
-        body: { access_token: accessToken },
+        body: { access_token: accessToken, days: period },
       });
-
-      if (error || !data?.success) {
-        toast({ title: "Erro ao buscar dados", description: data?.error || error?.message, variant: "destructive" });
-        setSyncing(false);
-        setLoading(false);
-        return;
-      }
 
       setMetrics(data.metrics);
       setMlUser(data.user);
@@ -106,7 +106,7 @@ export default function MercadoLivre() {
       setSyncing(false);
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user, toast, period]);
 
   useEffect(() => {
     fetchData();
@@ -143,6 +143,19 @@ export default function MercadoLivre() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-lg border border-border bg-muted/30 p-0.5">
+            {PERIOD_OPTIONS.map((opt) => (
+              <Button
+                key={opt.value}
+                variant={period === opt.value ? "default" : "ghost"}
+                size="sm"
+                className="h-7 px-3 text-xs"
+                onClick={() => setPeriod(opt.value)}
+              >
+                {opt.label}
+              </Button>
+            ))}
+          </div>
           {mlUser?.permalink && (
             <Button variant="outline" size="sm" asChild>
               <a href={mlUser.permalink} target="_blank" rel="noopener noreferrer">
@@ -164,7 +177,7 @@ export default function MercadoLivre() {
           icon={<DollarSign className="w-5 h-5" />}
           variant="info"
           loading={loading}
-          subtitle="Últimos 30 dias"
+          subtitle={`Últimos ${period} dias`}
         />
         <KPICard
           title="Receita Aprovada"
@@ -172,7 +185,7 @@ export default function MercadoLivre() {
           icon={<TrendingUp className="w-5 h-5" />}
           variant="success"
           loading={loading}
-          subtitle="Últimos 30 dias"
+          subtitle={`Últimos ${period} dias`}
         />
         <KPICard
           title="Total de Pedidos"
@@ -219,7 +232,7 @@ export default function MercadoLivre() {
       {chartData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Vendas Diárias — Últimos 30 dias</CardTitle>
+            <CardTitle className="text-base">Vendas Diárias — Últimos {period} dias</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={320}>

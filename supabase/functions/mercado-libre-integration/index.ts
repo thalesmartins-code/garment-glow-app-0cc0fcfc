@@ -29,7 +29,8 @@ serve(async (req) => {
   }
 
   try {
-    const { access_token } = await req.json();
+    const { access_token, days = 30 } = await req.json();
+    const periodDays = Math.min(Math.max(Number(days) || 30, 1), 90);
 
     if (!access_token) {
       return new Response(
@@ -44,7 +45,7 @@ serve(async (req) => {
 
     // 2. Get recent orders (last 30 days)
     const dateFrom = new Date();
-    dateFrom.setDate(dateFrom.getDate() - 30);
+    dateFrom.setDate(dateFrom.getDate() - periodDays);
     const dateFromStr = dateFrom.toISOString();
 
     const ordersData = await mlFetch(
@@ -124,7 +125,7 @@ serve(async (req) => {
         shipped_orders: shippedOrders,
         active_listings: activeListings,
         avg_ticket: totalOrders > 0 ? totalRevenue / totalOrders : 0,
-        period: "last_30_days",
+        period: `last_${periodDays}_days`,
       },
       daily_breakdown: dailyBreakdown,
       paging: ordersData.paging || {},
