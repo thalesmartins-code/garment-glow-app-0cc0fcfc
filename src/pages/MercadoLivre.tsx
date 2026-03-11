@@ -188,10 +188,10 @@ export default function MercadoLivre() {
           subtitle={`Últimos ${period} dias`}
         />
         <KPICard
-          title="Ticket Médio"
-          value={metrics ? currencyFmt(metrics.avg_ticket) : "—"}
-          icon={<Tag className="w-5 h-5" />}
-          variant="orange"
+          title="Total de Pedidos"
+          value={metrics ? String(metrics.total_orders) : "—"}
+          icon={<ShoppingCart className="w-5 h-5" />}
+          variant="purple"
           loading={loading}
         />
       </div>
@@ -199,10 +199,10 @@ export default function MercadoLivre() {
       {/* KPIs - Row 2: 4 cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
-          title="Total de Pedidos"
-          value={metrics ? String(metrics.total_orders) : "—"}
-          icon={<ShoppingCart className="w-5 h-5" />}
-          variant="purple"
+          title="Ticket Médio"
+          value={metrics ? currencyFmt(metrics.avg_ticket) : "—"}
+          icon={<Tag className="w-5 h-5" />}
+          variant="orange"
           loading={loading}
         />
         <KPICard
