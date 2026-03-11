@@ -407,7 +407,7 @@ export default function Integrations() {
   const handleManualCodeExchange = async () => {
     if (!mlCodeInput.trim()) return;
     setConnecting(true);
-    const redirectUri = "https://alcavie.com/";
+    const redirectUri = "https://analytics.alcavie.com/integracoes";
 
     const { data, error } = await supabase.functions.invoke("ml-oauth", {
       body: { action: "exchange_code", code: mlCodeInput.trim(), redirect_uri: redirectUri },
