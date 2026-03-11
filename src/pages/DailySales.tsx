@@ -151,6 +151,8 @@ const DailySales = () => {
         gapTotal: 0,
         melhorDia: { dia: 0, valor: 0 },
         totalAnoAnterior: 0,
+        mediaAtingimentoMeta: 0,
+        metaVsPmtAcum: 0,
       };
     }
 
@@ -168,12 +170,21 @@ const DailySales = () => {
       ? diasComVenda.reduce((sum, d) => sum + d.metaAtingida, 0) / diasComVenda.length
       : 0;
 
+    // % Meta vs PMT Acumulado: vendas até hoje / meta proporcional até hoje
+    const today = currentDate.getDate();
+    const dataAteHoje = isCurrentMonth
+      ? data.filter((d) => d.dia < today)
+      : data;
+    const vendaAteHoje = dataAteHoje.reduce((sum, d) => sum + d.vendaTotal, 0);
+    const metaAteHoje = dataAteHoje.reduce((sum, d) => sum + d.metaVendas, 0);
+    const metaVsPmtAcum = metaAteHoje > 0 ? (vendaAteHoje / metaAteHoje) * 100 : 0;
+
     const melhorDiaData = data.reduce((best, day) => 
       day.vendaTotal > best.vendaTotal ? day : best, data[0]);
     const melhorDia = { dia: melhorDiaData.dia, valor: melhorDiaData.vendaTotal };
 
-    return { metaTotal, vendaTotal, metaPercentage, yoy, mediaVendas, gapTotal, melhorDia, totalAnoAnterior, mediaAtingimentoMeta };
-  }, [dailySalesData]);
+    return { metaTotal, vendaTotal, metaPercentage, yoy, mediaVendas, gapTotal, melhorDia, totalAnoAnterior, mediaAtingimentoMeta, metaVsPmtAcum };
+  }, [dailySalesData, currentDate, isCurrentMonth]);
 
   // Calculate metrics for today (daily view)
   const dailyMetrics = useMemo(() => {
