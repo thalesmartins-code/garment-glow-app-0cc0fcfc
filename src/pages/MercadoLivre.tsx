@@ -135,10 +135,13 @@ export default function MercadoLivre() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Mercado Livre"
-        description={mlUser ? `Vendedor: ${mlUser.nickname}` : "Dashboard de vendas"}
-      >
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Mercado Livre</h1>
+          <p className="text-sm text-muted-foreground">
+            {mlUser ? `Vendedor: ${mlUser.nickname}` : "Dashboard de vendas"}
+          </p>
+        </div>
         <div className="flex items-center gap-2">
           {mlUser?.permalink && (
             <Button variant="outline" size="sm" asChild>
@@ -151,7 +154,7 @@ export default function MercadoLivre() {
             <RefreshCw className={`w-4 h-4 mr-1 ${syncing ? "animate-spin" : ""}`} /> Sincronizar
           </Button>
         </div>
-      </PageHeader>
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
