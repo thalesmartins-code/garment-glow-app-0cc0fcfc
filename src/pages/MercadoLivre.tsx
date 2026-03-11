@@ -45,6 +45,12 @@ interface DailyBreakdown {
 const currencyFmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+const PERIOD_OPTIONS = [
+  { label: "7 dias", value: 7 },
+  { label: "15 dias", value: 15 },
+  { label: "30 dias", value: 30 },
+] as const;
+
 export default function MercadoLivre() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -54,6 +60,7 @@ export default function MercadoLivre() {
   const [metrics, setMetrics] = useState<MLMetrics | null>(null);
   const [mlUser, setMlUser] = useState<MLUser | null>(null);
   const [daily, setDaily] = useState<DailyBreakdown[]>([]);
+  const [period, setPeriod] = useState(30);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
