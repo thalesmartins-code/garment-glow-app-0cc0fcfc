@@ -135,7 +135,8 @@ const TVMode = () => {
     const vendaAteHoje = dataAteHoje.reduce((s, d) => s + d.vendaTotal, 0);
     const metaAteHoje = dataAteHoje.reduce((s, d) => s + d.metaVendas, 0);
     const metaVsPmtAcum = metaAteHoje > 0 ? (vendaAteHoje / metaAteHoje) * 100 : 0;
-    return { metaTotal, vendaTotal, metaPercentage, yoy, gapTotal, totalAnoAnterior, mediaAtingimentoMeta, metaVsPmtAcum };
+    const gapPmtAcum = vendaAteHoje - metaAteHoje;
+    return { metaTotal, vendaTotal, metaPercentage, yoy, gapTotal, totalAnoAnterior, mediaAtingimentoMeta, metaVsPmtAcum, gapPmtAcum };
   }, [dailySalesData, selectedYear, selectedMonth, currentDate]);
 
   // Daily metrics (yesterday / D-1)
