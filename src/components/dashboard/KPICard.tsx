@@ -10,6 +10,7 @@ interface KPICardProps {
   value: string;
   rawValue?: number;
   subtitle?: string;
+  subtitleNode?: React.ReactNode;
   delta?: number;
   deltaLabel?: string;
   icon?: React.ReactNode;
@@ -39,6 +40,7 @@ export function KPICard({
   value,
   rawValue,
   subtitle,
+  subtitleNode,
   delta,
   deltaLabel,
   icon,
@@ -76,9 +78,9 @@ export function KPICard({
         <div className="flex-1 min-w-0">
           <span className="text-sm font-medium text-muted-foreground">{title}</span>
           <p className="text-[1.65rem] font-bold leading-tight">{displayValue}</p>
-          {subtitle && (
+          {subtitleNode ? subtitleNode : subtitle ? (
             <span className="text-xs text-muted-foreground">{subtitle}</span>
-          )}
+          ) : null}
           {progressValue !== undefined && (
             <div className="mt-2 flex items-center gap-2">
               <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
