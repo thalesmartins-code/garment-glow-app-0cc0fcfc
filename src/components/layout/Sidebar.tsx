@@ -27,6 +27,7 @@ const baseNavItems = [
   { icon: FileUp, label: "Importação", path: "/importacao" },
   { icon: Users, label: "Sellers", path: "/sellers" },
   { icon: Plug, label: "Integrações", path: "/integracoes" },
+  { icon: Store, label: "Mercado Livre", path: "/mercado-livre" },
 ];
 
 export function Sidebar() {

@@ -52,6 +52,7 @@ const App = () => (
                       <Route path="/usuarios" element={<RoleRoute><UserManagement /></RoleRoute>} />
                       <Route path="/perfil" element={<Profile />} />
                       <Route path="/integracoes" element={<RoleRoute><Integrations /></RoleRoute>} />
+                      <Route path="/mercado-livre" element={<RoleRoute><MercadoLivre /></RoleRoute>} />
                     </Route>
                   </Route>
                   <Route path="*" element={<NotFound />} />
