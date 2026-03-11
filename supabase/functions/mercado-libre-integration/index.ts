@@ -43,30 +43,57 @@ serve(async (req) => {
     const user = await mlFetch("/users/me", access_token);
     const sellerId = user.id;
 
-    // 2. Fetch ALL orders with pagination (last N days)
+    // 2. Fetch ALL orders using cursor-based pagination (from_id)
+    // This avoids the 10,000 offset limit of the ML API
     const dateFrom = new Date();
     dateFrom.setDate(dateFrom.getDate() - periodDays);
     const dateFromStr = dateFrom.toISOString();
 
     const PAGE_SIZE = 50;
-    const MAX_PAGES = 20; // safety cap: 1000 orders max
+    const MAX_ITERATIONS = 500; // safety cap: 25,000 orders max
     let allOrders: any[] = [];
-    let offset = 0;
     let totalAvailable = 0;
+    let lastOrderId: number | null = null;
 
-    for (let page = 0; page < MAX_PAGES; page++) {
-      const ordersData = await mlFetch(
-        `/orders/search?seller=${sellerId}&order.date_created.from=${dateFromStr}&sort=date_desc&limit=${PAGE_SIZE}&offset=${offset}`,
-        access_token
-      );
+    for (let i = 0; i < MAX_ITERATIONS; i++) {
+      // Build URL: first page uses offset=0, subsequent pages use the last order ID
+      // to fetch only older orders (date_created.to) avoiding offset limits
+      let url: string;
+      if (i === 0) {
+        url = `/orders/search?seller=${sellerId}&order.date_created.from=${dateFromStr}&sort=date_desc&limit=${PAGE_SIZE}`;
+      } else {
+        // Use offset-based for first 10k, then fall back to date-range slicing
+        const currentOffset = i * PAGE_SIZE;
+        if (currentOffset < 10000) {
+          url = `/orders/search?seller=${sellerId}&order.date_created.from=${dateFromStr}&sort=date_desc&limit=${PAGE_SIZE}&offset=${currentOffset}`;
+        } else {
+          // Beyond offset limit: slice by date using the last order's creation date
+          const lastOrder = allOrders[allOrders.length - 1];
+          const lastDate = lastOrder?.date_created;
+          if (!lastDate) break;
+          url = `/orders/search?seller=${sellerId}&order.date_created.from=${dateFromStr}&order.date_created.to=${lastDate}&sort=date_desc&limit=${PAGE_SIZE}`;
+        }
+      }
 
+      const ordersData = await mlFetch(url, access_token);
       const results = ordersData.results || [];
-      allOrders = allOrders.concat(results);
-      totalAvailable = ordersData.paging?.total || 0;
-      offset += PAGE_SIZE;
 
-      // Stop if we got all orders or no more results
-      if (results.length < PAGE_SIZE || offset >= totalAvailable) {
+      if (i === 0) {
+        totalAvailable = ordersData.paging?.total || 0;
+      }
+
+      if (results.length === 0) break;
+
+      // For date-range slicing beyond 10k, deduplicate by order ID
+      const existingIds = new Set(allOrders.map((o: any) => o.id));
+      const newResults = results.filter((o: any) => !existingIds.has(o.id));
+
+      if (newResults.length === 0) break;
+
+      allOrders = allOrders.concat(newResults);
+
+      // Stop if we got all or page wasn't full
+      if (results.length < PAGE_SIZE || allOrders.length >= totalAvailable) {
         break;
       }
     }
