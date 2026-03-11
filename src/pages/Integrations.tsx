@@ -311,13 +311,7 @@ export default function Integrations() {
         return;
       }
 
-      localStorage.removeItem("ml_pkce_code_verifier");
-      localStorage.setItem("ml_tokens", JSON.stringify({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        expires_at: Date.now() + data.expires_in * 1000,
-        user_id: data.user_id,
-      }));
+      await saveMLTokens(data);
       updateIntegrationStatus("ml", "connected");
       toast({ title: "Mercado Livre conectado!", description: `Conta conectada com sucesso (User ID: ${data.user_id}).` });
       setSearchParams({}, { replace: true });
