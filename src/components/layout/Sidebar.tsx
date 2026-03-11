@@ -10,6 +10,7 @@ import {
   AreaChart,
   ShieldCheck,
   Plug,
+  Store,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { canAccess } from "@/config/roleAccess";
