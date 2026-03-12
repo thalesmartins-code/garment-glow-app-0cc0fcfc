@@ -51,6 +51,7 @@ export default function MercadoLivre() {
   const [syncing, setSyncing] = useState(false);
   const [connected, setConnected] = useState(false);
   const [mlUser, setMlUser] = useState<MLUser | null>(null);
+  const [cachedAccessToken, setCachedAccessToken] = useState<string | null>(null);
   const [allDaily, setAllDaily] = useState<DailyBreakdown[]>([]);
   const [activeListings, setActiveListings] = useState(0);
   const [period, setPeriod] = useState(7);
