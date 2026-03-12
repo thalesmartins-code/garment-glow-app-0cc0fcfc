@@ -109,14 +109,13 @@ export default function MercadoLivre() {
     const syncedAt = new Date(userCache.synced_at).getTime();
     const isExpired = Date.now() - syncedAt > CACHE_TTL_MS;
 
-    // Load daily cache (last 30 days to cover all filters)
-    const cutoff30 = format(subDays(new Date(), 30), "yyyy-MM-dd");
+    // Load all daily cache (no date limit — includes historical imports)
     const { data: dailyCache } = await supabase
       .from("ml_daily_cache")
       .select("*")
       .eq("user_id", user.id)
-      .gte("date", cutoff30)
-      .order("date", { ascending: false });
+      .order("date", { ascending: false })
+      .limit(1000);
 
     if (!dailyCache || dailyCache.length === 0) return false;
 
