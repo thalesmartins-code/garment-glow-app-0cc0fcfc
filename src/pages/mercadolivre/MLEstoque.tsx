@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -113,7 +112,6 @@ export default function MLEstoque() {
   if (hasToken === false) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Estoque" subtitle="Mercado Livre" />
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <Plug className="w-12 h-12 mb-4 text-muted-foreground/40" />
@@ -132,8 +130,7 @@ export default function MLEstoque() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <PageHeader title="Estoque" subtitle="Mercado Livre" />
+      <div className="flex items-center justify-end">
         <Button onClick={fetchInventory} disabled={loading} size="sm" variant="outline">
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Atualizar
