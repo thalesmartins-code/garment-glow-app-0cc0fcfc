@@ -110,6 +110,9 @@ export function SalesDataProvider({ children }: { children: React.ReactNode }) {
 
   const refreshData = useCallback(async () => {
     await loadFromDB();
+    const now = new Date().toLocaleString("pt-BR");
+    setLastSyncedAt(now);
+    localStorage.setItem(LAST_SYNCED_KEY, now);
   }, [loadFromDB]);
 
   // Load quantities from localStorage
