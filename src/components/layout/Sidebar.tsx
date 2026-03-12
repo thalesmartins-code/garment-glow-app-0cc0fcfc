@@ -55,8 +55,11 @@ export function Sidebar() {
 
   const allNavItems = [...baseNavItems, { icon: ShieldCheck, label: "Usuários", path: "/usuarios" }];
   const navItems = allNavItems.filter((item) => canAccess(role, item.path));
+  const visibleMlSubItems = mlSubItems.filter((item) => canAccess(role, item.path));
+  const isMLActive = location.pathname.startsWith("/mercado-livre");
+  const showMLGroup = visibleMlSubItems.length > 0;
 
-  const renderLink = (item: { icon: any; label: string; path: string }) => {
+  const renderLink = (item: { icon: any; label: string; path: string }, isSubItem = false) => {
     const isActive = location.pathname === item.path;
     const Icon = item.icon;
 
@@ -65,17 +68,19 @@ export function Sidebar() {
         key={item.path}
         to={item.path}
         className={cn(
-          "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 overflow-hidden",
+          "flex items-center gap-3 rounded-xl transition-all duration-200 overflow-hidden",
+          isSubItem ? "px-3 py-2 text-[13px]" : "px-3 py-2.5",
           collapsed && "justify-center w-12 px-0",
           isActive
             ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         )}
       >
-        <Icon className="w-5 h-5 flex-shrink-0" />
+        <Icon className={cn("flex-shrink-0", isSubItem ? "w-4 h-4" : "w-5 h-5")} />
         <span
           className={cn(
-            "font-medium text-sm whitespace-nowrap transition-all duration-300 ease-in-out",
+            "font-medium whitespace-nowrap transition-all duration-300 ease-in-out",
+            isSubItem ? "text-[13px]" : "text-sm",
             collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
           )}
         >
@@ -95,6 +100,67 @@ export function Sidebar() {
       );
     }
     return linkContent;
+  };
+
+  const renderMLGroup = () => {
+    if (!showMLGroup) return null;
+
+    if (collapsed) {
+      return (
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <Link
+              to="/mercado-livre"
+              className={cn(
+                "flex items-center justify-center w-12 py-2.5 rounded-xl transition-all duration-200",
+                isMLActive
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}
+            >
+              <Store className="w-5 h-5 flex-shrink-0" />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="p-0">
+            <div className="flex flex-col py-1">
+              {visibleMlSubItems.map((sub) => (
+                <Link
+                  key={sub.path}
+                  to={sub.path}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors",
+                    location.pathname === sub.path && "font-medium text-primary"
+                  )}
+                >
+                  <sub.icon className="w-4 h-4" />
+                  {sub.label}
+                </Link>
+              ))}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    return (
+      <Collapsible defaultOpen={isMLActive}>
+        <CollapsibleTrigger className={cn(
+          "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full text-left",
+          isMLActive
+            ? "text-sidebar-foreground font-medium"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        )}>
+          <Store className="w-5 h-5 flex-shrink-0" />
+          <span className="font-medium text-sm flex-1">Mercado Livre</span>
+          <ChevronDown className="w-4 h-4 transition-transform duration-200 [&[data-state=open]]:rotate-0 rotate-[-90deg]" />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="ml-3 pl-3 border-l border-sidebar-border space-y-0.5 mt-1">
+            {visibleMlSubItems.map((sub) => renderLink(sub, true))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    );
   };
 
   return (
@@ -117,7 +183,8 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className={cn("flex-1 pt-6 pb-4 space-y-1.5 overflow-y-auto", collapsed ? "px-2 flex flex-col items-center" : "px-3")}>
-        {navItems.map(renderLink)}
+        {navItems.map((item) => renderLink(item))}
+        {renderMLGroup()}
       </nav>
 
       {/* Collapse toggle */}
