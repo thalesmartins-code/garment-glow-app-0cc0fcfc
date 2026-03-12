@@ -62,6 +62,7 @@ export default function MercadoLivre() {
   const [activeListings, setActiveListings] = useState(0);
   const [period, setPeriod] = useState(7);
   const [customRange, setCustomRange] = useState<DateRange>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(() => localStorage.getItem(LAST_ML_SYNC_KEY));
   const cacheLoadedRef = useRef(false);
 
   // Filter daily data locally based on period or custom range
