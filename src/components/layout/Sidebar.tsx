@@ -12,7 +12,6 @@ import {
   ShieldCheck,
   Plug,
   Store,
-  LayoutDashboard,
   Package,
   ShoppingBag,
   ClipboardList,
