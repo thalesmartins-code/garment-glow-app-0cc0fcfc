@@ -39,11 +39,11 @@ interface DailyBreakdown {
 const currencyFmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-const PERIOD_OPTIONS = [
+const QUICK_RANGES = [
+  { label: "Hoje", value: 0 },
   { label: "7 dias", value: 7 },
   { label: "15 dias", value: 15 },
   { label: "30 dias", value: 30 },
-  { label: "Personalizado", value: 0 },
 ] as const;
 
 type DateRange = { from: Date; to: Date } | null;
@@ -60,25 +60,25 @@ export default function MercadoLivre() {
   const [cachedAccessToken, setCachedAccessToken] = useState<string | null>(null);
   const [allDaily, setAllDaily] = useState<DailyBreakdown[]>([]);
   const [activeListings, setActiveListings] = useState(0);
-  const [period, setPeriod] = useState(7);
+  const [period, setPeriod] = useState(0); // 0 = today (default)
   const [customRange, setCustomRange] = useState<DateRange>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(() => localStorage.getItem(LAST_ML_SYNC_KEY));
   const cacheLoadedRef = useRef(false);
 
   // Filter daily data locally based on period or custom range
   const daily = allDaily.filter((d) => {
-    if (period === 0 && customRange) {
+    if (customRange) {
       const from = format(customRange.from, "yyyy-MM-dd");
       const to = format(customRange.to, "yyyy-MM-dd");
       return d.date >= from && d.date <= to;
     }
-    const cutoff = format(subDays(new Date(), period || 7), "yyyy-MM-dd");
+    const cutoff = format(subDays(new Date(), period), "yyyy-MM-dd");
     return d.date >= cutoff;
   });
 
-  const periodLabel = period === 0 && customRange
+  const periodLabel = customRange
     ? `${format(customRange.from, "dd/MM/yy")} – ${format(customRange.to, "dd/MM/yy")}`
-    : `Últimos ${period} dias`;
+    : period === 0 ? "Hoje" : `Últimos ${period} dias`;
 
   // Compute metrics from filtered daily data
   const metrics = daily.length > 0 ? {
@@ -252,53 +252,47 @@ export default function MercadoLivre() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center rounded-lg border border-border bg-muted/30 p-0.5">
-            {PERIOD_OPTIONS.map((opt) => (
-              <Button
-                key={opt.value}
-                variant={period === opt.value ? "default" : "ghost"}
-                size="sm"
-                className="h-7 px-3 text-xs"
-                onClick={() => {
-                  setPeriod(opt.value);
-                  if (opt.value !== 0) setCustomRange(null);
-                }}
-              >
-                {opt.value === 0 ? (
-                  <><CalendarIcon className="w-3 h-3 mr-1" />{opt.label}</>
-                ) : opt.label}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-7 text-xs">
+                <CalendarIcon className="w-3.5 h-3.5 mr-1" />
+                {periodLabel}
               </Button>
-            ))}
-          </div>
-          {period === 0 && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className={cn("h-7 text-xs", !customRange && "text-muted-foreground")}>
-                  <CalendarIcon className="w-3.5 h-3.5 mr-1" />
-                  {customRange
-                    ? `${format(customRange.from, "dd/MM/yy")} – ${format(customRange.to, "dd/MM/yy")}`
-                    : "Selecionar período"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="range"
-                  selected={customRange ? { from: customRange.from, to: customRange.to } : undefined}
-                  onSelect={(range) => {
-                    if (range?.from && range?.to) {
-                      setCustomRange({ from: range.from, to: range.to });
-                    } else if (range?.from) {
-                      setCustomRange({ from: range.from, to: range.from });
-                    }
-                  }}
-                  disabled={(date) => date > new Date()}
-                  numberOfMonths={2}
-                  locale={ptBR}
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-          )}
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-3" align="start">
+              <div className="flex gap-1 mb-3">
+                {QUICK_RANGES.map((opt) => (
+                  <Button
+                    key={opt.value}
+                    variant={!customRange && period === opt.value ? "default" : "outline"}
+                    size="sm"
+                    className="h-7 px-3 text-xs"
+                    onClick={() => {
+                      setPeriod(opt.value);
+                      setCustomRange(null);
+                    }}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+              <Calendar
+                mode="range"
+                selected={customRange ? { from: customRange.from, to: customRange.to } : undefined}
+                onSelect={(range) => {
+                  if (range?.from && range?.to) {
+                    setCustomRange({ from: range.from, to: range.to });
+                  } else if (range?.from) {
+                    setCustomRange({ from: range.from, to: range.from });
+                  }
+                }}
+                disabled={(date) => date > new Date()}
+                numberOfMonths={2}
+                locale={ptBR}
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
           {mlUser?.permalink && (
             <Button variant="outline" size="sm" asChild>
               <a href={mlUser.permalink} target="_blank" rel="noopener noreferrer">
