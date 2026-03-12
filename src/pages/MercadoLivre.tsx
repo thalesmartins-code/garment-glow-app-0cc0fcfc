@@ -43,7 +43,10 @@ const PERIOD_OPTIONS = [
   { label: "7 dias", value: 7 },
   { label: "15 dias", value: 15 },
   { label: "30 dias", value: 30 },
+  { label: "Personalizado", value: 0 },
 ] as const;
+
+type DateRange = { from: Date; to: Date } | null;
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
