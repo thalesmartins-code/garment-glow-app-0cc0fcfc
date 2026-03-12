@@ -148,6 +148,7 @@ export default function MercadoLivre() {
         if (refreshed?.access_token) accessToken = refreshed.access_token;
       }
 
+      setCachedAccessToken(accessToken);
       setConnected(true);
 
       // Always fetch 30 days to populate full cache
