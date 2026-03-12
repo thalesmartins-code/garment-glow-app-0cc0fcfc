@@ -61,13 +61,23 @@ export default function MercadoLivre() {
   const [allDaily, setAllDaily] = useState<DailyBreakdown[]>([]);
   const [activeListings, setActiveListings] = useState(0);
   const [period, setPeriod] = useState(7);
+  const [customRange, setCustomRange] = useState<DateRange>(null);
   const cacheLoadedRef = useRef(false);
 
-  // Filter daily data locally based on period
+  // Filter daily data locally based on period or custom range
   const daily = allDaily.filter((d) => {
-    const cutoff = format(subDays(new Date(), period), "yyyy-MM-dd");
+    if (period === 0 && customRange) {
+      const from = format(customRange.from, "yyyy-MM-dd");
+      const to = format(customRange.to, "yyyy-MM-dd");
+      return d.date >= from && d.date <= to;
+    }
+    const cutoff = format(subDays(new Date(), period || 7), "yyyy-MM-dd");
     return d.date >= cutoff;
   });
+
+  const periodLabel = period === 0 && customRange
+    ? `${format(customRange.from, "dd/MM/yy")} – ${format(customRange.to, "dd/MM/yy")}`
+    : `Últimos ${period} dias`;
 
   // Compute metrics from filtered daily data
   const metrics = daily.length > 0 ? {
