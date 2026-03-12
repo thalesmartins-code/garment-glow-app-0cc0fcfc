@@ -48,7 +48,7 @@ const PERIOD_OPTIONS = [
 
 type DateRange = { from: Date; to: Date } | null;
 
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const LAST_ML_SYNC_KEY = "ml_last_synced_at";
 
 export default function MercadoLivre() {
   const { user } = useAuth();
@@ -62,6 +62,7 @@ export default function MercadoLivre() {
   const [activeListings, setActiveListings] = useState(0);
   const [period, setPeriod] = useState(7);
   const [customRange, setCustomRange] = useState<DateRange>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(() => localStorage.getItem(LAST_ML_SYNC_KEY));
   const cacheLoadedRef = useRef(false);
 
   // Filter daily data locally based on period or custom range
@@ -97,7 +98,6 @@ export default function MercadoLivre() {
   const loadFromCache = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
 
-    // Load user cache
     const { data: userCache } = await supabase
       .from("ml_user_cache")
       .select("*")
@@ -106,10 +106,6 @@ export default function MercadoLivre() {
 
     if (!userCache) return false;
 
-    const syncedAt = new Date(userCache.synced_at).getTime();
-    const isExpired = Date.now() - syncedAt > CACHE_TTL_MS;
-
-    // Load all daily cache (no date limit — includes historical imports)
     const { data: dailyCache } = await supabase
       .from("ml_daily_cache")
       .select("*")
@@ -135,8 +131,7 @@ export default function MercadoLivre() {
       shipped: r.shipped_orders || 0,
     })));
     setConnected(true);
-
-    return !isExpired; // true = cache is fresh, no need to sync
+    return true;
   }, [user]);
 
   const syncFromAPI = useCallback(async () => {
@@ -184,6 +179,10 @@ export default function MercadoLivre() {
         cancelled: d.cancelled || 0,
         shipped: d.shipped || 0,
       })));
+      const now = new Date().toLocaleString("pt-BR");
+      setLastSyncedAt(now);
+      localStorage.setItem(LAST_ML_SYNC_KEY, now);
+      toast({ title: "Sincronizado", description: "Dados atualizados com sucesso." });
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     } finally {
@@ -202,7 +201,6 @@ export default function MercadoLivre() {
     cacheLoadedRef.current = true;
 
     (async () => {
-      // First check if user has a token at all
       const { data: tokenRow } = await supabase
         .from("ml_tokens")
         .select("access_token")
@@ -215,17 +213,11 @@ export default function MercadoLivre() {
         return;
       }
 
-      // Token exists — user is connected
       setConnected(true);
-
-      const cacheFresh = await loadFromCache();
+      await loadFromCache();
       setLoading(false);
-
-      if (!cacheFresh) {
-        await syncFromAPI();
-      }
     })();
-  }, [user, loadFromCache, syncFromAPI]);
+  }, [user, loadFromCache]);
 
   if (!loading && !connected) {
     return (
@@ -254,6 +246,9 @@ export default function MercadoLivre() {
           <h1 className="text-2xl font-bold text-foreground">Mercado Livre</h1>
           <p className="text-sm text-muted-foreground">
             {mlUser ? `Vendedor: ${mlUser.nickname}` : "Dashboard de vendas"}
+          </p>
+          <p className="text-xs text-muted-foreground/70">
+            {lastSyncedAt ? `Última sinc: ${lastSyncedAt}` : "Nunca sincronizado"}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
