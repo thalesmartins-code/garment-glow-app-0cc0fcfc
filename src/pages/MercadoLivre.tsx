@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,27 +6,15 @@ import { KPICard } from "@/components/dashboard/KPICard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/layout/PageHeader";
 import {
   DollarSign, ShoppingCart, TrendingUp, Tag, Megaphone, PackageCheck, PackageX, RefreshCw, ExternalLink, Plug,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
-
-interface MLMetrics {
-  total_revenue: number;
-  approved_revenue: number;
-  total_orders: number;
-  cancelled_orders: number;
-  shipped_orders: number;
-  active_listings: number;
-  avg_ticket: number;
-  period: string;
-}
 
 interface MLUser {
   id: number;
@@ -40,6 +28,8 @@ interface DailyBreakdown {
   total: number;
   approved: number;
   qty: number;
+  cancelled: number;
+  shipped: number;
 }
 
 const currencyFmt = (v: number) =>
@@ -51,22 +41,91 @@ const PERIOD_OPTIONS = [
   { label: "30 dias", value: 30 },
 ] as const;
 
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
 export default function MercadoLivre() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [connected, setConnected] = useState(false);
-  const [metrics, setMetrics] = useState<MLMetrics | null>(null);
   const [mlUser, setMlUser] = useState<MLUser | null>(null);
-  const [daily, setDaily] = useState<DailyBreakdown[]>([]);
+  const [allDaily, setAllDaily] = useState<DailyBreakdown[]>([]);
+  const [activeListings, setActiveListings] = useState(0);
   const [period, setPeriod] = useState(7);
+  const cacheLoadedRef = useRef(false);
 
-  const fetchData = useCallback(async () => {
+  // Filter daily data locally based on period
+  const daily = allDaily.filter((d) => {
+    const cutoff = format(subDays(new Date(), period), "yyyy-MM-dd");
+    return d.date >= cutoff;
+  });
+
+  // Compute metrics from filtered daily data
+  const metrics = daily.length > 0 ? {
+    total_revenue: daily.reduce((s, d) => s + d.total, 0),
+    approved_revenue: daily.reduce((s, d) => s + d.approved, 0),
+    total_orders: daily.reduce((s, d) => s + d.qty, 0),
+    cancelled_orders: daily.reduce((s, d) => s + (d.cancelled || 0), 0),
+    shipped_orders: daily.reduce((s, d) => s + (d.shipped || 0), 0),
+    active_listings: activeListings,
+    avg_ticket: 0,
+  } : null;
+
+  if (metrics && metrics.total_orders > 0) {
+    metrics.avg_ticket = metrics.total_revenue / metrics.total_orders;
+  }
+
+  const loadFromCache = useCallback(async (): Promise<boolean> => {
+    if (!user) return false;
+
+    // Load user cache
+    const { data: userCache } = await supabase
+      .from("ml_user_cache")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!userCache) return false;
+
+    const syncedAt = new Date(userCache.synced_at).getTime();
+    const isExpired = Date.now() - syncedAt > CACHE_TTL_MS;
+
+    // Load daily cache (last 30 days to cover all filters)
+    const cutoff30 = format(subDays(new Date(), 30), "yyyy-MM-dd");
+    const { data: dailyCache } = await supabase
+      .from("ml_daily_cache")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("date", cutoff30)
+      .order("date", { ascending: false });
+
+    if (!dailyCache || dailyCache.length === 0) return false;
+
+    setMlUser({
+      id: userCache.ml_user_id,
+      nickname: userCache.nickname,
+      country: userCache.country,
+      permalink: userCache.permalink,
+    });
+    setActiveListings(userCache.active_listings || 0);
+    setAllDaily(dailyCache.map((r: any) => ({
+      date: r.date,
+      total: Number(r.total_revenue),
+      approved: Number(r.approved_revenue),
+      qty: r.qty_orders,
+      cancelled: r.cancelled_orders || 0,
+      shipped: r.shipped_orders || 0,
+    })));
+    setConnected(true);
+
+    return !isExpired; // true = cache is fresh, no need to sync
+  }, [user]);
+
+  const syncFromAPI = useCallback(async () => {
     if (!user) return;
     setSyncing(true);
     try {
-      // 1. Get token from DB
       const { data: tokenRow } = await supabase
         .from("ml_tokens")
         .select("access_token, expires_at, refresh_token")
@@ -75,12 +134,9 @@ export default function MercadoLivre() {
 
       if (!tokenRow?.access_token) {
         setConnected(false);
-        setLoading(false);
-        setSyncing(false);
         return;
       }
 
-      // Check expiry — try refresh if needed
       let accessToken = tokenRow.access_token;
       const expiresAt = tokenRow.expires_at ? new Date(tokenRow.expires_at).getTime() : 0;
       if (expiresAt > 0 && expiresAt - Date.now() < 5 * 60 * 1000 && tokenRow.refresh_token) {
@@ -92,27 +148,45 @@ export default function MercadoLivre() {
 
       setConnected(true);
 
-      // 2. Call edge function
+      // Always fetch 30 days to populate full cache
       const { data, error } = await supabase.functions.invoke("mercado-libre-integration", {
-        body: { access_token: accessToken, days: period },
+        body: { access_token: accessToken, days: 30, user_id: user.id },
       });
 
-      setMetrics(data.metrics);
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Sync failed");
+
       setMlUser(data.user);
-      setDaily(data.daily_breakdown || []);
+      setActiveListings(data.metrics?.active_listings || 0);
+      setAllDaily((data.daily_breakdown || []).map((d: any) => ({
+        date: d.date,
+        total: d.total,
+        approved: d.approved,
+        qty: d.qty,
+        cancelled: d.cancelled || 0,
+        shipped: d.shipped || 0,
+      })));
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     } finally {
       setSyncing(false);
-      setLoading(false);
     }
-  }, [user, toast, period]);
+  }, [user, toast]);
 
+  // Initial load: cache first, then API if needed
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!user || cacheLoadedRef.current) return;
+    cacheLoadedRef.current = true;
 
-  // Empty state
+    (async () => {
+      const cacheFresh = await loadFromCache();
+      setLoading(false);
+      if (!cacheFresh) {
+        await syncFromAPI();
+      }
+    })();
+  }, [user, loadFromCache, syncFromAPI]);
+
   if (!loading && !connected) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -163,76 +237,25 @@ export default function MercadoLivre() {
               </a>
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={syncing}>
+          <Button variant="outline" size="sm" onClick={syncFromAPI} disabled={syncing}>
             <RefreshCw className={`w-4 h-4 mr-1 ${syncing ? "animate-spin" : ""}`} /> Sincronizar
           </Button>
         </div>
       </div>
 
-      {/* KPIs - Row 1: 3 cards */}
+      {/* KPIs - Row 1 */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KPICard
-          title="Receita Total"
-          value={metrics ? currencyFmt(metrics.total_revenue) : "—"}
-          icon={<DollarSign className="w-5 h-5" />}
-          variant="info"
-          loading={loading}
-          refreshing={syncing}
-          subtitle={`Últimos ${period} dias`}
-        />
-        <KPICard
-          title="Receita Aprovada"
-          value={metrics ? currencyFmt(metrics.approved_revenue) : "—"}
-          icon={<TrendingUp className="w-5 h-5" />}
-          variant="success"
-          loading={loading}
-          refreshing={syncing}
-          subtitle={`Últimos ${period} dias`}
-        />
-        <KPICard
-          title="Total de Pedidos"
-          value={metrics ? String(metrics.total_orders) : "—"}
-          icon={<ShoppingCart className="w-5 h-5" />}
-          variant="purple"
-          loading={loading}
-          refreshing={syncing}
-        />
+        <KPICard title="Receita Total" value={metrics ? currencyFmt(metrics.total_revenue) : "—"} icon={<DollarSign className="w-5 h-5" />} variant="info" loading={loading} refreshing={syncing} subtitle={`Últimos ${period} dias`} />
+        <KPICard title="Receita Aprovada" value={metrics ? currencyFmt(metrics.approved_revenue) : "—"} icon={<TrendingUp className="w-5 h-5" />} variant="success" loading={loading} refreshing={syncing} subtitle={`Últimos ${period} dias`} />
+        <KPICard title="Total de Pedidos" value={metrics ? String(metrics.total_orders) : "—"} icon={<ShoppingCart className="w-5 h-5" />} variant="purple" loading={loading} refreshing={syncing} />
       </div>
 
-      {/* KPIs - Row 2: 4 cards */}
+      {/* KPIs - Row 2 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          title="Ticket Médio"
-          value={metrics ? currencyFmt(metrics.avg_ticket) : "—"}
-          icon={<Tag className="w-5 h-5" />}
-          variant="orange"
-          loading={loading}
-          refreshing={syncing}
-        />
-        <KPICard
-          title="Anúncios Ativos"
-          value={metrics ? String(metrics.active_listings) : "—"}
-          icon={<Megaphone className="w-5 h-5" />}
-          variant="neutral"
-          loading={loading}
-          refreshing={syncing}
-        />
-        <KPICard
-          title="Pedidos Enviados"
-          value={metrics ? String(metrics.shipped_orders) : "—"}
-          icon={<PackageCheck className="w-5 h-5" />}
-          variant="success"
-          loading={loading}
-          refreshing={syncing}
-        />
-        <KPICard
-          title="Pedidos Cancelados"
-          value={metrics ? String(metrics.cancelled_orders) : "—"}
-          icon={<PackageX className="w-5 h-5" />}
-          variant="danger"
-          loading={loading}
-          refreshing={syncing}
-        />
+        <KPICard title="Ticket Médio" value={metrics ? currencyFmt(metrics.avg_ticket) : "—"} icon={<Tag className="w-5 h-5" />} variant="orange" loading={loading} refreshing={syncing} />
+        <KPICard title="Anúncios Ativos" value={metrics ? String(metrics.active_listings) : "—"} icon={<Megaphone className="w-5 h-5" />} variant="neutral" loading={loading} refreshing={syncing} />
+        <KPICard title="Pedidos Enviados" value={metrics ? String(metrics.shipped_orders) : "—"} icon={<PackageCheck className="w-5 h-5" />} variant="success" loading={loading} refreshing={syncing} />
+        <KPICard title="Pedidos Cancelados" value={metrics ? String(metrics.cancelled_orders) : "—"} icon={<PackageX className="w-5 h-5" />} variant="danger" loading={loading} refreshing={syncing} />
       </div>
 
       {/* Chart */}
@@ -256,34 +279,11 @@ export default function MercadoLivre() {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(210,10%,90%)" />
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="hsl(217,5%,45%)" />
-                <YAxis
-                  tick={{ fontSize: 12 }}
-                  stroke="hsl(217,5%,45%)"
-                  tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`}
-                />
-                <RechartsTooltip
-                  formatter={(value: number) => currencyFmt(value)}
-                  contentStyle={{
-                    borderRadius: 12,
-                    border: "none",
-                    boxShadow: "0 4px 20px rgba(0,0,0,.1)",
-                  }}
-                />
+                <YAxis tick={{ fontSize: 12 }} stroke="hsl(217,5%,45%)" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
+                <RechartsTooltip formatter={(value: number) => currencyFmt(value)} contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 20px rgba(0,0,0,.1)" }} />
                 <Legend />
-                <Area
-                  type="monotone"
-                  dataKey="Venda Total"
-                  stroke="hsl(217,70%,45%)"
-                  fill="url(#mlTotal)"
-                  strokeWidth={2}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="Venda Aprovada"
-                  stroke="hsl(142,70%,45%)"
-                  fill="url(#mlApproved)"
-                  strokeWidth={2}
-                />
+                <Area type="monotone" dataKey="Venda Total" stroke="hsl(217,70%,45%)" fill="url(#mlTotal)" strokeWidth={2} />
+                <Area type="monotone" dataKey="Venda Aprovada" stroke="hsl(142,70%,45%)" fill="url(#mlApproved)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
@@ -309,9 +309,7 @@ export default function MercadoLivre() {
               <TableBody>
                 {daily.map((d) => (
                   <TableRow key={d.date}>
-                    <TableCell>
-                      {format(parseISO(d.date), "dd/MM/yyyy", { locale: ptBR })}
-                    </TableCell>
+                    <TableCell>{format(parseISO(d.date), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                     <TableCell className="text-right">{d.qty}</TableCell>
                     <TableCell className="text-right">{currencyFmt(d.total)}</TableCell>
                     <TableCell className="text-right">{currencyFmt(d.approved)}</TableCell>
