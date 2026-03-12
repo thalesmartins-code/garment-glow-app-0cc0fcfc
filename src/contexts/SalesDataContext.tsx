@@ -41,6 +41,7 @@ interface SalesDataContextType {
 }
 
 const QUANTITIES_STORAGE_KEY = "marketplace_quantities";
+const LAST_SYNCED_KEY = "sales_last_synced_at";
 
 const SalesDataContext = createContext<SalesDataContextType | undefined>(undefined);
 
