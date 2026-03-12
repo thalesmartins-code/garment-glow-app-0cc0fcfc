@@ -122,7 +122,6 @@ export default function MLProdutos() {
   if (hasToken === false) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Produtos" subtitle="Mercado Livre" />
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <Plug className="w-12 h-12 mb-4 text-muted-foreground/40" />
