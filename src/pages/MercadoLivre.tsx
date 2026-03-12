@@ -201,7 +201,6 @@ export default function MercadoLivre() {
     cacheLoadedRef.current = true;
 
     (async () => {
-      // First check if user has a token at all
       const { data: tokenRow } = await supabase
         .from("ml_tokens")
         .select("access_token")
@@ -214,17 +213,11 @@ export default function MercadoLivre() {
         return;
       }
 
-      // Token exists — user is connected
       setConnected(true);
-
-      const cacheFresh = await loadFromCache();
+      await loadFromCache();
       setLoading(false);
-
-      if (!cacheFresh) {
-        await syncFromAPI();
-      }
     })();
-  }, [user, loadFromCache, syncFromAPI]);
+  }, [user, loadFromCache]);
 
   if (!loading && !connected) {
     return (
