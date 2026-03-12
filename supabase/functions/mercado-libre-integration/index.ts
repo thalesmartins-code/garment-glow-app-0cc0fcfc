@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,10 +24,6 @@ async function mlFetch(path: string, accessToken: string) {
   return data;
 }
 
-/**
- * Fetch all orders for a date range using offset pagination.
- * Stops at 10k offset limit (safe for daily/weekly chunks).
- */
 async function fetchOrdersChunk(
   sellerId: number,
   dateFrom: string,
@@ -57,7 +54,7 @@ serve(async (req) => {
   }
 
   try {
-    const { access_token, days = 30 } = await req.json();
+    const { access_token, days = 30, user_id } = await req.json();
     const periodDays = Math.min(Math.max(Number(days) || 30, 1), 90);
 
     if (!access_token) {
@@ -67,12 +64,17 @@ serve(async (req) => {
       );
     }
 
+    // Create supabase admin client for cache writes
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
     // 1. Get user info
     const user = await mlFetch("/users/me", access_token);
     const sellerId = user.id;
 
     // 2. Split period into weekly chunks and fetch sequentially
-    // This avoids WORKER_LIMIT by not overloading memory/CPU
     const now = new Date();
     const CHUNK_DAYS = 7;
     const chunks: Array<{ from: string; to: string }> = [];
@@ -114,7 +116,7 @@ serve(async (req) => {
     let approvedRevenue = 0;
     let cancelledOrders = 0;
     let shippedOrders = 0;
-    const dailySales: Record<string, { total: number; approved: number; qty: number }> = {};
+    const dailySales: Record<string, { total: number; approved: number; qty: number; cancelled: number; shipped: number }> = {};
 
     for (const order of orders) {
       const amount = order.total_amount || 0;
@@ -135,12 +137,18 @@ serve(async (req) => {
 
       if (date) {
         if (!dailySales[date]) {
-          dailySales[date] = { total: 0, approved: 0, qty: 0 };
+          dailySales[date] = { total: 0, approved: 0, qty: 0, cancelled: 0, shipped: 0 };
         }
         dailySales[date].total += amount;
         dailySales[date].qty += 1;
         if (status === "paid" || status === "confirmed") {
           dailySales[date].approved += amount;
+        }
+        if (status === "cancelled") {
+          dailySales[date].cancelled += 1;
+        }
+        if (order.shipping?.status === "shipped" || order.shipping?.status === "delivered") {
+          dailySales[date].shipped += 1;
         }
       }
     }
@@ -157,7 +165,49 @@ serve(async (req) => {
       // non-critical
     }
 
-    // 5. Build daily breakdown
+    // 5. Save to cache if user_id provided
+    if (user_id) {
+      try {
+        // Upsert daily cache
+        const dailyRows = Object.entries(dailySales).map(([date, data]) => ({
+          user_id,
+          date,
+          total_revenue: data.total,
+          approved_revenue: data.approved,
+          qty_orders: data.qty,
+          cancelled_orders: data.cancelled,
+          shipped_orders: data.shipped,
+          synced_at: new Date().toISOString(),
+        }));
+
+        if (dailyRows.length > 0) {
+          const { error: cacheErr } = await supabaseAdmin
+            .from("ml_daily_cache")
+            .upsert(dailyRows, { onConflict: "user_id,date" });
+          if (cacheErr) console.error("Cache upsert error:", cacheErr);
+        }
+
+        // Upsert user cache
+        const { error: userCacheErr } = await supabaseAdmin
+          .from("ml_user_cache")
+          .upsert({
+            user_id,
+            ml_user_id: user.id,
+            nickname: user.nickname,
+            country: user.country_id,
+            permalink: user.permalink,
+            active_listings: activeListings,
+            synced_at: new Date().toISOString(),
+          }, { onConflict: "user_id" });
+        if (userCacheErr) console.error("User cache upsert error:", userCacheErr);
+
+        console.log(`Cache updated: ${dailyRows.length} daily rows, user cache saved`);
+      } catch (cacheError) {
+        console.error("Cache save error:", cacheError);
+      }
+    }
+
+    // 6. Build daily breakdown
     const dailyBreakdown = Object.entries(dailySales)
       .map(([date, data]) => ({ date, ...data }))
       .sort((a, b) => b.date.localeCompare(a.date));
