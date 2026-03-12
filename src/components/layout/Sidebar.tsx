@@ -7,10 +7,16 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   AreaChart,
   ShieldCheck,
   Plug,
   Store,
+  LayoutDashboard,
+  Package,
+  ShoppingBag,
+  ClipboardList,
+  Megaphone,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { canAccess } from "@/config/roleAccess";
@@ -20,6 +26,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const baseNavItems = [
   { icon: BarChart3, label: "Dashboard", path: "/" },
@@ -27,7 +38,14 @@ const baseNavItems = [
   { icon: FileUp, label: "Importação", path: "/importacao" },
   { icon: Users, label: "Sellers", path: "/sellers" },
   { icon: Plug, label: "Integrações", path: "/integracoes" },
-  { icon: Store, label: "Mercado Livre", path: "/mercado-livre" },
+];
+
+const mlSubItems = [
+  { icon: LayoutDashboard, label: "Dashboard", path: "/mercado-livre" },
+  { icon: Package, label: "Estoque", path: "/mercado-livre/estoque" },
+  { icon: ShoppingBag, label: "Produtos", path: "/mercado-livre/produtos" },
+  { icon: ClipboardList, label: "Pedidos", path: "/mercado-livre/pedidos" },
+  { icon: Megaphone, label: "Anúncios", path: "/mercado-livre/anuncios" },
 ];
 
 export function Sidebar() {
