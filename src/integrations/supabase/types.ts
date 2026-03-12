@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      ml_daily_cache: {
+        Row: {
+          approved_revenue: number
+          cancelled_orders: number
+          date: string
+          id: string
+          qty_orders: number
+          shipped_orders: number
+          synced_at: string
+          total_revenue: number
+          user_id: string
+        }
+        Insert: {
+          approved_revenue?: number
+          cancelled_orders?: number
+          date: string
+          id?: string
+          qty_orders?: number
+          shipped_orders?: number
+          synced_at?: string
+          total_revenue?: number
+          user_id: string
+        }
+        Update: {
+          approved_revenue?: number
+          cancelled_orders?: number
+          date?: string
+          id?: string
+          qty_orders?: number
+          shipped_orders?: number
+          synced_at?: string
+          total_revenue?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       ml_tokens: {
         Row: {
           access_token: string | null
@@ -50,6 +86,36 @@ export type Database = {
           token_type?: string | null
           updated_at?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      ml_user_cache: {
+        Row: {
+          active_listings: number
+          country: string | null
+          ml_user_id: number | null
+          nickname: string | null
+          permalink: string | null
+          synced_at: string
+          user_id: string
+        }
+        Insert: {
+          active_listings?: number
+          country?: string | null
+          ml_user_id?: number | null
+          nickname?: string | null
+          permalink?: string | null
+          synced_at?: string
+          user_id: string
+        }
+        Update: {
+          active_listings?: number
+          country?: string | null
+          ml_user_id?: number | null
+          nickname?: string | null
+          permalink?: string | null
+          synced_at?: string
+          user_id?: string
         }
         Relationships: []
       }
