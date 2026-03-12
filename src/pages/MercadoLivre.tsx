@@ -247,6 +247,9 @@ export default function MercadoLivre() {
           <p className="text-sm text-muted-foreground">
             {mlUser ? `Vendedor: ${mlUser.nickname}` : "Dashboard de vendas"}
           </p>
+          <p className="text-xs text-muted-foreground/70">
+            {lastSyncedAt ? `Última sinc: ${lastSyncedAt}` : "Nunca sincronizado"}
+          </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center rounded-lg border border-border bg-muted/30 p-0.5">
