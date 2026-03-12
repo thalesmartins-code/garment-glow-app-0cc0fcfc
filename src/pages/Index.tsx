@@ -4,6 +4,7 @@ import { FilterBar } from "@/components/dashboard/FilterBar";
 import { SalesTable } from "@/components/dashboard/SalesTable";
 import { useSeller } from "@/contexts/SellerContext";
 import { useSellerSalesData } from "@/hooks/useSellerSalesData";
+import { useSalesData } from "@/contexts/SalesDataContext";
 import { useMemo, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
