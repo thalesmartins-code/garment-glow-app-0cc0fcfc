@@ -6,9 +6,11 @@ import { KPICard } from "@/components/dashboard/KPICard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HistoricalSyncModal } from "@/components/mercadolivre/HistoricalSyncModal";
 import {
-  DollarSign, ShoppingCart, TrendingUp, Tag, Megaphone, PackageCheck, PackageX, RefreshCw, ExternalLink, Plug,
+  DollarSign, ShoppingCart, TrendingUp, Tag, Megaphone, PackageCheck, PackageX, RefreshCw, ExternalLink, Plug, CalendarIcon,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
@@ -16,6 +18,7 @@ import {
 import { format, parseISO, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface MLUser {
   id: number;
@@ -40,7 +43,10 @@ const PERIOD_OPTIONS = [
   { label: "7 dias", value: 7 },
   { label: "15 dias", value: 15 },
   { label: "30 dias", value: 30 },
+  { label: "Personalizado", value: 0 },
 ] as const;
+
+type DateRange = { from: Date; to: Date } | null;
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -55,13 +61,23 @@ export default function MercadoLivre() {
   const [allDaily, setAllDaily] = useState<DailyBreakdown[]>([]);
   const [activeListings, setActiveListings] = useState(0);
   const [period, setPeriod] = useState(7);
+  const [customRange, setCustomRange] = useState<DateRange>(null);
   const cacheLoadedRef = useRef(false);
 
-  // Filter daily data locally based on period
+  // Filter daily data locally based on period or custom range
   const daily = allDaily.filter((d) => {
-    const cutoff = format(subDays(new Date(), period), "yyyy-MM-dd");
+    if (period === 0 && customRange) {
+      const from = format(customRange.from, "yyyy-MM-dd");
+      const to = format(customRange.to, "yyyy-MM-dd");
+      return d.date >= from && d.date <= to;
+    }
+    const cutoff = format(subDays(new Date(), period || 7), "yyyy-MM-dd");
     return d.date >= cutoff;
   });
+
+  const periodLabel = period === 0 && customRange
+    ? `${format(customRange.from, "dd/MM/yy")} – ${format(customRange.to, "dd/MM/yy")}`
+    : `Últimos ${period} dias`;
 
   // Compute metrics from filtered daily data
   const metrics = daily.length > 0 ? {
@@ -93,14 +109,13 @@ export default function MercadoLivre() {
     const syncedAt = new Date(userCache.synced_at).getTime();
     const isExpired = Date.now() - syncedAt > CACHE_TTL_MS;
 
-    // Load daily cache (last 30 days to cover all filters)
-    const cutoff30 = format(subDays(new Date(), 30), "yyyy-MM-dd");
+    // Load all daily cache (no date limit — includes historical imports)
     const { data: dailyCache } = await supabase
       .from("ml_daily_cache")
       .select("*")
       .eq("user_id", user.id)
-      .gte("date", cutoff30)
-      .order("date", { ascending: false });
+      .order("date", { ascending: false })
+      .limit(1000);
 
     if (!dailyCache || dailyCache.length === 0) return false;
 
@@ -224,7 +239,7 @@ export default function MercadoLivre() {
             {mlUser ? `Vendedor: ${mlUser.nickname}` : "Dashboard de vendas"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center rounded-lg border border-border bg-muted/30 p-0.5">
             {PERIOD_OPTIONS.map((opt) => (
               <Button
@@ -232,12 +247,46 @@ export default function MercadoLivre() {
                 variant={period === opt.value ? "default" : "ghost"}
                 size="sm"
                 className="h-7 px-3 text-xs"
-                onClick={() => setPeriod(opt.value)}
+                onClick={() => {
+                  setPeriod(opt.value);
+                  if (opt.value !== 0) setCustomRange(null);
+                }}
               >
-                {opt.label}
+                {opt.value === 0 ? (
+                  <><CalendarIcon className="w-3 h-3 mr-1" />{opt.label}</>
+                ) : opt.label}
               </Button>
             ))}
           </div>
+          {period === 0 && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("h-7 text-xs", !customRange && "text-muted-foreground")}>
+                  <CalendarIcon className="w-3.5 h-3.5 mr-1" />
+                  {customRange
+                    ? `${format(customRange.from, "dd/MM/yy")} – ${format(customRange.to, "dd/MM/yy")}`
+                    : "Selecionar período"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  selected={customRange ? { from: customRange.from, to: customRange.to } : undefined}
+                  onSelect={(range) => {
+                    if (range?.from && range?.to) {
+                      setCustomRange({ from: range.from, to: range.to });
+                    } else if (range?.from) {
+                      setCustomRange({ from: range.from, to: range.from });
+                    }
+                  }}
+                  disabled={(date) => date > new Date()}
+                  numberOfMonths={2}
+                  locale={ptBR}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
           {mlUser?.permalink && (
             <Button variant="outline" size="sm" asChild>
               <a href={mlUser.permalink} target="_blank" rel="noopener noreferrer">
@@ -254,8 +303,8 @@ export default function MercadoLivre() {
 
       {/* KPIs - Row 1 */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KPICard title="Receita Total" value={metrics ? currencyFmt(metrics.total_revenue) : "—"} icon={<DollarSign className="w-5 h-5" />} variant="info" loading={loading} refreshing={syncing} subtitle={`Últimos ${period} dias`} />
-        <KPICard title="Receita Aprovada" value={metrics ? currencyFmt(metrics.approved_revenue) : "—"} icon={<TrendingUp className="w-5 h-5" />} variant="success" loading={loading} refreshing={syncing} subtitle={`Últimos ${period} dias`} />
+        <KPICard title="Receita Total" value={metrics ? currencyFmt(metrics.total_revenue) : "—"} icon={<DollarSign className="w-5 h-5" />} variant="info" loading={loading} refreshing={syncing} subtitle={periodLabel} />
+        <KPICard title="Receita Aprovada" value={metrics ? currencyFmt(metrics.approved_revenue) : "—"} icon={<TrendingUp className="w-5 h-5" />} variant="success" loading={loading} refreshing={syncing} subtitle={periodLabel} />
         <KPICard title="Total de Pedidos" value={metrics ? String(metrics.total_orders) : "—"} icon={<ShoppingCart className="w-5 h-5" />} variant="purple" loading={loading} refreshing={syncing} />
       </div>
 
@@ -271,7 +320,7 @@ export default function MercadoLivre() {
       {chartData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Vendas Diárias — Últimos {period} dias</CardTitle>
+            <CardTitle className="text-base">Vendas Diárias — {periodLabel}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={320}>
