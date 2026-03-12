@@ -7,6 +7,7 @@ type CardVariant = "default" | "success" | "warning" | "danger" | "info" | "neut
 
 interface KPICardProps {
   title: string;
+  refreshing?: boolean;
   value: string;
   rawValue?: number;
   subtitle?: string;
