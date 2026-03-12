@@ -392,6 +392,7 @@ export function SalesDataProvider({ children }: { children: React.ReactNode }) {
         findDuplicates,
         isLoading,
         refreshData,
+        lastSyncedAt,
         getMarketplaceQuantity,
         updateMarketplaceQuantity,
       }}
