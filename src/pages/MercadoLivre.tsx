@@ -46,7 +46,7 @@ const QUICK_RANGES = [
   { label: "30 dias", value: 30 },
 ] as const;
 
-type DateRange = { from: Date; to: Date } | null;
+type DateRange = { from: Date; to?: Date } | null;
 
 const LAST_ML_SYNC_KEY = "ml_last_synced_at";
 
@@ -81,17 +81,19 @@ export default function MercadoLivre() {
 
   // Filter daily data locally based on period or custom range (UTC-based)
   const daily = allDaily.filter((d) => {
-    if (customRange) {
-      const from = format(customRange.from, "yyyy-MM-dd");
-      const to = format(customRange.to, "yyyy-MM-dd");
+    if (customRange?.from) {
+      const from = format(startOfDay(customRange.from), "yyyy-MM-dd");
+      const to = format(startOfDay(customRange.to ?? customRange.from), "yyyy-MM-dd");
       return d.date >= from && d.date <= to;
     }
     const cutoff = cutoffDateStr(period);
     return d.date >= cutoff;
   });
 
-  const periodLabel = customRange
-    ? `${format(customRange.from, "dd/MM/yy")} – ${format(customRange.to, "dd/MM/yy")}`
+  const periodLabel = customRange?.from
+    ? customRange.to
+      ? `${format(customRange.from, "dd/MM/yy")} – ${format(customRange.to, "dd/MM/yy")}`
+      : `Início: ${format(customRange.from, "dd/MM/yy")}`
     : period === 0 ? "Hoje" : `Últimos ${period} dias`;
 
   // Compute metrics from filtered daily data
@@ -359,17 +361,22 @@ export default function MercadoLivre() {
               </div>
               <Calendar
                 mode="range"
-                selected={customRange ? { from: customRange.from, to: customRange.to } : undefined}
-              onSelect={(range) => {
-                  if (range?.from && range?.to) {
-                    setCustomRange({ from: range.from, to: range.to });
+                selected={customRange ?? undefined}
+                onSelect={(range) => {
+                  if (!range?.from) {
+                    setCustomRange(null);
+                    return;
+                  }
+
+                  const normalizedRange = {
+                    from: startOfDay(range.from),
+                    to: range.to ? startOfDay(range.to) : undefined,
+                  };
+
+                  setCustomRange(normalizedRange);
+
+                  if (normalizedRange.to) {
                     setPopoverOpen(false);
-                  } else if (range?.from) {
-                    setCustomRange(null);
-                    // Use setTimeout so DayPicker processes the reset before we set the new partial range
-                    setTimeout(() => setCustomRange({ from: range.from, to: range.from }), 0);
-                  } else {
-                    setCustomRange(null);
                   }
                 }}
                 disabled={(date) => date > new Date()}
