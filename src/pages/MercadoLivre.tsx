@@ -361,17 +361,22 @@ export default function MercadoLivre() {
               </div>
               <Calendar
                 mode="range"
-                selected={customRange ? { from: customRange.from, to: customRange.to } : undefined}
-              onSelect={(range) => {
-                  if (range?.from && range?.to) {
-                    setCustomRange({ from: range.from, to: range.to });
+                selected={customRange ?? undefined}
+                onSelect={(range) => {
+                  if (!range?.from) {
+                    setCustomRange(null);
+                    return;
+                  }
+
+                  const normalizedRange = {
+                    from: startOfDay(range.from),
+                    to: range.to ? startOfDay(range.to) : undefined,
+                  };
+
+                  setCustomRange(normalizedRange);
+
+                  if (normalizedRange.to) {
                     setPopoverOpen(false);
-                  } else if (range?.from) {
-                    setCustomRange(null);
-                    // Use setTimeout so DayPicker processes the reset before we set the new partial range
-                    setTimeout(() => setCustomRange({ from: range.from, to: range.from }), 0);
-                  } else {
-                    setCustomRange(null);
                   }
                 }}
                 disabled={(date) => date > new Date()}
