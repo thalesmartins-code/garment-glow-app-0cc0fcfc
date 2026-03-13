@@ -90,8 +90,10 @@ export default function MercadoLivre() {
     return d.date >= cutoff;
   });
 
-  const periodLabel = customRange
-    ? `${format(customRange.from, "dd/MM/yy")} – ${format(customRange.to, "dd/MM/yy")}`
+  const periodLabel = customRange?.from
+    ? customRange.to
+      ? `${format(customRange.from, "dd/MM/yy")} – ${format(customRange.to, "dd/MM/yy")}`
+      : `Início: ${format(customRange.from, "dd/MM/yy")}`
     : period === 0 ? "Hoje" : `Últimos ${period} dias`;
 
   // Compute metrics from filtered daily data
