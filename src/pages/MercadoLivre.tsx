@@ -335,7 +335,10 @@ export default function MercadoLivre() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+          <Popover open={popoverOpen} onOpenChange={(open) => {
+            setPopoverOpen(open);
+            if (open) setPendingRange(customRange);
+          }}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="h-7 text-xs">
                 <CalendarIcon className="w-3.5 h-3.5 mr-1" />
@@ -353,6 +356,7 @@ export default function MercadoLivre() {
                     onClick={() => {
                       setPeriod(opt.value);
                       setCustomRange(null);
+                      setPendingRange(null);
                       setPopoverOpen(false);
                     }}
                   >
@@ -362,29 +366,52 @@ export default function MercadoLivre() {
               </div>
               <Calendar
                 mode="range"
-                selected={customRange ?? undefined}
+                selected={pendingRange ?? undefined}
                 onSelect={(range) => {
                   if (!range?.from) {
-                    setCustomRange(null);
+                    setPendingRange(null);
                     return;
                   }
-
-                  const normalizedRange = {
+                  setPendingRange({
                     from: startOfDay(range.from),
                     to: range.to ? startOfDay(range.to) : undefined,
-                  };
-
-                  setCustomRange(normalizedRange);
-
-                  if (normalizedRange.to) {
-                    setPopoverOpen(false);
-                  }
+                  });
                 }}
                 disabled={(date) => date > new Date()}
                 numberOfMonths={2}
                 locale={ptBR}
                 className="pointer-events-auto"
               />
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-muted-foreground"
+                  onClick={() => {
+                    setCustomRange(null);
+                    setPendingRange(null);
+                    setPeriod(0);
+                    setPopoverOpen(false);
+                  }}
+                >
+                  <X className="w-3.5 h-3.5 mr-1" />
+                  Limpar
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-7 text-xs"
+                  disabled={!pendingRange?.from || !pendingRange?.to}
+                  onClick={() => {
+                    if (pendingRange?.from && pendingRange?.to) {
+                      setCustomRange(pendingRange);
+                      setPopoverOpen(false);
+                    }
+                  }}
+                >
+                  <Check className="w-3.5 h-3.5 mr-1" />
+                  Confirmar
+                </Button>
+              </div>
             </PopoverContent>
           </Popover>
           {mlUser?.permalink && (
