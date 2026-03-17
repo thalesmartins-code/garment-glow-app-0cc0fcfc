@@ -48,7 +48,7 @@ async function fetchOrdersChunk(
   return allOrders;
 }
 
-/** Fetch visits per day using the ML items_visits API */
+/** Fetch visits per day using the ML time_window endpoint */
 async function fetchVisits(
   sellerId: number,
   dateFrom: string,
@@ -57,26 +57,24 @@ async function fetchVisits(
 ): Promise<Record<string, number>> {
   const visitsMap: Record<string, number> = {};
   try {
+    const from = new Date(`${dateFrom}T00:00:00.000Z`);
+    const to = new Date(`${dateTo}T00:00:00.000Z`);
+    const diffMs = to.getTime() - from.getTime();
+    const last = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+
     const data = await mlFetch(
-      `/users/${sellerId}/items_visits?date_from=${dateFrom}&date_to=${dateTo}`,
+      `/users/${sellerId}/items_visits/time_window?last=${last}&unit=day&ending=${dateTo}`,
       accessToken
     );
-    // API returns array of { date, total } or similar structure
-    if (Array.isArray(data)) {
-      for (const entry of data) {
-        if (entry.date && typeof entry.total === "number") {
-          visitsMap[entry.date.substring(0, 10)] = entry.total;
-        }
-      }
-    } else if (data.results && Array.isArray(data.results)) {
+
+    if (data.results && Array.isArray(data.results)) {
       for (const entry of data.results) {
         if (entry.date && typeof entry.total === "number") {
           visitsMap[entry.date.substring(0, 10)] = entry.total;
         }
       }
-    } else if (typeof data.total_visits === "number") {
-      // Fallback: single total — can't split by day
-      console.log(`Visits API returned total_visits=${data.total_visits} (no daily breakdown)`);
+    } else {
+      console.log("Visits API returned no daily results");
     }
   } catch (err) {
     console.error("Visits API error (non-critical):", err);
@@ -233,11 +231,12 @@ serve(async (req) => {
     // 4. Count unique buyers per day
     const dailyBuyers = countUniqueBuyers(orders);
     for (const [date, count] of Object.entries(dailyBuyers)) {
-      if (dailySales[date]) {
-        dailySales[date].unique_buyers = count;
+      if (!dailySales[date]) {
+        dailySales[date] = { total: 0, approved: 0, qty: 0, cancelled: 0, shipped: 0, unique_visits: 0, unique_buyers: 0 };
       }
+      dailySales[date].unique_buyers = count;
     }
-    const totalUniqueBuyers = new Set(orders.map(o => o.buyer?.id).filter(Boolean)).size;
+    const totalUniqueBuyers = new Set(orders.map((o) => o.buyer?.id).filter(Boolean)).size;
 
     // 5. Fetch visits
     const rangeFromStr = rangeStart.toISOString().substring(0, 10);
@@ -246,10 +245,13 @@ serve(async (req) => {
     let totalVisits = 0;
     for (const [date, visits] of Object.entries(dailyVisits)) {
       totalVisits += visits;
-      if (dailySales[date]) {
-        dailySales[date].unique_visits = visits;
+      if (!dailySales[date]) {
+        dailySales[date] = { total: 0, approved: 0, qty: 0, cancelled: 0, shipped: 0, unique_visits: 0, unique_buyers: 0 };
       }
+      dailySales[date].unique_visits = visits;
     }
+
+    console.log(`Unique buyers: ${totalUniqueBuyers}, daily visit rows: ${Object.keys(dailyVisits).length}, total visits: ${totalVisits}`);
 
     // 6. Get active listings count
     let activeListings = 0;
