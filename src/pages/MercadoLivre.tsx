@@ -163,6 +163,7 @@ export default function MercadoLivre() {
     : null;
 
   const isHourlyAvailable = period === 0 || !!singleDayRange;
+  const hourlyTargetDate = singleDayRange ?? (period === 0 ? todayUTC() : null);
   const activeFilterKey = customRange?.from
     ? `${format(startOfDay(customRange.from), "yyyy-MM-dd")}:${format(startOfDay(customRange.to ?? customRange.from), "yyyy-MM-dd")}`
     : `period:${period}`;
@@ -217,21 +218,23 @@ export default function MercadoLivre() {
   };
 
   const loadHourlyCache = useCallback(async () => {
-    if (!user) return [] as HourlyBreakdown[];
+    if (!user || !isHourlyAvailable || !hourlyTargetDate) {
+      setAllHourly([]);
+      return [] as HourlyBreakdown[];
+    }
 
     const { data } = await (supabase as any)
       .from("ml_hourly_cache")
       .select("*")
       .eq("user_id", user.id)
-      .gte("date", cutoffDateStr(7))
-      .order("date", { ascending: false })
+      .eq("date", hourlyTargetDate)
       .order("hour", { ascending: true })
-      .limit(500);
+      .limit(24);
 
     const mapped = (data || []).map(mapHourlyRow);
     setAllHourly(mapped);
     return mapped;
-  }, [user]);
+  }, [user, isHourlyAvailable, hourlyTargetDate]);
 
   const loadFromCache = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
@@ -422,13 +425,13 @@ export default function MercadoLivre() {
   }, [user, loadFromCache, loadHourlyCache]);
 
   useEffect(() => {
-    if (!user || !isHourlyAvailable) {
-      setAllHourly((current) => (current.length > 0 && !isHourlyAvailable ? [] : current));
+    if (!user) {
+      setAllHourly([]);
       return;
     }
 
     void loadHourlyCache();
-  }, [user, isHourlyAvailable, period, loadHourlyCache]);
+  }, [user, loadHourlyCache, activeFilterKey]);
 
   if (!loading && !connected) {
     return (
