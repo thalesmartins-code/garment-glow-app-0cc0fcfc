@@ -369,7 +369,6 @@ export default function MercadoLivre() {
       const hourlyData: HourlyBreakdown[] = (data.hourly_breakdown || []).map(mapHourlyRow);
 
       setMlUser(userInfo);
-      setActiveListings(listings);
       setAllDaily(dailyData);
       setAllHourly(hourlyData);
 
