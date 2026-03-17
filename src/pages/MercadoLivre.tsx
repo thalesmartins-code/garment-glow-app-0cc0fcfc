@@ -150,7 +150,7 @@ export default function MercadoLivre() {
   const [allHourly, setAllHourly] = useState<HourlyBreakdown[]>([]);
   const [period, setPeriod] = useState(0);
   const [customRange, setCustomRange] = useState<DateRange>(null);
-  const [chartMode, setChartMode] = useState<ChartMode>("daily");
+  const [chartMode, setChartMode] = useState<ChartMode>("hourly");
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [pendingRange, setPendingRange] = useState<DateRange>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(() => localStorage.getItem(LAST_ML_SYNC_KEY));
@@ -592,13 +592,6 @@ export default function MercadoLivre() {
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle className="text-base">{chartTitle}</CardTitle>
             <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant={chartMode === "daily" ? "default" : "outline"}
-                onClick={() => setChartMode("daily")}
-              >
-                Diário
-              </Button>
               {isHourlyAvailable && (
                 <Button
                   size="sm"
@@ -608,6 +601,13 @@ export default function MercadoLivre() {
                   <Clock3 className="mr-1 h-4 w-4" /> Venda / Hora
                 </Button>
               )}
+              <Button
+                size="sm"
+                variant={chartMode === "daily" ? "default" : "outline"}
+                onClick={() => setChartMode("daily")}
+              >
+                Diário
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
