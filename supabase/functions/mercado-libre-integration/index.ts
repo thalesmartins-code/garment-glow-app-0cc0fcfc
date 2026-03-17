@@ -231,11 +231,12 @@ serve(async (req) => {
     // 4. Count unique buyers per day
     const dailyBuyers = countUniqueBuyers(orders);
     for (const [date, count] of Object.entries(dailyBuyers)) {
-      if (dailySales[date]) {
-        dailySales[date].unique_buyers = count;
+      if (!dailySales[date]) {
+        dailySales[date] = { total: 0, approved: 0, qty: 0, cancelled: 0, shipped: 0, unique_visits: 0, unique_buyers: 0 };
       }
+      dailySales[date].unique_buyers = count;
     }
-    const totalUniqueBuyers = new Set(orders.map(o => o.buyer?.id).filter(Boolean)).size;
+    const totalUniqueBuyers = new Set(orders.map((o) => o.buyer?.id).filter(Boolean)).size;
 
     // 5. Fetch visits
     const rangeFromStr = rangeStart.toISOString().substring(0, 10);
@@ -244,9 +245,10 @@ serve(async (req) => {
     let totalVisits = 0;
     for (const [date, visits] of Object.entries(dailyVisits)) {
       totalVisits += visits;
-      if (dailySales[date]) {
-        dailySales[date].unique_visits = visits;
+      if (!dailySales[date]) {
+        dailySales[date] = { total: 0, approved: 0, qty: 0, cancelled: 0, shipped: 0, unique_visits: 0, unique_buyers: 0 };
       }
+      dailySales[date].unique_visits = visits;
     }
 
     // 6. Get active listings count
