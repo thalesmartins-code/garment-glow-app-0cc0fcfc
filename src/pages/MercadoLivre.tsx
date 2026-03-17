@@ -157,6 +157,8 @@ export default function MercadoLivre() {
       qty: r.qty_orders,
       cancelled: r.cancelled_orders || 0,
       shipped: r.shipped_orders || 0,
+      unique_visits: r.unique_visits || 0,
+      unique_buyers: r.unique_buyers || 0,
     })));
     setConnected(true);
     return true;
