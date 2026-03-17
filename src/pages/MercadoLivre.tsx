@@ -104,14 +104,15 @@ export default function MercadoLivre() {
     total_revenue: daily.reduce((s, d) => s + d.total, 0),
     approved_revenue: daily.reduce((s, d) => s + d.approved, 0),
     total_orders: daily.reduce((s, d) => s + d.qty, 0),
-    cancelled_orders: daily.reduce((s, d) => s + (d.cancelled || 0), 0),
-    shipped_orders: daily.reduce((s, d) => s + (d.shipped || 0), 0),
-    active_listings: activeListings,
+    unique_visits: daily.reduce((s, d) => s + (d.unique_visits || 0), 0),
+    unique_buyers: daily.reduce((s, d) => s + (d.unique_buyers || 0), 0),
     avg_ticket: 0,
+    conversion_rate: 0,
   } : null;
 
-  if (metrics && metrics.total_orders > 0) {
-    metrics.avg_ticket = metrics.total_revenue / metrics.total_orders;
+  if (metrics) {
+    if (metrics.total_orders > 0) metrics.avg_ticket = metrics.total_revenue / metrics.total_orders;
+    if (metrics.unique_visits > 0) metrics.conversion_rate = (metrics.unique_buyers / metrics.unique_visits) * 100;
   }
 
   // Totals for footer
