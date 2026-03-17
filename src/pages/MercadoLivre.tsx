@@ -34,6 +34,8 @@ interface DailyBreakdown {
   qty: number;
   cancelled: number;
   shipped: number;
+  unique_visits: number;
+  unique_buyers: number;
 }
 
 const currencyFmt = (v: number) =>
