@@ -251,6 +251,8 @@ serve(async (req) => {
       dailySales[date].unique_visits = visits;
     }
 
+    console.log(`Unique buyers: ${totalUniqueBuyers}, daily visit rows: ${Object.keys(dailyVisits).length}, total visits: ${totalVisits}`);
+
     // 6. Get active listings count
     let activeListings = 0;
     try {
