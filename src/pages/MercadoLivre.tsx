@@ -582,9 +582,6 @@ export default function MercadoLivre() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KPICard title="Ticket Médio" value={metrics ? metrics.avg_ticket.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "—"} icon={<Tag className="w-5 h-5" />} variant="orange" loading={loading} refreshing={syncing} />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KPICard title="Visitas Únicas" value={metrics ? metrics.unique_visits.toLocaleString("pt-BR") : "—"} icon={<Eye className="w-5 h-5" />} variant="neutral" loading={loading} refreshing={syncing} />
         <KPICard title="Total de Compradores" value={metrics ? metrics.unique_buyers.toLocaleString("pt-BR") : "—"} icon={<Users className="w-5 h-5" />} variant="success" loading={loading} refreshing={syncing} />
         <KPICard title="Conversão" value={metrics ? `${metrics.conversion_rate.toFixed(2)}%` : "—"} icon={<Percent className="w-5 h-5" />} variant="info" loading={loading} refreshing={syncing} />
