@@ -218,21 +218,23 @@ export default function MercadoLivre() {
   };
 
   const loadHourlyCache = useCallback(async () => {
-    if (!user) return [] as HourlyBreakdown[];
+    if (!user || !isHourlyAvailable || !hourlyTargetDate) {
+      setAllHourly([]);
+      return [] as HourlyBreakdown[];
+    }
 
     const { data } = await (supabase as any)
       .from("ml_hourly_cache")
       .select("*")
       .eq("user_id", user.id)
-      .gte("date", cutoffDateStr(7))
-      .order("date", { ascending: false })
+      .eq("date", hourlyTargetDate)
       .order("hour", { ascending: true })
-      .limit(500);
+      .limit(24);
 
     const mapped = (data || []).map(mapHourlyRow);
     setAllHourly(mapped);
     return mapped;
-  }, [user]);
+  }, [user, isHourlyAvailable, hourlyTargetDate]);
 
   const loadFromCache = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
