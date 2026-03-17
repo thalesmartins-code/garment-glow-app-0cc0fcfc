@@ -462,9 +462,9 @@ export default function MercadoLivre() {
       {/* KPIs - Row 2 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard title="Ticket Médio" value={metrics ? currencyFmt(metrics.avg_ticket) : "—"} icon={<Tag className="w-5 h-5" />} variant="orange" loading={loading} refreshing={syncing} />
-        <KPICard title="Anúncios Ativos" value={metrics ? String(metrics.active_listings) : "—"} icon={<Megaphone className="w-5 h-5" />} variant="neutral" loading={loading} refreshing={syncing} />
-        <KPICard title="Pedidos Enviados" value={metrics ? String(metrics.shipped_orders) : "—"} icon={<PackageCheck className="w-5 h-5" />} variant="success" loading={loading} refreshing={syncing} />
-        <KPICard title="Pedidos Cancelados" value={metrics ? String(metrics.cancelled_orders) : "—"} icon={<PackageX className="w-5 h-5" />} variant="danger" loading={loading} refreshing={syncing} />
+        <KPICard title="Visitas Únicas" value={metrics ? metrics.unique_visits.toLocaleString("pt-BR") : "—"} icon={<Eye className="w-5 h-5" />} variant="neutral" loading={loading} refreshing={syncing} />
+        <KPICard title="Total de Compradores" value={metrics ? metrics.unique_buyers.toLocaleString("pt-BR") : "—"} icon={<Users className="w-5 h-5" />} variant="success" loading={loading} refreshing={syncing} />
+        <KPICard title="Conversão" value={metrics ? `${metrics.conversion_rate.toFixed(1)}%` : "—"} icon={<Percent className="w-5 h-5" />} variant="info" loading={loading} refreshing={syncing} />
       </div>
 
       {/* Chart */}
