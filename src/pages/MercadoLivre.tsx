@@ -293,6 +293,7 @@ export default function MercadoLivre() {
         total_revenue: d.total,
         approved_revenue: d.approved,
         qty_orders: d.qty,
+        units_sold: d.units || 0,
         cancelled_orders: d.cancelled || 0,
         shipped_orders: d.shipped || 0,
         unique_visits: d.unique_visits || 0,
