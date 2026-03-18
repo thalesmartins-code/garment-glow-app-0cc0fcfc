@@ -29,7 +29,7 @@ async function fetchOrdersChunk(
   dateFrom: string,
   dateTo: string,
   accessToken: string,
-  maxOrders = 5000,
+  maxOrders = 15000,
 ): Promise<any[]> {
   const PAGE_SIZE = 50;
   let allOrders: any[] = [];
@@ -43,6 +43,12 @@ async function fetchOrdersChunk(
     const total = data.paging?.total || 0;
     offset += PAGE_SIZE;
     if (results.length < PAGE_SIZE || offset >= total) break;
+  }
+
+  // Log truncation warning if we couldn't fetch all orders
+  const firstPageTotal = allOrders.length > 0 ? offset : 0;
+  if (offset >= 10000 || allOrders.length >= maxOrders) {
+    console.warn(`⚠️ TRUNCATION: fetched ${allOrders.length} orders but paging may have more. offset=${offset}, maxOrders=${maxOrders}`);
   }
 
   return allOrders;
@@ -140,7 +146,7 @@ serve(async (req) => {
       rangeStart.setHours(0, 0, 0, 0);
     }
 
-    const CHUNK_DAYS = 7;
+    const CHUNK_DAYS = 1;
     const chunks: Array<{ from: string; to: string }> = [];
     const totalMs = rangeEnd.getTime() - rangeStart.getTime();
     const totalDays = Math.ceil(totalMs / (1000 * 60 * 60 * 24));
