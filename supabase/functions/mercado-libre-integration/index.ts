@@ -236,10 +236,11 @@ serve(async (req) => {
       if (date && hour !== null && Number.isFinite(hour)) {
         const hourlyKey = `${date}-${String(hour).padStart(2, "0")}`;
         if (!hourlySales[hourlyKey]) {
-          hourlySales[hourlyKey] = { date, hour, total: 0, approved: 0, qty: 0 };
+          hourlySales[hourlyKey] = { date, hour, total: 0, approved: 0, qty: 0, units_sold: 0 };
         }
         hourlySales[hourlyKey].total += amount;
         hourlySales[hourlyKey].qty += 1;
+        hourlySales[hourlyKey].units_sold += orderUnits;
         if (status === "paid" || status === "confirmed") {
           hourlySales[hourlyKey].approved += amount;
         }
