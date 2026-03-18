@@ -290,6 +290,26 @@ export default function MercadoLivre() {
 
     setAllDaily(dailyCache.map(mapDailyRow));
     setConnected(true);
+
+    // Load product daily cache
+    const { data: productCache } = await (supabase as any)
+      .from("ml_product_daily_cache")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("revenue", { ascending: false })
+      .limit(1000);
+
+    if (productCache && productCache.length > 0) {
+      setAllProductSales(productCache.map((r: any) => ({
+        item_id: r.item_id,
+        date: r.date,
+        title: r.title || "",
+        thumbnail: r.thumbnail,
+        qty_sold: Number(r.qty_sold || 0),
+        revenue: Number(r.revenue || 0),
+      })));
+    }
+
     return true;
   }, [user]);
 
