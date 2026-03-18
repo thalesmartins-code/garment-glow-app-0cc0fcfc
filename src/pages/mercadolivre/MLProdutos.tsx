@@ -27,6 +27,7 @@ interface ProductItem {
   category_id: string | null;
   listing_type_id: string | null;
   health: number | null;
+  visits: number;
 }
 
 const currencyFmt = (v: number) =>
