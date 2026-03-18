@@ -193,6 +193,7 @@ serve(async (req) => {
     let shippedOrders = 0;
   const dailySales: Record<string, { total: number; approved: number; qty: number; units_sold: number; cancelled: number; shipped: number; unique_visits: number; unique_buyers: number }> = {};
   const hourlySales: Record<string, { date: string; hour: number; total: number; approved: number; qty: number; units_sold: number }> = {};
+  const productSales: Record<string, { item_id: string; date: string; title: string; thumbnail: string | null; qty_sold: number; revenue: number }> = {};
 
     for (const order of orders) {
       const amount = Number(order.total_amount || 0);
