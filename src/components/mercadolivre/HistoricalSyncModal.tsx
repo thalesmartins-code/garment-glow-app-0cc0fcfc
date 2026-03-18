@@ -12,6 +12,7 @@ interface DailyBreakdown {
   total: number;
   approved: number;
   qty: number;
+  units_sold: number;
   cancelled: number;
   shipped: number;
   unique_visits: number;
@@ -115,6 +116,7 @@ export function HistoricalSyncModal({ accessToken, onSyncComplete, saveToCache }
             total: Number(d.total ?? 0),
             approved: Number(d.approved ?? 0),
             qty: Number(d.qty ?? 0),
+            units_sold: Number(d.units_sold ?? d.qty ?? 0),
             cancelled: Number(d.cancelled || 0),
             shipped: Number(d.shipped || 0),
             unique_visits: Number(d.unique_visits || 0),

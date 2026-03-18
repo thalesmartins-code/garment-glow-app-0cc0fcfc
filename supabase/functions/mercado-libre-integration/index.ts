@@ -187,11 +187,12 @@ serve(async (req) => {
 
     let totalRevenue = 0;
     const totalOrders = orders.length;
+    let totalUnitsSold = 0;
     let approvedRevenue = 0;
     let cancelledOrders = 0;
     let shippedOrders = 0;
-    const dailySales: Record<string, { total: number; approved: number; qty: number; cancelled: number; shipped: number; unique_visits: number; unique_buyers: number }> = {};
-    const hourlySales: Record<string, { date: string; hour: number; total: number; approved: number; qty: number }> = {};
+  const dailySales: Record<string, { total: number; approved: number; qty: number; units_sold: number; cancelled: number; shipped: number; unique_visits: number; unique_buyers: number }> = {};
+  const hourlySales: Record<string, { date: string; hour: number; total: number; approved: number; qty: number; units_sold: number }> = {};
 
     for (const order of orders) {
       const amount = Number(order.total_amount || 0);
@@ -200,7 +201,11 @@ serve(async (req) => {
       const hour = dateCreated ? Number(dateCreated.substring(11, 13)) : null;
       const status = order.status;
 
+      // Count units sold (each different product in a cart = 1 sale)
+      const orderUnits = (order.order_items || []).reduce((sum: number, item: any) => sum + (Number(item.quantity) || 1), 0) || 1;
+
       totalRevenue += amount;
+      totalUnitsSold += orderUnits;
 
       if (status === "paid" || status === "confirmed") {
         approvedRevenue += amount;
@@ -214,10 +219,11 @@ serve(async (req) => {
 
       if (date) {
         if (!dailySales[date]) {
-          dailySales[date] = { total: 0, approved: 0, qty: 0, cancelled: 0, shipped: 0, unique_visits: 0, unique_buyers: 0 };
+          dailySales[date] = { total: 0, approved: 0, qty: 0, units_sold: 0, cancelled: 0, shipped: 0, unique_visits: 0, unique_buyers: 0 };
         }
         dailySales[date].total += amount;
         dailySales[date].qty += 1;
+        dailySales[date].units_sold += orderUnits;
         if (status === "paid" || status === "confirmed") {
           dailySales[date].approved += amount;
         }
@@ -232,10 +238,11 @@ serve(async (req) => {
       if (date && hour !== null && Number.isFinite(hour)) {
         const hourlyKey = `${date}-${String(hour).padStart(2, "0")}`;
         if (!hourlySales[hourlyKey]) {
-          hourlySales[hourlyKey] = { date, hour, total: 0, approved: 0, qty: 0 };
+          hourlySales[hourlyKey] = { date, hour, total: 0, approved: 0, qty: 0, units_sold: 0 };
         }
         hourlySales[hourlyKey].total += amount;
         hourlySales[hourlyKey].qty += 1;
+        hourlySales[hourlyKey].units_sold += orderUnits;
         if (status === "paid" || status === "confirmed") {
           hourlySales[hourlyKey].approved += amount;
         }
@@ -282,6 +289,7 @@ serve(async (req) => {
           total_revenue: data.total,
           approved_revenue: data.approved,
           qty_orders: data.qty,
+          units_sold: data.units_sold,
           cancelled_orders: data.cancelled,
           shipped_orders: data.shipped,
           unique_visits: data.unique_visits,
@@ -296,6 +304,7 @@ serve(async (req) => {
           total_revenue: data.total,
           approved_revenue: data.approved,
           qty_orders: data.qty,
+          units_sold: data.units_sold,
           synced_at: syncedAt,
         }));
 
@@ -357,6 +366,7 @@ serve(async (req) => {
         total_revenue: totalRevenue,
         approved_revenue: approvedRevenue,
         total_orders: totalOrders,
+        units_sold: totalUnitsSold,
         cancelled_orders: cancelledOrders,
         shipped_orders: shippedOrders,
         active_listings: activeListings,

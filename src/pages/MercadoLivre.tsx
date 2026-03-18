@@ -54,6 +54,7 @@ interface DailyBreakdown {
   total: number;
   approved: number;
   qty: number;
+  units_sold: number;
   cancelled: number;
   shipped: number;
   unique_visits: number;
@@ -101,6 +102,7 @@ function mapDailyRow(row: any): DailyBreakdown {
     total: Number(row.total_revenue ?? row.total ?? 0),
     approved: Number(row.approved_revenue ?? row.approved ?? 0),
     qty: Number(row.qty_orders ?? row.qty ?? 0),
+    units_sold: Number(row.units_sold ?? row.qty_orders ?? row.qty ?? 0),
     cancelled: Number(row.cancelled_orders ?? row.cancelled ?? 0),
     shipped: Number(row.shipped_orders ?? row.shipped ?? 0),
     unique_visits: Number(row.unique_visits ?? 0),
@@ -200,6 +202,7 @@ export default function MercadoLivre() {
     total_revenue: daily.reduce((s, d) => s + d.total, 0),
     approved_revenue: daily.reduce((s, d) => s + d.approved, 0),
     total_orders: daily.reduce((s, d) => s + d.qty, 0),
+    units_sold: daily.reduce((s, d) => s + d.units_sold, 0),
     unique_visits: daily.reduce((s, d) => s + (d.unique_visits || 0), 0),
     unique_buyers: daily.reduce((s, d) => s + (d.unique_buyers || 0), 0),
     avg_ticket: 0,
@@ -587,7 +590,7 @@ export default function MercadoLivre() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KPICard title="Receita Total" value={metrics ? currencyFmt(metrics.total_revenue) : "—"} icon={<DollarSign className="w-5 h-5" />} variant="info" loading={loading} refreshing={syncing} subtitle={periodLabel} />
         <KPICard title="Receita Aprovada" value={metrics ? currencyFmt(metrics.approved_revenue) : "—"} icon={<TrendingUp className="w-5 h-5" />} variant="success" loading={loading} refreshing={syncing} subtitle={periodLabel} />
-        <KPICard title="Total de Pedidos" value={metrics ? String(metrics.total_orders) : "—"} icon={<ShoppingCart className="w-5 h-5" />} variant="purple" loading={loading} refreshing={syncing} />
+        <KPICard title="Quantidade de Vendas" value={metrics ? String(metrics.units_sold) : "—"} icon={<ShoppingCart className="w-5 h-5" />} variant="purple" loading={loading} refreshing={syncing} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
