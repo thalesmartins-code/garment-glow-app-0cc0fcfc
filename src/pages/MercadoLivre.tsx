@@ -54,6 +54,7 @@ interface DailyBreakdown {
   total: number;
   approved: number;
   qty: number;
+  units: number;
   cancelled: number;
   shipped: number;
   unique_visits: number;
@@ -101,6 +102,7 @@ function mapDailyRow(row: any): DailyBreakdown {
     total: Number(row.total_revenue ?? row.total ?? 0),
     approved: Number(row.approved_revenue ?? row.approved ?? 0),
     qty: Number(row.qty_orders ?? row.qty ?? 0),
+    units: Number(row.units_sold ?? row.units ?? 0),
     cancelled: Number(row.cancelled_orders ?? row.cancelled ?? 0),
     shipped: Number(row.shipped_orders ?? row.shipped ?? 0),
     unique_visits: Number(row.unique_visits ?? 0),
@@ -200,19 +202,23 @@ export default function MercadoLivre() {
     total_revenue: daily.reduce((s, d) => s + d.total, 0),
     approved_revenue: daily.reduce((s, d) => s + d.approved, 0),
     total_orders: daily.reduce((s, d) => s + d.qty, 0),
+    units_sold: daily.reduce((s, d) => s + (d.units || 0), 0),
     unique_visits: daily.reduce((s, d) => s + (d.unique_visits || 0), 0),
     unique_buyers: daily.reduce((s, d) => s + (d.unique_buyers || 0), 0),
     avg_ticket: 0,
+    avg_ticket_unit: 0,
     conversion_rate: 0,
   } : null;
 
   if (metrics) {
     if (metrics.total_orders > 0) metrics.avg_ticket = metrics.total_revenue / metrics.total_orders;
+    if (metrics.units_sold > 0) metrics.avg_ticket_unit = metrics.total_revenue / metrics.units_sold;
     if (metrics.unique_visits > 0) metrics.conversion_rate = (metrics.unique_buyers / metrics.unique_visits) * 100;
   }
 
   const totals = {
     qty: daily.reduce((s, d) => s + d.qty, 0),
+    units: daily.reduce((s, d) => s + (d.units || 0), 0),
     total: daily.reduce((s, d) => s + d.total, 0),
     approved: daily.reduce((s, d) => s + d.approved, 0),
   };
@@ -287,6 +293,7 @@ export default function MercadoLivre() {
         total_revenue: d.total,
         approved_revenue: d.approved,
         qty_orders: d.qty,
+        units_sold: d.units || 0,
         cancelled_orders: d.cancelled || 0,
         shipped_orders: d.shipped || 0,
         unique_visits: d.unique_visits || 0,
@@ -584,17 +591,18 @@ export default function MercadoLivre() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <KPICard title="Receita Total" value={metrics ? currencyFmt(metrics.total_revenue) : "—"} icon={<DollarSign className="w-5 h-5" />} variant="info" loading={loading} refreshing={syncing} subtitle={periodLabel} />
-        <KPICard title="Receita Aprovada" value={metrics ? currencyFmt(metrics.approved_revenue) : "—"} icon={<TrendingUp className="w-5 h-5" />} variant="success" loading={loading} refreshing={syncing} subtitle={periodLabel} />
-        <KPICard title="Total de Pedidos" value={metrics ? String(metrics.total_orders) : "—"} icon={<ShoppingCart className="w-5 h-5" />} variant="purple" loading={loading} refreshing={syncing} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard title="Vendas Brutas" value={metrics ? currencyFmt(metrics.total_revenue) : "—"} icon={<DollarSign className="w-5 h-5" />} variant="info" loading={loading} refreshing={syncing} subtitle={periodLabel} />
+        <KPICard title="Unidades Vendidas" value={metrics ? metrics.units_sold.toLocaleString("pt-BR") : "—"} icon={<ShoppingCart className="w-5 h-5" />} variant="purple" loading={loading} refreshing={syncing} />
+        <KPICard title="Preço Médio / Unidade" value={metrics ? metrics.avg_ticket_unit.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—"} icon={<Tag className="w-5 h-5" />} variant="orange" loading={loading} refreshing={syncing} />
+        <KPICard title="Visitas" value={metrics ? metrics.unique_visits.toLocaleString("pt-BR") : "—"} icon={<Eye className="w-5 h-5" />} variant="neutral" loading={loading} refreshing={syncing} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KPICard title="Ticket Médio" value={metrics ? metrics.avg_ticket.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "—"} icon={<Tag className="w-5 h-5" />} variant="orange" loading={loading} refreshing={syncing} />
-        <KPICard title="Visitas Únicas" value={metrics ? metrics.unique_visits.toLocaleString("pt-BR") : "—"} icon={<Eye className="w-5 h-5" />} variant="neutral" loading={loading} refreshing={syncing} />
+        <KPICard title="Qtd de Vendas" value={metrics ? metrics.total_orders.toLocaleString("pt-BR") : "—"} icon={<ShoppingCart className="w-5 h-5" />} variant="default" loading={loading} refreshing={syncing} />
+        <KPICard title="Conversão" value={metrics ? `${metrics.conversion_rate.toFixed(1)}%` : "—"} icon={<Percent className="w-5 h-5" />} variant="info" loading={loading} refreshing={syncing} />
+        <KPICard title="Preço Médio / Venda" value={metrics ? metrics.avg_ticket.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—"} icon={<Tag className="w-5 h-5" />} variant="success" loading={loading} refreshing={syncing} />
         <KPICard title="Total de Compradores" value={metrics ? metrics.unique_buyers.toLocaleString("pt-BR") : "—"} icon={<Users className="w-5 h-5" />} variant="success" loading={loading} refreshing={syncing} />
-        <KPICard title="Conversão" value={metrics ? `${metrics.conversion_rate.toFixed(2)}%` : "—"} icon={<Percent className="w-5 h-5" />} variant="info" loading={loading} refreshing={syncing} />
       </div>
 
       {(dailyChartData.length > 0 || showHourlyChart) && (
@@ -695,7 +703,8 @@ export default function MercadoLivre() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Data</TableHead>
-                  <TableHead className="text-right">Pedidos</TableHead>
+                  <TableHead className="text-right">Vendas</TableHead>
+                  <TableHead className="text-right">Unidades</TableHead>
                   <TableHead className="text-right">Venda Total</TableHead>
                   <TableHead className="text-right">Venda Aprovada</TableHead>
                 </TableRow>
@@ -705,6 +714,7 @@ export default function MercadoLivre() {
                   <TableRow key={d.date}>
                     <TableCell>{format(parseISO(d.date), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                     <TableCell className="text-right">{d.qty}</TableCell>
+                    <TableCell className="text-right">{d.units || "—"}</TableCell>
                     <TableCell className="text-right">{currencyFmt(d.total)}</TableCell>
                     <TableCell className="text-right">{currencyFmt(d.approved)}</TableCell>
                   </TableRow>
@@ -714,6 +724,7 @@ export default function MercadoLivre() {
                 <TableRow className="font-semibold">
                   <TableCell>Total</TableCell>
                   <TableCell className="text-right">{totals.qty}</TableCell>
+                  <TableCell className="text-right">{totals.units || "—"}</TableCell>
                   <TableCell className="text-right">{currencyFmt(totals.total)}</TableCell>
                   <TableCell className="text-right">{currencyFmt(totals.approved)}</TableCell>
                 </TableRow>

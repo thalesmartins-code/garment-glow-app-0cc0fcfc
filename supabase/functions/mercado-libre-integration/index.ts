@@ -84,6 +84,7 @@ async function fetchVisits(
 function countUniqueBuyers(orders: any[]): Record<string, number> {
   const dailyBuyers: Record<string, Set<number>> = {};
   for (const order of orders) {
+    if (order.status === "cancelled") continue; // exclude cancelled
     const date = order.date_created ? order.date_created.substring(0, 10) : null;
     const buyerId = order.buyer?.id;
     if (date && buyerId) {
@@ -96,6 +97,12 @@ function countUniqueBuyers(orders: any[]): Record<string, number> {
     result[date] = buyers.size;
   }
   return result;
+}
+
+/** Count units sold per order from order_items */
+function countUnits(order: any): number {
+  if (!order.order_items || !Array.isArray(order.order_items)) return 1;
+  return order.order_items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
 }
 
 serve(async (req) => {
@@ -179,13 +186,21 @@ serve(async (req) => {
 
     console.log(`Fetched ${orders.length} unique orders in ${chunks.length} chunks (period: ${periodDays} days)`);
 
+    // --- Aggregation: exclude cancelled from revenue/qty totals (align with ML official) ---
     let totalRevenue = 0;
-    const totalOrders = orders.length;
     let approvedRevenue = 0;
+    let totalOrders = 0;
+    let totalUnitsSold = 0;
     let cancelledOrders = 0;
     let shippedOrders = 0;
-    const dailySales: Record<string, { total: number; approved: number; qty: number; cancelled: number; shipped: number; unique_visits: number; unique_buyers: number }> = {};
-    const hourlySales: Record<string, { date: string; hour: number; total: number; approved: number; qty: number }> = {};
+
+    const dailySales: Record<string, {
+      total: number; approved: number; qty: number; units: number;
+      cancelled: number; shipped: number; unique_visits: number; unique_buyers: number;
+    }> = {};
+    const hourlySales: Record<string, {
+      date: string; hour: number; total: number; approved: number; qty: number; units: number;
+    }> = {};
 
     for (const order of orders) {
       const amount = Number(order.total_amount || 0);
@@ -193,31 +208,43 @@ serve(async (req) => {
       const date = dateCreated ? dateCreated.substring(0, 10) : null;
       const hour = dateCreated ? Number(dateCreated.substring(11, 13)) : null;
       const status = order.status;
+      const units = countUnits(order);
 
-      totalRevenue += amount;
+      const isCancelled = status === "cancelled";
 
-      if (status === "paid" || status === "confirmed") {
-        approvedRevenue += amount;
-      }
-      if (status === "cancelled") {
+      if (isCancelled) {
         cancelledOrders++;
+      } else {
+        // Only count non-cancelled in totals (aligns with ML "Vendas brutas")
+        totalRevenue += amount;
+        totalOrders++;
+        totalUnitsSold += units;
+
+        if (status === "paid" || status === "confirmed") {
+          approvedRevenue += amount;
+        }
       }
+
       if (order.shipping?.status === "shipped" || order.shipping?.status === "delivered") {
         shippedOrders++;
       }
 
       if (date) {
         if (!dailySales[date]) {
-          dailySales[date] = { total: 0, approved: 0, qty: 0, cancelled: 0, shipped: 0, unique_visits: 0, unique_buyers: 0 };
+          dailySales[date] = { total: 0, approved: 0, qty: 0, units: 0, cancelled: 0, shipped: 0, unique_visits: 0, unique_buyers: 0 };
         }
-        dailySales[date].total += amount;
-        dailySales[date].qty += 1;
-        if (status === "paid" || status === "confirmed") {
-          dailySales[date].approved += amount;
-        }
-        if (status === "cancelled") {
+
+        if (isCancelled) {
           dailySales[date].cancelled += 1;
+        } else {
+          dailySales[date].total += amount;
+          dailySales[date].qty += 1;
+          dailySales[date].units += units;
+          if (status === "paid" || status === "confirmed") {
+            dailySales[date].approved += amount;
+          }
         }
+
         if (order.shipping?.status === "shipped" || order.shipping?.status === "delivered") {
           dailySales[date].shipped += 1;
         }
@@ -226,12 +253,16 @@ serve(async (req) => {
       if (date && hour !== null && Number.isFinite(hour)) {
         const hourlyKey = `${date}-${String(hour).padStart(2, "0")}`;
         if (!hourlySales[hourlyKey]) {
-          hourlySales[hourlyKey] = { date, hour, total: 0, approved: 0, qty: 0 };
+          hourlySales[hourlyKey] = { date, hour, total: 0, approved: 0, qty: 0, units: 0 };
         }
-        hourlySales[hourlyKey].total += amount;
-        hourlySales[hourlyKey].qty += 1;
-        if (status === "paid" || status === "confirmed") {
-          hourlySales[hourlyKey].approved += amount;
+
+        if (!isCancelled) {
+          hourlySales[hourlyKey].total += amount;
+          hourlySales[hourlyKey].qty += 1;
+          hourlySales[hourlyKey].units += units;
+          if (status === "paid" || status === "confirmed") {
+            hourlySales[hourlyKey].approved += amount;
+          }
         }
       }
     }
@@ -239,11 +270,13 @@ serve(async (req) => {
     const dailyBuyers = countUniqueBuyers(orders);
     for (const [date, count] of Object.entries(dailyBuyers)) {
       if (!dailySales[date]) {
-        dailySales[date] = { total: 0, approved: 0, qty: 0, cancelled: 0, shipped: 0, unique_visits: 0, unique_buyers: 0 };
+        dailySales[date] = { total: 0, approved: 0, qty: 0, units: 0, cancelled: 0, shipped: 0, unique_visits: 0, unique_buyers: 0 };
       }
       dailySales[date].unique_buyers = count;
     }
-    const totalUniqueBuyers = new Set(orders.map((o) => o.buyer?.id).filter(Boolean)).size;
+    const totalUniqueBuyers = new Set(
+      orders.filter((o) => o.status !== "cancelled").map((o) => o.buyer?.id).filter(Boolean)
+    ).size;
 
     const rangeFromStr = rangeStart.toISOString().substring(0, 10);
     const rangeToStr = rangeEnd.toISOString().substring(0, 10);
@@ -252,12 +285,12 @@ serve(async (req) => {
     for (const [date, visits] of Object.entries(dailyVisits)) {
       totalVisits += visits;
       if (!dailySales[date]) {
-        dailySales[date] = { total: 0, approved: 0, qty: 0, cancelled: 0, shipped: 0, unique_visits: 0, unique_buyers: 0 };
+        dailySales[date] = { total: 0, approved: 0, qty: 0, units: 0, cancelled: 0, shipped: 0, unique_visits: 0, unique_buyers: 0 };
       }
       dailySales[date].unique_visits = visits;
     }
 
-    console.log(`Unique buyers: ${totalUniqueBuyers}, daily visit rows: ${Object.keys(dailyVisits).length}, total visits: ${totalVisits}`);
+    console.log(`Unique buyers: ${totalUniqueBuyers}, total visits: ${totalVisits}, total orders (excl cancelled): ${totalOrders}, units sold: ${totalUnitsSold}, cancelled: ${cancelledOrders}`);
 
     let activeListings = 0;
     try {
@@ -276,6 +309,7 @@ serve(async (req) => {
           total_revenue: data.total,
           approved_revenue: data.approved,
           qty_orders: data.qty,
+          units_sold: data.units,
           cancelled_orders: data.cancelled,
           shipped_orders: data.shipped,
           unique_visits: data.unique_visits,
@@ -290,6 +324,7 @@ serve(async (req) => {
           total_revenue: data.total,
           approved_revenue: data.approved,
           qty_orders: data.qty,
+          units_sold: data.units,
           synced_at: syncedAt,
         }));
 
@@ -351,6 +386,7 @@ serve(async (req) => {
         total_revenue: totalRevenue,
         approved_revenue: approvedRevenue,
         total_orders: totalOrders,
+        units_sold: totalUnitsSold,
         cancelled_orders: cancelledOrders,
         shipped_orders: shippedOrders,
         active_listings: activeListings,
