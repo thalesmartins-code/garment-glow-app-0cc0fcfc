@@ -29,7 +29,7 @@ async function fetchOrdersChunk(
   dateFrom: string,
   dateTo: string,
   accessToken: string,
-  maxOrders = 5000,
+  maxOrders = 15000,
 ): Promise<any[]> {
   const PAGE_SIZE = 50;
   let allOrders: any[] = [];
