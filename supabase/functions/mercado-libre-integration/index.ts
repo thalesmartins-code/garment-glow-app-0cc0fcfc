@@ -205,6 +205,7 @@ serve(async (req) => {
       const orderUnits = (order.order_items || []).reduce((sum: number, item: any) => sum + (Number(item.quantity) || 1), 0) || 1;
 
       totalRevenue += amount;
+      totalUnitsSold += orderUnits;
 
       if (status === "paid" || status === "confirmed") {
         approvedRevenue += amount;
