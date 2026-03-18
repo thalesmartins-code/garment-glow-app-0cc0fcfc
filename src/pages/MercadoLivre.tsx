@@ -802,7 +802,7 @@ export default function MercadoLivre() {
           </Card>
         )}
 
-        <TopSellingProducts accessToken={cachedAccessToken} connected={connected} />
+        <TopSellingProducts products={filteredTopProducts} loading={loading} />
       </div>
     </div>
   );
