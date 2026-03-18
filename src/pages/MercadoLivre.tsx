@@ -426,34 +426,67 @@ export default function MercadoLivre() {
       setCachedAccessToken(accessToken);
       setConnected(true);
 
-      const { data, error } = await supabase.functions.invoke("mercado-libre-integration", {
-        body: { access_token: accessToken, days: 30, user_id: user.id },
-      });
+      const today = startOfDay(new Date());
+      let rangeStart = new Date(today);
+      let rangeEnd = new Date(today);
 
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || "Sync failed");
+      if (customRange?.from) {
+        rangeStart = startOfDay(customRange.from);
+        rangeEnd = startOfDay(customRange.to ?? customRange.from);
+      } else {
+        const days = period > 0 ? period : 1;
+        rangeStart = new Date(today);
+        rangeStart.setDate(today.getDate() - days + 1);
+      }
 
-      const userInfo: MLUser = data.user;
-      const listings = data.metrics?.active_listings || 0;
-      const dailyData: DailyBreakdown[] = (data.daily_breakdown || []).map(mapDailyRow);
-      const hourlyData: HourlyBreakdown[] = (data.hourly_breakdown || []).map(mapHourlyRow);
+      const CHUNK_DAYS = 2;
+      const chunks: Array<{ date_from: string; date_to: string }> = [];
+      const cursor = new Date(rangeStart);
+      while (cursor <= rangeEnd) {
+        const chunkStart = new Date(cursor);
+        const chunkEnd = new Date(cursor);
+        chunkEnd.setDate(chunkEnd.getDate() + CHUNK_DAYS - 1);
+        if (chunkEnd > rangeEnd) chunkEnd.setTime(rangeEnd.getTime());
 
-      setMlUser(userInfo);
-      setAllDaily(dailyData);
-      setAllHourly(hourlyData);
+        chunks.push({
+          date_from: chunkStart.toISOString().substring(0, 10),
+          date_to: chunkEnd.toISOString().substring(0, 10),
+        });
 
-      await saveToCache(dailyData, hourlyData, userInfo, listings);
+        cursor.setDate(cursor.getDate() + CHUNK_DAYS);
+      }
+
+      let lastUserInfo: MLUser | null = null;
+
+      for (const chunk of chunks) {
+        const { data, error } = await supabase.functions.invoke("mercado-libre-integration", {
+          body: {
+            access_token: accessToken,
+            user_id: user.id,
+            date_from: chunk.date_from,
+            date_to: chunk.date_to,
+          },
+        });
+
+        if (error) throw error;
+        if (!data?.success) throw new Error(data?.error || "Sync failed");
+
+        if (data.user) lastUserInfo = data.user as MLUser;
+      }
+
+      await Promise.all([loadFromCache(), loadHourlyCache()]);
+      if (lastUserInfo) setMlUser(lastUserInfo);
 
       const now = new Date().toLocaleString("pt-BR");
       setLastSyncedAt(now);
       localStorage.setItem(LAST_ML_SYNC_KEY, now);
-      toast({ title: "Sincronizado", description: "Dados atualizados com sucesso." });
+      toast({ title: "Sincronizado", description: `Dados atualizados (${chunks.length} bloco(s)).` });
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     } finally {
       setSyncing(false);
     }
-  }, [user, toast, saveToCache]);
+  }, [user, toast, period, customRange, loadFromCache, loadHourlyCache]);
 
   const reloadCache = useCallback(async () => {
     cacheLoadedRef.current = false;
