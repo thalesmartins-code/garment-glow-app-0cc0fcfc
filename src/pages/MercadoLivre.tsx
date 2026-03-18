@@ -480,6 +480,21 @@ export default function MercadoLivre() {
       setCachedAccessToken(tokenRow.access_token);
       setConnected(true);
       await Promise.all([loadFromCache(), loadHourlyCache()]);
+
+      // Load stock data for product ranking
+      try {
+        const { data: invData } = await supabase.functions.invoke("ml-inventory", {
+          body: { access_token: tokenRow.access_token },
+        });
+        if (invData?.items) {
+          const stockMap: Record<string, number> = {};
+          for (const item of invData.items) {
+            stockMap[item.id] = item.available_quantity ?? 0;
+          }
+          setProductStockMap(stockMap);
+        }
+      } catch { /* non-critical */ }
+
       setLoading(false);
     })();
   }, [user, loadFromCache, loadHourlyCache]);
