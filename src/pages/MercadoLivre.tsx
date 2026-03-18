@@ -705,46 +705,50 @@ export default function MercadoLivre() {
         </Card>
       )}
 
-      {hourly.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Venda por Hora</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Hora</TableHead>
-                  <TableHead className="text-right">Receita</TableHead>
-                  <TableHead className="text-right">Vendas Totais</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Array.from({ length: 24 }, (_, h) => {
-                  const hourData = hourly.filter((d) => d.hour === h);
-                  const revenue = hourData.reduce((s, d) => s + d.total, 0);
-                  const sales = hourData.reduce((s, d) => s + d.qty, 0);
-                  if (revenue === 0 && sales === 0) return null;
-                  return (
-                    <TableRow key={h}>
-                      <TableCell>{String(h).padStart(2, "0")}:00 – {String(h).padStart(2, "0")}:59</TableCell>
-                      <TableCell className="text-right">{currencyFmt(revenue)}</TableCell>
-                      <TableCell className="text-right">{sales}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-              <TableFooter>
-                <TableRow className="font-semibold">
-                  <TableCell>Total</TableCell>
-                  <TableCell className="text-right">{currencyFmt(hourly.reduce((s, d) => s + d.total, 0))}</TableCell>
-                  <TableCell className="text-right">{hourly.reduce((s, d) => s + d.qty, 0)}</TableCell>
-                </TableRow>
-              </TableFooter>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {hourly.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Venda por Hora</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Hora</TableHead>
+                    <TableHead className="text-right">Receita</TableHead>
+                    <TableHead className="text-right">Vendas Totais</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 24 }, (_, h) => {
+                    const hourData = hourly.filter((d) => d.hour === h);
+                    const revenue = hourData.reduce((s, d) => s + d.total, 0);
+                    const sales = hourData.reduce((s, d) => s + d.qty, 0);
+                    if (revenue === 0 && sales === 0) return null;
+                    return (
+                      <TableRow key={h}>
+                        <TableCell>{String(h).padStart(2, "0")}:00 – {String(h).padStart(2, "0")}:59</TableCell>
+                        <TableCell className="text-right">{currencyFmt(revenue)}</TableCell>
+                        <TableCell className="text-right">{sales}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+                <TableFooter>
+                  <TableRow className="font-semibold">
+                    <TableCell>Total</TableCell>
+                    <TableCell className="text-right">{currencyFmt(hourly.reduce((s, d) => s + d.total, 0))}</TableCell>
+                    <TableCell className="text-right">{hourly.reduce((s, d) => s + d.qty, 0)}</TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        <TopSellingProducts accessToken={cachedAccessToken} connected={connected} />
+      </div>
     </div>
   );
 }
