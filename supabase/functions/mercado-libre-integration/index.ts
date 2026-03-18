@@ -287,6 +287,7 @@ serve(async (req) => {
           total_revenue: data.total,
           approved_revenue: data.approved,
           qty_orders: data.qty,
+          units_sold: data.units_sold,
           cancelled_orders: data.cancelled,
           shipped_orders: data.shipped,
           unique_visits: data.unique_visits,
