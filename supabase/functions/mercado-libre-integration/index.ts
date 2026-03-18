@@ -45,6 +45,12 @@ async function fetchOrdersChunk(
     if (results.length < PAGE_SIZE || offset >= total) break;
   }
 
+  // Log truncation warning if we couldn't fetch all orders
+  const firstPageTotal = allOrders.length > 0 ? offset : 0;
+  if (offset >= 10000 || allOrders.length >= maxOrders) {
+    console.warn(`⚠️ TRUNCATION: fetched ${allOrders.length} orders but paging may have more. offset=${offset}, maxOrders=${maxOrders}`);
+  }
+
   return allOrders;
 }
 
