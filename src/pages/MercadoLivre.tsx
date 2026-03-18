@@ -457,7 +457,6 @@ export default function MercadoLivre() {
       }
 
       let lastUserInfo: MLUser | null = null;
-      let lastListings = 0;
 
       for (const chunk of chunks) {
         const { data, error } = await supabase.functions.invoke("mercado-libre-integration", {
