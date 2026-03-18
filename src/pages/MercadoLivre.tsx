@@ -151,6 +151,8 @@ export default function MercadoLivre() {
   const [cachedAccessToken, setCachedAccessToken] = useState<string | null>(null);
   const [allDaily, setAllDaily] = useState<DailyBreakdown[]>([]);
   const [allHourly, setAllHourly] = useState<HourlyBreakdown[]>([]);
+  const [allProductSales, setAllProductSales] = useState<(ProductSalesRow & { date: string })[]>([]);
+  const [productStockMap, setProductStockMap] = useState<Record<string, number>>({});
   const [period, setPeriod] = useState(0);
   const [customRange, setCustomRange] = useState<DateRange>(null);
   const [chartMode, setChartMode] = useState<ChartMode>("hourly");
