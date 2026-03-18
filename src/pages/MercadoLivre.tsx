@@ -760,13 +760,13 @@ export default function MercadoLivre() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
         {hourly.length > 0 && (
-          <Card>
+          <Card className="flex flex-col">
             <CardHeader>
               <CardTitle className="text-base">Venda por Hora</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 flex-1 overflow-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
