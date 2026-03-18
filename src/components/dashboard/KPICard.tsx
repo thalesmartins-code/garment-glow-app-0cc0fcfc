@@ -56,6 +56,7 @@ export function KPICard({
   valueSuffix = "",
   valueDecimals = 0,
   progressValue,
+  tooltip,
 }: KPICardProps) {
   const displayValue = value;
 
