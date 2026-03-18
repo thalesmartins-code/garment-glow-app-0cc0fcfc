@@ -166,6 +166,7 @@ export default function MercadoLivre() {
 
   const isHourlyAvailable = period === 0 || !!singleDayRange;
   const hourlyTargetDate = singleDayRange ?? (period === 0 ? todayUTC() : null);
+  const isMultiDayHourly = !isHourlyAvailable;
   const activeFilterKey = customRange?.from
     ? `${format(startOfDay(customRange.from), "yyyy-MM-dd")}:${format(startOfDay(customRange.to ?? customRange.from), "yyyy-MM-dd")}`
     : `period:${period}`;
@@ -185,9 +186,18 @@ export default function MercadoLivre() {
   });
 
   const hourly = allHourly.filter((d) => {
-    if (!isHourlyAvailable) return false;
-    if (singleDayRange) return d.date === singleDayRange;
-    return d.date === todayUTC();
+    if (isHourlyAvailable) {
+      if (singleDayRange) return d.date === singleDayRange;
+      return d.date === todayUTC();
+    }
+    // Multi-day: filter by same criteria as daily
+    if (customRange?.from) {
+      const from = format(startOfDay(customRange.from), "yyyy-MM-dd");
+      const to = customRange.to ? format(startOfDay(customRange.to), "yyyy-MM-dd") : from;
+      return d.date >= from && d.date <= to;
+    }
+    const cutoff = cutoffDateStr(period);
+    return d.date >= cutoff;
   });
 
   const periodLabel = customRange?.from
@@ -221,19 +231,25 @@ export default function MercadoLivre() {
   };
 
   const loadHourlyCache = useCallback(async () => {
-    if (!user || !isHourlyAvailable || !hourlyTargetDate) {
+    if (!user) {
       setAllHourly([]);
       return [] as HourlyBreakdown[];
     }
 
-    const { data } = await (supabase as any)
+    let query = (supabase as any)
       .from("ml_hourly_cache")
       .select("*")
       .eq("user_id", user.id)
-      .eq("date", hourlyTargetDate)
-      .order("hour", { ascending: true })
-      .limit(24);
+      .order("date", { ascending: false })
+      .order("hour", { ascending: true });
 
+    if (isHourlyAvailable && hourlyTargetDate) {
+      query = query.eq("date", hourlyTargetDate).limit(24);
+    } else {
+      query = query.limit(1000);
+    }
+
+    const { data } = await query;
     const mapped = (data || []).map(mapHourlyRow);
     setAllHourly(mapped);
     return mapped;
