@@ -703,7 +703,8 @@ export default function MercadoLivre() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Data</TableHead>
-                  <TableHead className="text-right">Pedidos</TableHead>
+                  <TableHead className="text-right">Vendas</TableHead>
+                  <TableHead className="text-right">Unidades</TableHead>
                   <TableHead className="text-right">Venda Total</TableHead>
                   <TableHead className="text-right">Venda Aprovada</TableHead>
                 </TableRow>
@@ -713,6 +714,7 @@ export default function MercadoLivre() {
                   <TableRow key={d.date}>
                     <TableCell>{format(parseISO(d.date), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
                     <TableCell className="text-right">{d.qty}</TableCell>
+                    <TableCell className="text-right">{d.units || "—"}</TableCell>
                     <TableCell className="text-right">{currencyFmt(d.total)}</TableCell>
                     <TableCell className="text-right">{currencyFmt(d.approved)}</TableCell>
                   </TableRow>
@@ -722,6 +724,7 @@ export default function MercadoLivre() {
                 <TableRow className="font-semibold">
                   <TableCell>Total</TableCell>
                   <TableCell className="text-right">{totals.qty}</TableCell>
+                  <TableCell className="text-right">{totals.units || "—"}</TableCell>
                   <TableCell className="text-right">{currencyFmt(totals.total)}</TableCell>
                   <TableCell className="text-right">{currencyFmt(totals.approved)}</TableCell>
                 </TableRow>
