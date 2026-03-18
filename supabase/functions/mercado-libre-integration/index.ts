@@ -366,6 +366,7 @@ serve(async (req) => {
         total_revenue: totalRevenue,
         approved_revenue: approvedRevenue,
         total_orders: totalOrders,
+        units_sold: totalUnitsSold,
         cancelled_orders: cancelledOrders,
         shipped_orders: shippedOrders,
         active_listings: activeListings,
