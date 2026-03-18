@@ -233,6 +233,24 @@ export default function MercadoLivre() {
     approved: daily.reduce((s, d) => s + d.approved, 0),
   };
 
+  // Compute top products filtered by the same date range as daily
+  const filteredTopProducts = (() => {
+    const dateSet = new Set(daily.map((d) => d.date));
+    const filtered = allProductSales.filter((p) => dateSet.has(p.date));
+    const agg: Record<string, ProductSalesRow> = {};
+    for (const p of filtered) {
+      if (!agg[p.item_id]) {
+        agg[p.item_id] = { item_id: p.item_id, title: p.title, thumbnail: p.thumbnail, qty_sold: 0, revenue: 0 };
+      }
+      agg[p.item_id].qty_sold += p.qty_sold;
+      agg[p.item_id].revenue += p.revenue;
+    }
+    return Object.values(agg)
+      .map((p) => ({ ...p, available_quantity: productStockMap[p.item_id] }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 7);
+  })();
+
   const loadHourlyCache = useCallback(async () => {
     if (!user) {
       setAllHourly([]);
