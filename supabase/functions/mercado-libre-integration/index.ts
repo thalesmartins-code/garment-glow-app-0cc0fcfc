@@ -200,6 +200,9 @@ serve(async (req) => {
       const hour = dateCreated ? Number(dateCreated.substring(11, 13)) : null;
       const status = order.status;
 
+      // Count units sold (each different product in a cart = 1 sale)
+      const orderUnits = (order.order_items || []).reduce((sum: number, item: any) => sum + (Number(item.quantity) || 1), 0) || 1;
+
       totalRevenue += amount;
 
       if (status === "paid" || status === "confirmed") {
@@ -214,10 +217,11 @@ serve(async (req) => {
 
       if (date) {
         if (!dailySales[date]) {
-          dailySales[date] = { total: 0, approved: 0, qty: 0, cancelled: 0, shipped: 0, unique_visits: 0, unique_buyers: 0 };
+          dailySales[date] = { total: 0, approved: 0, qty: 0, units_sold: 0, cancelled: 0, shipped: 0, unique_visits: 0, unique_buyers: 0 };
         }
         dailySales[date].total += amount;
         dailySales[date].qty += 1;
+        dailySales[date].units_sold += orderUnits;
         if (status === "paid" || status === "confirmed") {
           dailySales[date].approved += amount;
         }
