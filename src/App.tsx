@@ -6,6 +6,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { MainAppLayout } from "@/components/layout/MainAppLayout";
 import { MercadoLivreLayout } from "@/components/layout/MercadoLivreLayout";
 import { SellerProvider } from "@/contexts/SellerContext";
+import { MLInventoryProvider } from "@/contexts/MLInventoryContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { SalesDataProvider } from "@/contexts/SalesDataContext";
 import { AuthProvider } from "@/contexts/AuthContext";
