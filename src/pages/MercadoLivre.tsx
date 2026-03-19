@@ -798,6 +798,17 @@ export default function MercadoLivre() {
           <Card className="flex flex-col">
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-base">Venda por Hora</CardTitle>
+              {(() => {
+                const peakHour = Array.from({ length: 24 }, (_, h) => {
+                  const hd = hourly.filter((d) => d.hour === h);
+                  return { h, revenue: hd.reduce((s, d) => s + d.total, 0) };
+                }).reduce((best, cur) => (cur.revenue > best.revenue ? cur : best), { h: 0, revenue: 0 });
+                return peakHour.revenue > 0 ? (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    🔥 Pico às <span className="font-semibold text-foreground">{String(peakHour.h).padStart(2, "0")}h</span> — <span className="font-semibold text-foreground">{currencyFmt(peakHour.revenue)}</span>
+                  </p>
+                ) : null;
+              })()}
             </CardHeader>
             <CardContent className="p-0 flex-1 overflow-auto">
               <Table className="text-xs">
