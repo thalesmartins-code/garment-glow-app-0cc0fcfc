@@ -63,7 +63,7 @@ export function TopSellingProducts({ products, loading }: Props) {
             Nenhum produto encontrado
           </div>
         ) : (
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border flex flex-col h-full">
             {visibleProducts.map((product, idx) => (
               <div key={product.item_id} className="flex items-center gap-3 px-4 py-4">
                 <span className="text-sm font-bold text-muted-foreground w-5 text-center shrink-0">{idx + 1}</span>
