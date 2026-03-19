@@ -52,6 +52,7 @@ export default function MLProdutos() {
   const [items, setItems] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasToken, setHasToken] = useState<boolean | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [search, setSearch] = useState("");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
   const [sortBy, setSortBy] = useState<"price_desc" | "price_asc" | "sold" | "title">("sold");
@@ -80,6 +81,7 @@ export default function MLProdutos() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setItems(data.items || []);
+      setLastUpdated(new Date());
     } catch (err: any) {
       console.error("Products fetch error:", err);
       toast({ title: "Erro ao carregar produtos", description: err.message, variant: "destructive" });
@@ -143,7 +145,7 @@ export default function MLProdutos() {
 
   return (
     <div className="space-y-6">
-      <MLPageHeader title="Produtos">
+      <MLPageHeader title="Produtos" lastUpdated={lastUpdated}>
         <Button onClick={fetchProducts} disabled={loading} size="sm" variant="outline">
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Atualizar

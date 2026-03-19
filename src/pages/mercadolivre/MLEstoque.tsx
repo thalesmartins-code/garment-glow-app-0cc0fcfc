@@ -47,6 +47,7 @@ export default function MLEstoque() {
   const [summary, setSummary] = useState<InventorySummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasToken, setHasToken] = useState<boolean | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [search, setSearch] = useState("");
 
   const checkToken = useCallback(async () => {
@@ -79,6 +80,7 @@ export default function MLEstoque() {
 
       setItems(data.items || []);
       setSummary(data.summary || null);
+      setLastUpdated(new Date());
     } catch (err: any) {
       console.error("Inventory fetch error:", err);
       toast({
@@ -134,7 +136,7 @@ export default function MLEstoque() {
 
   return (
     <div className="space-y-6">
-      <MLPageHeader title="Estoque">
+      <MLPageHeader title="Estoque" lastUpdated={lastUpdated}>
         <Button onClick={fetchInventory} disabled={loading} size="sm" variant="outline">
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Atualizar
