@@ -62,7 +62,7 @@ export default function MLProdutos() {
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <Plug className="w-12 h-12 mb-4 text-muted-foreground/40" />
             <h3 className="text-lg font-semibold mb-2">Conta não conectada</h3>
-            <p className="text-sm text-muted-foreground mb-4">Conecte sua conta do Mercado Livre para visualizar os produtos.</p>
+            <p className="text-sm text-muted-foreground mb-4">Conecte sua conta do Mercado Livre para visualizar os anúncios.</p>
             <Button asChild><Link to="/integracoes">Ir para Integrações</Link></Button>
           </CardContent>
         </Card>
