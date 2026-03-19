@@ -1,6 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
+import { useMLInventory } from "@/contexts/MLInventoryContext";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,99 +9,16 @@ import { Badge } from "@/components/ui/badge";
 import {
   Package, PackageX, AlertTriangle, Boxes, RefreshCw, Search, ExternalLink, Plug,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
-
-interface InventoryItem {
-  id: string;
-  title: string;
-  available_quantity: number;
-  sold_quantity: number;
-  price: number;
-  currency_id: string;
-  thumbnail: string | null;
-  status: string;
-  category_id: string | null;
-  listing_type_id: string | null;
-  health: number | null;
-}
-
-interface InventorySummary {
-  totalItems: number;
-  totalStock: number;
-  outOfStock: number;
-  lowStock: number;
-}
 
 const currencyFmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function MLEstoque() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-
-  const [items, setItems] = useState<InventoryItem[]>([]);
-  const [summary, setSummary] = useState<InventorySummary | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [hasToken, setHasToken] = useState<boolean | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const { items, summary, loading, hasToken, lastUpdated, refresh } = useMLInventory();
   const [search, setSearch] = useState("");
-
-  const checkToken = useCallback(async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("ml_tokens")
-      .select("access_token")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    setHasToken(!!data?.access_token);
-    return data?.access_token || null;
-  }, [user]);
-
-  const fetchInventory = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
-      const token = await checkToken();
-      if (!token) {
-        setHasToken(false);
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke("ml-inventory", {
-        body: { access_token: token },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      setItems(data.items || []);
-      setSummary(data.summary || null);
-      setLastUpdated(new Date());
-    } catch (err: any) {
-      console.error("Inventory fetch error:", err);
-      toast({
-        title: "Erro ao carregar estoque",
-        description: err.message || "Tente novamente",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [user, checkToken, toast]);
-
-  useEffect(() => {
-    checkToken();
-  }, [checkToken]);
-
-  useEffect(() => {
-    if (!hasToken) return;
-    fetchInventory();
-    const interval = setInterval(fetchInventory, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [hasToken, fetchInventory]);
 
   const filtered = items.filter((item) =>
     item.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -137,7 +53,7 @@ export default function MLEstoque() {
   return (
     <div className="space-y-6">
       <MLPageHeader title="Estoque" lastUpdated={lastUpdated}>
-        <Button onClick={fetchInventory} disabled={loading} size="sm" variant="outline">
+        <Button onClick={refresh} disabled={loading} size="sm" variant="outline">
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Atualizar
         </Button>
