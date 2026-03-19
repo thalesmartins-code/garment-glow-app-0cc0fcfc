@@ -20,8 +20,15 @@ interface Props {
 const currencyFmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function TopSellingProducts({ products, loading }: Props) {
-  const isLargeScreen = useMediaQuery("(min-width: 1024px)");
-  const maxItems = isLargeScreen ? 12 : 10;
+  const [isLarge, setIsLarge] = React.useState(false);
+  React.useEffect(() => {
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const onChange = () => setIsLarge(mql.matches);
+    mql.addEventListener("change", onChange);
+    setIsLarge(mql.matches);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+  const maxItems = isLarge ? 12 : 10;
   const visibleProducts = products.slice(0, maxItems);
   if (loading) {
     return (
