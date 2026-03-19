@@ -862,6 +862,22 @@ export default function MercadoLivre() {
                   </TableRow>
                 </TableFooter>
               </Table>
+              <div className="flex items-center gap-3 px-4 py-2 border-t border-border">
+                <span className="text-[10px] text-muted-foreground">Legenda:</span>
+                {[
+                  { color: "rgba(16,185,129,0.18)", label: "1º" },
+                  { color: "rgba(52,211,153,0.14)", label: "2º" },
+                  { color: "rgba(250,204,21,0.14)", label: "3º" },
+                  { color: "rgba(251,191,36,0.14)", label: "4º" },
+                  { color: "rgba(251,146,60,0.14)", label: "5º" },
+                  { color: "rgba(248,113,113,0.14)", label: "6º" },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center gap-1">
+                    <span className="inline-block w-3 h-3 rounded-sm border border-border" style={{ backgroundColor: item.color }} />
+                    <span className="text-[10px] text-muted-foreground">{item.label}</span>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}
