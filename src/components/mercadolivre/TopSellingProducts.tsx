@@ -16,8 +16,7 @@ interface Props {
   loading?: boolean;
 }
 
-const currencyFmt = (v: number) =>
-  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const currencyFmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function TopSellingProducts({ products, loading }: Props) {
   if (loading) {
@@ -26,7 +25,7 @@ export function TopSellingProducts({ products, loading }: Props) {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Trophy className="w-4 h-4 text-[hsl(45,93%,47%)]" />
-            Produtos Mais Vendidos
+            Produtos mais vendidos
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -52,7 +51,7 @@ export function TopSellingProducts({ products, loading }: Props) {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Trophy className="w-4 h-4 text-[hsl(45,93%,47%)]" />
-          Produtos Mais Vendidos
+          Produtos mais vendidos
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
@@ -65,9 +64,7 @@ export function TopSellingProducts({ products, loading }: Props) {
           <div className="divide-y divide-border">
             {products.map((product, idx) => (
               <div key={product.item_id} className="flex items-center gap-3 px-4 py-3">
-                <span className="text-sm font-bold text-muted-foreground w-5 text-center shrink-0">
-                  {idx + 1}
-                </span>
+                <span className="text-sm font-bold text-muted-foreground w-5 text-center shrink-0">{idx + 1}</span>
                 <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0">
                   {product.thumbnail ? (
                     <img
@@ -84,20 +81,22 @@ export function TopSellingProducts({ products, loading }: Props) {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium leading-tight line-clamp-2">{product.title}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-muted-foreground">
-                      {product.qty_sold} vendidos
-                    </span>
+                    <span className="text-xs text-muted-foreground">{product.qty_sold} vendidos</span>
                     <span className="text-xs text-muted-foreground">·</span>
-                    <span className="text-xs font-semibold text-primary">
-                      {currencyFmt(product.revenue)}
-                    </span>
+                    <span className="text-xs font-semibold text-primary">{currencyFmt(product.revenue)}</span>
                   </div>
                 </div>
                 {product.available_quantity !== undefined && (
                   <div className="flex flex-col items-end shrink-0">
                     <span className="text-[10px] text-muted-foreground mb-0.5">Estoque</span>
                     <Badge
-                      variant={product.available_quantity === 0 ? "destructive" : product.available_quantity <= 5 ? "secondary" : "outline"}
+                      variant={
+                        product.available_quantity === 0
+                          ? "destructive"
+                          : product.available_quantity <= 5
+                            ? "secondary"
+                            : "outline"
+                      }
                       className="text-xs"
                     >
                       {product.available_quantity} un.
