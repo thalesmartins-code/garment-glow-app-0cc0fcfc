@@ -1,6 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
+import { useMLInventory } from "@/contexts/MLInventoryContext";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,92 +10,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   ShoppingBag, RefreshCw, Search, ExternalLink, Plug, DollarSign, Tag, TrendingUp, Package,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
 
-interface ProductItem {
-  id: string;
-  title: string;
-  available_quantity: number;
-  sold_quantity: number;
-  price: number;
-  currency_id: string;
-  thumbnail: string | null;
-  status: string;
-  category_id: string | null;
-  listing_type_id: string | null;
-  health: number | null;
-  visits: number;
-}
-
 const currencyFmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-const listingTypeLabel: Record<string, string> = {
-  gold_special: "Clássico",
-  gold_pro: "Premium",
-  gold: "Ouro",
-  silver: "Prata",
-  bronze: "Bronze",
-  free: "Grátis",
-};
 
 type StockFilter = "all" | "in_stock" | "low" | "out";
 
 export default function MLProdutos() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-
-  const [items, setItems] = useState<ProductItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [hasToken, setHasToken] = useState<boolean | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const { items, loading, hasToken, lastUpdated, refresh } = useMLInventory();
   const [search, setSearch] = useState("");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
   const [sortBy, setSortBy] = useState<"price_desc" | "price_asc" | "sold" | "title">("sold");
-
-  const checkToken = useCallback(async () => {
-    if (!user) return null;
-    const { data } = await supabase
-      .from("ml_tokens")
-      .select("access_token")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    setHasToken(!!data?.access_token);
-    return data?.access_token || null;
-  }, [user]);
-
-  const fetchProducts = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
-      const token = await checkToken();
-      if (!token) { setHasToken(false); return; }
-
-      const { data, error } = await supabase.functions.invoke("ml-inventory", {
-        body: { access_token: token },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setItems(data.items || []);
-      setLastUpdated(new Date());
-    } catch (err: any) {
-      console.error("Products fetch error:", err);
-      toast({ title: "Erro ao carregar produtos", description: err.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  }, [user, checkToken, toast]);
-
-  useEffect(() => { checkToken(); }, [checkToken]);
-  useEffect(() => {
-    if (!hasToken) return;
-    fetchProducts();
-    const interval = setInterval(fetchProducts, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [hasToken, fetchProducts]);
 
   // Derived stats
   const totalRevenuePotential = items.reduce((s, i) => s + i.price * i.available_quantity, 0);
@@ -146,7 +73,7 @@ export default function MLProdutos() {
   return (
     <div className="space-y-6">
       <MLPageHeader title="Produtos" lastUpdated={lastUpdated}>
-        <Button onClick={fetchProducts} disabled={loading} size="sm" variant="outline">
+        <Button onClick={refresh} disabled={loading} size="sm" variant="outline">
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Atualizar
         </Button>
@@ -224,7 +151,6 @@ export default function MLProdutos() {
                      <TableHead className="text-center w-20">% Part.</TableHead>
                      <TableHead className="text-center w-20">Visitas</TableHead>
                      <TableHead className="text-center w-20">Conv.</TableHead>
-                     
                      <TableHead className="text-center w-20">Saúde</TableHead>
                      <TableHead className="w-10"></TableHead>
                    </TableRow>
