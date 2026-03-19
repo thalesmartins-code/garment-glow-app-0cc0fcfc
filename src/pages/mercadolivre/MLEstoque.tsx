@@ -13,6 +13,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
 
 interface InventoryItem {
   id: string;
@@ -130,12 +131,12 @@ export default function MLEstoque() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end">
+      <MLPageHeader title="Estoque">
         <Button onClick={fetchInventory} disabled={loading} size="sm" variant="outline">
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Atualizar
         </Button>
-      </div>
+      </MLPageHeader>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
