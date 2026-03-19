@@ -806,7 +806,7 @@ export default function MercadoLivre() {
                   return { h, revenue: hd.reduce((s, d) => s + d.total, 0) };
                 }).reduce((best, cur) => (cur.revenue > best.revenue ? cur : best), { h: 0, revenue: 0 });
                 return peakHour.revenue > 0 ? (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     🔥 Pico às <span className="font-semibold text-foreground">{String(peakHour.h).padStart(2, "0")}h–{String(peakHour.h + 1).padStart(2, "0")}h</span> — <span className="font-semibold text-foreground">{currencyFmt(peakHour.revenue)}</span>
                   </p>
                 ) : null;
