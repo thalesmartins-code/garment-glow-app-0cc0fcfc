@@ -81,6 +81,7 @@ export default function MLProdutos() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setItems(data.items || []);
+      setLastUpdated(new Date());
     } catch (err: any) {
       console.error("Products fetch error:", err);
       toast({ title: "Erro ao carregar produtos", description: err.message, variant: "destructive" });
