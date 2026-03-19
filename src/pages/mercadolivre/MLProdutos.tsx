@@ -72,7 +72,7 @@ export default function MLProdutos() {
 
   return (
     <div className="space-y-6">
-      <MLPageHeader title="Produtos" lastUpdated={lastUpdated}>
+      <MLPageHeader title="Anúncios" lastUpdated={lastUpdated}>
         <Button onClick={refresh} disabled={loading} size="sm" variant="outline">
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Atualizar
