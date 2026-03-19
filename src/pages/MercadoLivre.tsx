@@ -825,18 +825,24 @@ export default function MercadoLivre() {
                       const hourData = hourly.filter((d) => d.hour === h);
                       return { h, revenue: hourData.reduce((s, d) => s + d.total, 0), sales: hourData.reduce((s, d) => s + d.qty, 0) };
                     });
-                    // Rank top 6 hours by revenue for gradient coloring
+                    // Rank top 12 hours by revenue for gradient coloring
                     const ranked = hourRows
                       .filter((r) => r.revenue > 0)
                       .sort((a, b) => b.revenue - a.revenue)
-                      .slice(0, 6);
+                      .slice(0, 12);
                     const gradientColors = [
-                      "rgba(16,185,129,0.18)",  // 1st - emerald
-                      "rgba(52,211,153,0.14)",  // 2nd - emerald lighter
-                      "rgba(250,204,21,0.14)",  // 3rd - yellow
-                      "rgba(251,191,36,0.14)",  // 4th - amber
-                      "rgba(251,146,60,0.14)",  // 5th - orange
-                      "rgba(248,113,113,0.14)", // 6th - red
+                      "rgba(16,185,129,0.18)",  // 1st  - emerald
+                      "rgba(5,180,140,0.17)",   // 2nd  - emerald→teal
+                      "rgba(13,172,156,0.16)",  // 3rd  - teal
+                      "rgba(20,160,180,0.16)",  // 4th  - teal→cyan
+                      "rgba(6,182,212,0.15)",   // 5th  - cyan
+                      "rgba(14,165,233,0.15)",  // 6th  - sky
+                      "rgba(59,130,246,0.14)",  // 7th  - blue
+                      "rgba(99,102,241,0.14)",  // 8th  - indigo
+                      "rgba(129,90,230,0.13)",  // 9th  - indigo→violet
+                      "rgba(139,92,246,0.13)",  // 10th - violet
+                      "rgba(160,70,230,0.12)",  // 11th - violet→purple
+                      "rgba(168,85,247,0.12)",  // 12th - purple
                     ];
                     const rankMap = new Map(ranked.map((r, i) => [r.h, i]));
                     return hourRows.map(({ h, revenue, sales }) => {
