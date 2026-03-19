@@ -65,7 +65,7 @@ export function TopSellingProducts({ products, loading }: Props) {
         ) : (
           <div className="divide-y divide-border flex flex-col flex-1">
             {visibleProducts.map((product, idx) => (
-              <div key={product.item_id} className="flex items-center gap-3 px-4 flex-1">
+              <div key={product.item_id} className={`flex items-center gap-3 px-4 flex-1 ${idx === 0 ? "bg-[hsl(45,93%,47%)]/5" : idx === 1 ? "bg-[hsl(0,0%,66%)]/5" : idx === 2 ? "bg-[hsl(25,60%,50%)]/5" : ""}`}>
                 <span className={`text-sm font-bold w-5 text-center shrink-0 ${idx === 0 ? "text-[hsl(45,93%,47%)]" : idx === 1 ? "text-[hsl(0,0%,66%)]" : idx === 2 ? "text-[hsl(25,60%,50%)]" : "text-muted-foreground"}`}>{idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1}</span>
                 <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0">
                   {product.thumbnail ? (
