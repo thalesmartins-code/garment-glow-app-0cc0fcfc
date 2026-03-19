@@ -273,6 +273,31 @@ serve(async (req) => {
       }
     }
 
+    // Enrich product thumbnails via multi-get
+    try {
+      const uniqueItemIds = [...new Set(Object.values(productSales).map((p) => p.item_id))];
+      for (let i = 0; i < uniqueItemIds.length; i += 20) {
+        const batch = uniqueItemIds.slice(i, i + 20);
+        const idsParam = batch.join(",");
+        const multiGet = await mlFetch(
+          `/items?ids=${idsParam}&attributes=id,thumbnail`,
+          access_token
+        );
+        for (const entry of multiGet) {
+          if (entry.code === 200 && entry.body?.thumbnail) {
+            for (const ps of Object.values(productSales)) {
+              if (ps.item_id === entry.body.id) {
+                ps.thumbnail = entry.body.thumbnail;
+              }
+            }
+          }
+        }
+      }
+      console.log(`Enriched thumbnails for ${uniqueItemIds.length} unique items`);
+    } catch (thumbErr) {
+      console.error("Thumbnail enrichment error (non-critical):", thumbErr);
+    }
+
     const dailyBuyers = countUniqueBuyers(orders);
     for (const [date, count] of Object.entries(dailyBuyers)) {
       if (!dailySales[date]) {
