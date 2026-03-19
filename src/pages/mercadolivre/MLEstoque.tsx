@@ -80,6 +80,7 @@ export default function MLEstoque() {
 
       setItems(data.items || []);
       setSummary(data.summary || null);
+      setLastUpdated(new Date());
     } catch (err: any) {
       console.error("Inventory fetch error:", err);
       toast({
