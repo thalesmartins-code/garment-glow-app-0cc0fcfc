@@ -619,9 +619,7 @@ export default function MercadoLivre() {
                       setCustomRange(null);
                       setPendingRange(null);
                       setPopoverOpen(false);
-                      if (autoSyncTriggeredRef.current) {
-                        syncFromAPI({ periodDays: opt.value === 0 ? 1 : opt.value });
-                      }
+                      syncFromAPI({ periodDays: opt.value === 0 ? 1 : opt.value });
                     }}
                   >
                     {opt.label}
@@ -656,9 +654,7 @@ export default function MercadoLivre() {
                     setPendingRange(null);
                     setPeriod(0);
                     setPopoverOpen(false);
-                    if (autoSyncTriggeredRef.current) {
                       syncFromAPI({ periodDays: 1 });
-                    }
                   }}
                 >
                   <X className="w-3.5 h-3.5 mr-1" />
@@ -672,9 +668,7 @@ export default function MercadoLivre() {
                     if (pendingRange?.from && pendingRange?.to) {
                       setCustomRange(pendingRange);
                       setPopoverOpen(false);
-                      if (autoSyncTriggeredRef.current) {
-                        syncFromAPI({ from: pendingRange.from, to: pendingRange.to });
-                      }
+                      syncFromAPI({ from: pendingRange.from, to: pendingRange.to });
                     }
                   }}
                 >
