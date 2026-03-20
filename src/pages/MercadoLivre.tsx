@@ -542,6 +542,13 @@ export default function MercadoLivre() {
     })();
   }, [user, loadFromCache, loadHourlyCache, syncFromAPI]);
 
+  // Auto-sync when period/date filter changes
+  useEffect(() => {
+    if (!user || !connected || !autoSyncTriggeredRef.current) return;
+    // autoSyncTriggeredRef is true only after initial load+sync, so this fires on subsequent filter changes
+    syncFromAPI();
+  }, [activeFilterKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!user) {
       setAllHourly([]);
