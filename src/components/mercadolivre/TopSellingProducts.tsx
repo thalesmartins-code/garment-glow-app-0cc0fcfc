@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Trophy, ExternalLink } from "lucide-react";
+import { Package, Trophy, ExternalLink, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import * as React from "react";
 
@@ -65,8 +65,15 @@ export function TopSellingProducts({ products, loading }: Props) {
         ) : (
           <div className="divide-y divide-border flex flex-col flex-1">
             {visibleProducts.map((product, idx) => (
-              <div key={product.item_id} className={`flex items-center gap-3 px-4 flex-1 ${idx === 0 ? "bg-[hsl(45,93%,47%)]/5" : idx === 1 ? "bg-[hsl(0,0%,66%)]/5" : idx === 2 ? "bg-[hsl(25,60%,50%)]/5" : ""}`}>
-                <span className={`text-sm font-bold w-5 text-center shrink-0 ${idx === 0 ? "text-[hsl(45,93%,47%)]" : idx === 1 ? "text-[hsl(0,0%,66%)]" : idx === 2 ? "text-[hsl(25,60%,50%)]" : "text-muted-foreground"}`}>{idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1}</span>
+              <div
+                key={product.item_id}
+                className={`flex items-center gap-3 px-4 flex-1 ${idx === 0 ? "bg-[hsl(45,93%,47%)]/5" : idx === 1 ? "bg-[hsl(0,0%,66%)]/5" : idx === 2 ? "bg-[hsl(25,60%,50%)]/5" : ""}`}
+              >
+                <span
+                  className={`text-sm font-bold w-5 text-center shrink-0 ${idx === 0 ? "text-[hsl(45,93%,47%)]" : idx === 1 ? "text-[hsl(0,0%,66%)]" : idx === 2 ? "text-[hsl(25,60%,50%)]" : "text-muted-foreground"}`}
+                >
+                  {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : idx + 1}
+                </span>
                 <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted shrink-0">
                   {product.thumbnail ? (
                     <img
@@ -89,7 +96,7 @@ export function TopSellingProducts({ products, loading }: Props) {
                   </div>
                 </div>
                 <a
-                  href={`https://produto.mercadolivre.com.br/${product.item_id.replace(/^(MLB)(\d+)$/, '$1-$2')}`}
+                  href={`https://produto.mercadolivre.com.br/${product.item_id.replace(/^(MLB)(\d+)$/, "$1-$2")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="shrink-0 text-muted-foreground/30 hover:text-primary transition-colors"
@@ -99,18 +106,16 @@ export function TopSellingProducts({ products, loading }: Props) {
                 {product.available_quantity !== undefined && (
                   <div className="flex flex-col items-end shrink-0">
                     <span className="text-[10px] text-muted-foreground mb-0.5">Estoque</span>
-                    <Badge
-                      variant={
-                        product.available_quantity === 0
-                          ? "destructive"
-                          : product.available_quantity <= 5
-                            ? "secondary"
-                            : "outline"
-                      }
-                      className="text-xs"
-                    >
-                      {product.available_quantity === 0 ? "Sem estoque" : `${product.available_quantity} un.`}
-                    </Badge>
+                    {product.available_quantity === 0 ? (
+                      <Badge variant="destructive" className="text-xs flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        Sem estoque
+                      </Badge>
+                    ) : (
+                      <Badge variant={product.available_quantity <= 5 ? "secondary" : "outline"} className="text-xs">
+                        {product.available_quantity} un.
+                      </Badge>
+                    )}
                   </div>
                 )}
               </div>
