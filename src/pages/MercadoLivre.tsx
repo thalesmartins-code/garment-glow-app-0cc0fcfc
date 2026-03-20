@@ -317,7 +317,7 @@ export default function MercadoLivre() {
       .select("*")
       .eq("user_id", user.id)
       .order("revenue", { ascending: false })
-      .limit(1000);
+      .limit(5000);
 
     if (productCache && productCache.length > 0) {
       setAllProductSales(productCache.map((r: any) => ({
