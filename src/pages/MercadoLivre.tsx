@@ -495,6 +495,8 @@ export default function MercadoLivre() {
     await Promise.all([loadFromCache(), loadHourlyCache()]);
   }, [loadFromCache, loadHourlyCache]);
 
+  const autoSyncTriggeredRef = useRef(false);
+
   useEffect(() => {
     if (!user || cacheLoadedRef.current) return;
     cacheLoadedRef.current = true;
@@ -531,8 +533,14 @@ export default function MercadoLivre() {
       } catch { /* non-critical */ }
 
       setLoading(false);
+
+      // Auto-sync from API after loading cache
+      if (!autoSyncTriggeredRef.current) {
+        autoSyncTriggeredRef.current = true;
+        syncFromAPI();
+      }
     })();
-  }, [user, loadFromCache, loadHourlyCache]);
+  }, [user, loadFromCache, loadHourlyCache, syncFromAPI]);
 
   useEffect(() => {
     if (!user) {
