@@ -88,7 +88,7 @@ async function fetchVisits(
     const from = new Date(`${dateFrom}T00:00:00.000Z`);
     const to = new Date(`${dateTo}T00:00:00.000Z`);
     const diffMs = to.getTime() - from.getTime();
-    const last = Math.max(1, Math.ceil(diffMs / DAY_MS));
+    const last = Math.max(1, Math.ceil(diffMs / DAY_MS) + 1);
 
     const data = await mlFetch(
       `/users/${sellerId}/items_visits/time_window?last=${last}&unit=day&ending=${dateTo}`,
@@ -168,38 +168,19 @@ serve(async (req) => {
       rangeStart.setHours(0, 0, 0, 0);
     }
 
-    const CHUNK_DAYS = 1;
-    const chunks: Array<{ from: string; to: string }> = [];
-    const totalMs = rangeEnd.getTime() - rangeStart.getTime();
-    const totalDays = Math.ceil(totalMs / DAY_MS);
-
-    for (let d = 0; d < totalDays; d += CHUNK_DAYS) {
-      const chunkFrom = new Date(rangeStart.getTime() + d * DAY_MS);
-      const chunkTo = new Date(Math.min(
-        rangeStart.getTime() + (d + CHUNK_DAYS) * DAY_MS - 1,
-        rangeEnd.getTime(),
-      ));
-      chunks.push({
-        from: chunkFrom.toISOString(),
-        to: chunkTo.toISOString(),
-      });
-    }
-
     const rangeFromStr = rangeStart.toISOString().substring(0, 10);
     const rangeToStr = rangeEnd.toISOString().substring(0, 10);
 
     console.log(
-      `Fetching orders from ${rangeStart.toISOString()} to ${rangeEnd.toISOString()} in ${chunks.length} chunks`,
+      `Fetching orders from ${rangeStart.toISOString()} to ${rangeEnd.toISOString()}`,
     );
 
-    // Paraleliza: todos os chunks de pedidos + visitas + anúncios ativos simultaneamente
-    const [chunkResults, dailyVisits, activeListings] = await Promise.all([
-      Promise.all(chunks.map((chunk) => fetchOrdersChunk(sellerId, chunk.from, chunk.to, access_token))),
+    // Uma única query paginada para o range completo + visitas + anúncios em paralelo
+    const [allOrders, dailyVisits, activeListings] = await Promise.all([
+      fetchOrdersChunk(sellerId, rangeStart.toISOString(), rangeEnd.toISOString(), access_token),
       fetchVisits(sellerId, rangeFromStr, rangeToStr, access_token),
       fetchActiveListings(sellerId, access_token),
     ]);
-
-    let allOrders: any[] = chunkResults.flat();
 
     const seen = new Set<number>();
     const orders = allOrders.filter((o) => {
@@ -208,7 +189,7 @@ serve(async (req) => {
       return true;
     });
 
-    console.log(`Fetched ${orders.length} unique orders in ${chunks.length} chunks (period: ${periodDays} days)`);
+    console.log(`Fetched ${orders.length} unique orders (period: ${periodDays} days)`);
 
     let totalRevenue = 0;
     const totalOrders = orders.length;
