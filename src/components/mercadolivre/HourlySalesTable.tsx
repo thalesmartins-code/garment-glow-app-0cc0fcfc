@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { useState } from "react";
 
 interface HourlyBreakdown {
@@ -14,11 +14,22 @@ interface Props {
   hourly: HourlyBreakdown[];
 }
 
+type SortKey = "hour" | "revenue" | "sales";
+type SortDir = "asc" | "desc";
+
 const currencyFmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
+  if (!active) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
+  return dir === "desc"
+    ? <ArrowDown className="w-3 h-3 text-primary" />
+    : <ArrowUp className="w-3 h-3 text-primary" />;
+}
+
 export function HourlySalesTable({ hourly }: Props) {
-  const [sortByRevenue, setSortByRevenue] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("hour");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const hourRows = Array.from({ length: 24 }, (_, h) => {
     const hourData = hourly.filter((d) => d.hour === h);
@@ -36,9 +47,37 @@ export function HourlySalesTable({ hourly }: Props) {
 
   const maxRevenue = peakHour.revenue;
 
-  const displayRows = sortByRevenue
-    ? [...hourRows].sort((a, b) => b.revenue - a.revenue)
-    : hourRows;
+  // Rank das top 12 horas por receita (só as que têm dados)
+  const rankedByRevenue = [...hourRows]
+    .filter((r) => r.revenue > 0)
+    .sort((a, b) => b.revenue - a.revenue);
+  const top12Set = new Set(rankedByRevenue.slice(0, 12).map((r) => r.h));
+  const rankMap = new Map(rankedByRevenue.map((r, i) => [r.h, i])); // 0 = melhor
+
+  // Gradiente: rank 0 = mais forte, rank 11 = mais fraco
+  function getRowBg(h: number, revenue: number): string {
+    if (revenue === 0 || !top12Set.has(h)) return "";
+    const rank = rankMap.get(h) ?? 12;
+    // Opacidade varia de 0.28 (rank 0) até 0.04 (rank 11)
+    const opacity = 0.28 - rank * (0.24 / 11);
+    return `rgba(34, 197, 94, ${opacity.toFixed(3)})`; // verde
+  }
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    } else {
+      setSortKey(key);
+      setSortDir(key === "hour" ? "asc" : "desc");
+    }
+  }
+
+  const displayRows = [...hourRows].sort((a, b) => {
+    const mul = sortDir === "desc" ? -1 : 1;
+    if (sortKey === "hour") return mul * (a.h - b.h);
+    if (sortKey === "revenue") return mul * (a.revenue - b.revenue);
+    return mul * (a.sales - b.sales);
+  });
 
   const totalRevenue = hourly.reduce((s, d) => s + d.total, 0);
   const totalSales = hourly.reduce((s, d) => s + d.qty, 0);
@@ -48,9 +87,7 @@ export function HourlySalesTable({ hourly }: Props) {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-base">
-              Venda por Hora
-            </CardTitle>
+            <CardTitle className="text-base">Venda por Hora</CardTitle>
             {peakHour.revenue > 0 && (
               <p className="text-xs text-muted-foreground mt-1">
                 🔥 Pico{" "}
@@ -65,7 +102,6 @@ export function HourlySalesTable({ hourly }: Props) {
               </p>
             )}
           </div>
-
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Total</p>
             <p className="text-sm font-semibold">{currencyFmt(totalRevenue)}</p>
@@ -77,18 +113,30 @@ export function HourlySalesTable({ hourly }: Props) {
         <table className="w-full text-sm">
           <thead className="sticky top-0 bg-card z-10">
             <tr className="border-b border-border">
-              <th className="text-left py-2 px-2 font-medium text-muted-foreground" style={{ width: 100 }}>
-                Hora
-              </th>
-              <th className="text-right py-2 px-2 font-medium text-muted-foreground">
-                Receita
-              </th>
               <th
-                className="text-right py-2 px-2 font-medium text-muted-foreground cursor-pointer select-none"
-                onClick={() => setSortByRevenue((p) => !p)}
+                className="text-left py-2 px-2 font-medium text-muted-foreground cursor-pointer select-none"
+                style={{ width: 80 }}
+                onClick={() => handleSort("hour")}
               >
                 <span className="inline-flex items-center gap-1">
-                  Vendas <ArrowUpDown className="w-3 h-3" />
+                  Hora <SortIcon active={sortKey === "hour"} dir={sortDir} />
+                </span>
+              </th>
+              <th
+                className="py-2 px-2 font-medium text-muted-foreground cursor-pointer select-none"
+                onClick={() => handleSort("revenue")}
+              >
+                <span className="inline-flex items-center justify-end gap-1 w-full">
+                  Receita <SortIcon active={sortKey === "revenue"} dir={sortDir} />
+                </span>
+              </th>
+              <th
+                className="py-2 px-2 font-medium text-muted-foreground cursor-pointer select-none"
+                style={{ width: 80 }}
+                onClick={() => handleSort("sales")}
+              >
+                <span className="inline-flex items-center justify-end gap-1 w-full">
+                  Vendas <SortIcon active={sortKey === "sales"} dir={sortDir} />
                 </span>
               </th>
             </tr>
@@ -96,41 +144,44 @@ export function HourlySalesTable({ hourly }: Props) {
           <tbody>
             {displayRows.map(({ h, revenue, sales }) => {
               const isEmpty = revenue === 0 && sales === 0;
-              const isPeak = h === peakHour.h && peakHour.revenue > 0;
               const barWidth = maxRevenue > 0 ? (revenue / maxRevenue) * 100 : 0;
+              const bg = getRowBg(h, revenue);
 
               return (
                 <tr
                   key={h}
-                  className={`border-b border-border/50 ${isPeak ? "bg-primary/5" : ""}`}
+                  className="border-b border-border/50 transition-colors"
+                  style={bg ? { backgroundColor: bg } : undefined}
                 >
-                  <td className="py-1.5 px-2 tabular-nums" style={{ width: 100 }}>
+                  <td className="py-1.5 px-2 tabular-nums" style={{ width: 80 }}>
                     {String(h).padStart(2, "0")}:00
                   </td>
-                  <td className="py-1.5 px-2 text-right">
+
+                  {/* Receita — barra + valor sempre alinhados à direita */}
+                  <td className="py-1.5 px-2">
                     {isEmpty ? (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="flex justify-end text-muted-foreground">—</span>
                     ) : (
                       <div className="flex items-center justify-end gap-2">
-                        <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden shrink-0">
                           <div
                             className="h-full rounded-full bg-primary/60"
                             style={{ width: `${barWidth}%` }}
                           />
                         </div>
-                        <span className="tabular-nums font-medium">
+                        <span className="tabular-nums font-medium text-right" style={{ minWidth: "7rem" }}>
                           {currencyFmt(revenue)}
                         </span>
                       </div>
                     )}
                   </td>
-                  <td className="py-1.5 px-2 text-right">
+
+                  {/* Vendas */}
+                  <td className="py-1.5 px-2 text-right" style={{ width: 80 }}>
                     {isEmpty ? (
                       <span className="text-muted-foreground">—</span>
                     ) : (
-                      <span className="tabular-nums font-medium">
-                        {sales}
-                      </span>
+                      <span className="tabular-nums font-medium">{sales}</span>
                     )}
                   </td>
                 </tr>
@@ -139,15 +190,9 @@ export function HourlySalesTable({ hourly }: Props) {
           </tbody>
           <tfoot className="border-t-2 border-border bg-muted/50">
             <tr className="font-semibold">
-              <td className="py-2 px-2">
-                Total
-              </td>
-              <td className="py-2 px-2 text-right">
-                {currencyFmt(totalRevenue)}
-              </td>
-              <td className="py-2 px-2 text-right">
-                {totalSales}
-              </td>
+              <td className="py-2 px-2">Total</td>
+              <td className="py-2 px-2 text-right">{currencyFmt(totalRevenue)}</td>
+              <td className="py-2 px-2 text-right">{totalSales}</td>
             </tr>
           </tfoot>
         </table>
