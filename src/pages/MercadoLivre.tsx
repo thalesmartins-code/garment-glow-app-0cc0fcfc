@@ -129,7 +129,6 @@ function buildHourlyChartData(hourlyRows: HourlyBreakdown[]) {
     "Venda Aprovada": 0,
     Pedidos: 0,
   }));
-
   hourlyRows.forEach((row) => {
     const bucket = buckets[row.hour];
     if (!bucket) return;
@@ -137,8 +136,16 @@ function buildHourlyChartData(hourlyRows: HourlyBreakdown[]) {
     bucket["Venda Aprovada"] += row.approved;
     bucket.Pedidos += row.qty;
   });
-
   return buckets;
+}
+
+function getFilterDates(customRange: DateRange, period: number): { fromDate: string; toDate: string } {
+  if (customRange?.from) {
+    const fromDate = format(startOfDay(customRange.from), "yyyy-MM-dd");
+    const toDate = customRange.to ? format(startOfDay(customRange.to), "yyyy-MM-dd") : fromDate;
+    return { fromDate, toDate };
+  }
+  return { fromDate: cutoffDateStr(period), toDate: todayUTC() };
 }
 
 export default function MercadoLivre() {
@@ -229,11 +236,10 @@ export default function MercadoLivre() {
     if (metrics.unique_visits > 0) metrics.conversion_rate = (metrics.unique_buyers / metrics.unique_visits) * 100;
   }
 
+  // Produtos já vêm filtrados pelo período — só agrega por item_id
   const filteredTopProducts = (() => {
-    const dateSet = new Set(daily.map((d) => d.date));
-    const filtered = allProductSales.filter((p) => dateSet.has(p.date));
     const agg: Record<string, ProductSalesRow> = {};
-    for (const p of filtered) {
+    for (const p of allProductSales) {
       if (!agg[p.item_id]) {
         agg[p.item_id] = { item_id: p.item_id, title: p.title, thumbnail: p.thumbnail, qty_sold: 0, revenue: 0 };
       }
@@ -245,6 +251,35 @@ export default function MercadoLivre() {
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10);
   })();
+
+  // Carrega produtos filtrados pelo período exato
+  const loadProductCache = useCallback(
+    async (fromDate: string, toDate: string) => {
+      if (!user) {
+        setAllProductSales([]);
+        return;
+      }
+      const { data } = await (supabase as any)
+        .from("ml_product_daily_cache")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("date", fromDate)
+        .lte("date", toDate)
+        .order("revenue", { ascending: false })
+        .limit(5000);
+      setAllProductSales(
+        (data || []).map((r: any) => ({
+          item_id: r.item_id,
+          date: r.date,
+          title: r.title || "",
+          thumbnail: r.thumbnail,
+          qty_sold: Number(r.qty_sold || 0),
+          revenue: Number(r.revenue || 0),
+        })),
+      );
+    },
+    [user],
+  );
 
   const loadHourlyCache = useCallback(
     async (overrideDate?: string | null) => {
@@ -280,7 +315,7 @@ export default function MercadoLivre() {
   const loadFromCache = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
 
-    const [{ data: userCache }, { data: dailyCache }, { data: productCache }] = await Promise.all([
+    const [{ data: userCache }, { data: dailyCache }] = await Promise.all([
       supabase.from("ml_user_cache").select("*").eq("user_id", user.id).maybeSingle(),
       supabase
         .from("ml_daily_cache")
@@ -288,12 +323,6 @@ export default function MercadoLivre() {
         .eq("user_id", user.id)
         .order("date", { ascending: false })
         .limit(1000),
-      (supabase as any)
-        .from("ml_product_daily_cache")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("revenue", { ascending: false })
-        .limit(5000),
     ]);
 
     if (userCache) {
@@ -312,20 +341,6 @@ export default function MercadoLivre() {
 
     setAllDaily(dailyCache.map(mapDailyRow));
     setConnected(true);
-
-    if (productCache && productCache.length > 0) {
-      setAllProductSales(
-        productCache.map((r: any) => ({
-          item_id: r.item_id,
-          date: r.date,
-          title: r.title || "",
-          thumbnail: r.thumbnail,
-          qty_sold: Number(r.qty_sold || 0),
-          revenue: Number(r.revenue || 0),
-        })),
-      );
-    }
-
     return true;
   }, [user]);
 
@@ -337,7 +352,6 @@ export default function MercadoLivre() {
       listings?: number,
     ) => {
       if (!user || dailyData.length === 0) return;
-
       try {
         const syncedAt = new Date().toISOString();
         const dailyRows = dailyData.map((d) => ({
@@ -354,8 +368,7 @@ export default function MercadoLivre() {
         }));
 
         for (let i = 0; i < dailyRows.length; i += 200) {
-          const batch = dailyRows.slice(i, i + 200);
-          await supabase.from("ml_daily_cache").upsert(batch, { onConflict: "user_id,date" });
+          await supabase.from("ml_daily_cache").upsert(dailyRows.slice(i, i + 200), { onConflict: "user_id,date" });
         }
 
         if (hourlyData.length > 0) {
@@ -368,10 +381,10 @@ export default function MercadoLivre() {
             qty_orders: h.qty,
             synced_at: syncedAt,
           }));
-
           for (let i = 0; i < hourlyRows.length; i += 200) {
-            const batch = hourlyRows.slice(i, i + 200);
-            await (supabase as any).from("ml_hourly_cache").upsert(batch, { onConflict: "user_id,date,hour" });
+            await (supabase as any)
+              .from("ml_hourly_cache")
+              .upsert(hourlyRows.slice(i, i + 200), { onConflict: "user_id,date,hour" });
           }
         }
 
@@ -449,17 +462,14 @@ export default function MercadoLivre() {
           const chunkEnd = new Date(cursor);
           chunkEnd.setDate(chunkEnd.getDate() + CHUNK_DAYS - 1);
           if (chunkEnd > rangeEnd) chunkEnd.setTime(rangeEnd.getTime());
-
           chunks.push({
             date_from: chunkStart.toISOString().substring(0, 10),
             date_to: chunkEnd.toISOString().substring(0, 10),
           });
-
           cursor.setDate(cursor.getDate() + CHUNK_DAYS);
         }
 
         let lastUserInfo: MLUser | null = null;
-
         const chunkResults = await Promise.all(
           chunks.map((chunk) =>
             supabase.functions.invoke("mercado-libre-integration", {
@@ -479,19 +489,22 @@ export default function MercadoLivre() {
           if (data.user) lastUserInfo = data.user as MLUser;
         }
 
-        // Calcula a data exata sincronizada para recarregar o horário correto,
-        // ignorando o closure desatualizado de hourlyTargetDate
+        const fromDateStr = rangeStart.toISOString().substring(0, 10);
+        const toDateStr = rangeEnd.toISOString().substring(0, 10);
+
         let hourlyDateOverride: string | null;
         if (effectiveFrom) {
-          const fromStr = format(startOfDay(effectiveFrom), "yyyy-MM-dd");
-          const toStr = format(startOfDay(effectiveTo ?? effectiveFrom), "yyyy-MM-dd");
-          hourlyDateOverride = fromStr === toStr ? fromStr : null;
+          hourlyDateOverride = fromDateStr === toDateStr ? fromDateStr : null;
         } else {
           const days = opts?.periodDays ?? (period > 0 ? period : 1);
           hourlyDateOverride = days <= 1 ? todayUTC() : null;
         }
 
-        await Promise.all([loadFromCache(), loadHourlyCache(hourlyDateOverride)]);
+        await Promise.all([
+          loadFromCache(),
+          loadHourlyCache(hourlyDateOverride),
+          loadProductCache(fromDateStr, toDateStr),
+        ]);
         if (lastUserInfo) setMlUser(lastUserInfo);
 
         const now = new Date().toLocaleString("pt-BR");
@@ -505,13 +518,14 @@ export default function MercadoLivre() {
         setSyncing(false);
       }
     },
-    [user, toast, period, customRange, loadFromCache, loadHourlyCache],
+    [user, toast, period, customRange, loadFromCache, loadHourlyCache, loadProductCache],
   );
 
   const reloadCache = useCallback(async () => {
     cacheLoadedRef.current = false;
-    await Promise.all([loadFromCache(), loadHourlyCache()]);
-  }, [loadFromCache, loadHourlyCache]);
+    const { fromDate, toDate } = getFilterDates(customRange, period);
+    await Promise.all([loadFromCache(), loadHourlyCache(), loadProductCache(fromDate, toDate)]);
+  }, [loadFromCache, loadHourlyCache, loadProductCache, customRange, period]);
 
   const autoSyncTriggeredRef = useRef(false);
 
@@ -534,16 +548,16 @@ export default function MercadoLivre() {
 
       setCachedAccessToken(tokenRow.access_token);
       setConnected(true);
-      await Promise.all([loadFromCache(), loadHourlyCache()]);
+
+      const { fromDate, toDate } = getFilterDates(customRange, period);
+      await Promise.all([loadFromCache(), loadHourlyCache(), loadProductCache(fromDate, toDate)]);
 
       supabase.functions
         .invoke("ml-inventory", { body: { access_token: tokenRow.access_token } })
         .then(({ data: invData }) => {
           if (invData?.items) {
             const stockMap: Record<string, number> = {};
-            for (const item of invData.items) {
-              stockMap[item.id] = item.available_quantity ?? 0;
-            }
+            for (const item of invData.items) stockMap[item.id] = item.available_quantity ?? 0;
             setProductStockMap(stockMap);
           }
         })
@@ -559,15 +573,18 @@ export default function MercadoLivre() {
         }
       }
     })();
-  }, [user, loadFromCache, loadHourlyCache, syncFromAPI]);
+  }, [user, loadFromCache, loadHourlyCache, loadProductCache, syncFromAPI]);
 
+  // Recarrega horário E produtos sempre que o filtro mudar
   useEffect(() => {
     if (!user) {
       setAllHourly([]);
       return;
     }
+    const { fromDate, toDate } = getFilterDates(customRange, period);
     void loadHourlyCache();
-  }, [user, loadHourlyCache, activeFilterKey]);
+    void loadProductCache(fromDate, toDate);
+  }, [user, loadHourlyCache, loadProductCache, activeFilterKey]);
 
   if (!loading && !connected) {
     return (
