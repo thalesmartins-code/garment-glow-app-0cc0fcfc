@@ -165,6 +165,7 @@ export default function MercadoLivre() {
   const [chartMode, setChartMode] = useState<ChartMode>("hourly");
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [pendingRange, setPendingRange] = useState<DateRange>(null);
+  const [pendingPeriod, setPendingPeriod] = useState<number | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(() => localStorage.getItem(LAST_ML_SYNC_KEY));
   const cacheLoadedRef = useRef(false);
 
@@ -210,12 +211,24 @@ export default function MercadoLivre() {
   });
 
   const periodLabel = customRange?.from
-    ? customRange.to
+    ? customRange.to && format(startOfDay(customRange.from), "yyyy-MM-dd") !== format(startOfDay(customRange.to), "yyyy-MM-dd")
       ? `${format(customRange.from, "dd/MM/yy")} – ${format(customRange.to, "dd/MM/yy")}`
-      : `Início: ${format(customRange.from, "dd/MM/yy")}`
+      : format(customRange.from, "dd/MM/yy")
     : period === 0
       ? "Hoje"
       : `Últimos ${period} dias`;
+
+  const pendingLabel = (() => {
+    if (pendingRange?.from) {
+      const from = format(pendingRange.from, "dd/MM/yyyy");
+      const to = pendingRange.to ? format(pendingRange.to, "dd/MM/yyyy") : from;
+      return from === to ? `${from} (1 dia)` : `${from} – ${to}`;
+    }
+    if (pendingPeriod !== null) return pendingPeriod === 0 ? "Hoje" : `Últimos ${pendingPeriod} dias`;
+    return null;
+  })();
+
+  const canConfirm = pendingRange !== null || pendingPeriod !== null;
 
   const metrics =
     daily.length > 0
@@ -586,6 +599,22 @@ export default function MercadoLivre() {
     void loadProductCache(fromDate, toDate);
   }, [user, loadHourlyCache, loadProductCache, activeFilterKey]);
 
+  const handleConfirm = useCallback(() => {
+    if (pendingRange?.from) {
+      const resolvedTo = pendingRange.to ?? pendingRange.from;
+      const resolvedRange = { from: pendingRange.from, to: resolvedTo };
+      setCustomRange(resolvedRange);
+      setPeriod(0);
+      setPopoverOpen(false);
+      syncFromAPI({ from: resolvedRange.from, to: resolvedRange.to });
+    } else if (pendingPeriod !== null) {
+      setCustomRange(null);
+      setPeriod(pendingPeriod);
+      setPopoverOpen(false);
+      syncFromAPI({ periodDays: pendingPeriod === 0 ? 1 : pendingPeriod });
+    }
+  }, [pendingRange, pendingPeriod, syncFromAPI]);
+
   if (!loading && !connected) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -630,7 +659,13 @@ export default function MercadoLivre() {
             open={popoverOpen}
             onOpenChange={(open) => {
               setPopoverOpen(open);
-              if (open) setPendingRange(customRange);
+              if (open) {
+                setPendingRange(customRange);
+                setPendingPeriod(customRange ? null : period);
+              } else {
+                setPendingRange(null);
+                setPendingPeriod(null);
+              }
             }}
           >
             <PopoverTrigger asChild>
@@ -640,54 +675,52 @@ export default function MercadoLivre() {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-3" align="start">
+              {/* Atalhos — apenas marcam seleção pendente, sem fechar */}
               <div className="flex gap-1 mb-3">
                 {QUICK_RANGES.map((opt) => (
                   <Button
                     key={opt.value}
-                    variant={!customRange && period === opt.value ? "default" : "outline"}
+                    variant={pendingPeriod === opt.value && pendingRange === null ? "default" : "outline"}
                     size="sm"
                     className="h-7 px-3 text-xs"
                     onClick={() => {
-                      setPeriod(opt.value);
-                      setCustomRange(null);
+                      setPendingPeriod(opt.value);
                       setPendingRange(null);
-                      setPopoverOpen(false);
-                      syncFromAPI({ periodDays: opt.value === 0 ? 1 : opt.value });
                     }}
                   >
                     {opt.label}
                   </Button>
                 ))}
               </div>
+              {/* Calendário — 1 clique = 1 dia, 2 cliques = range */}
               <Calendar
                 mode="range"
                 selected={pendingRange ?? undefined}
                 onSelect={(range) => {
-                  if (!range?.from) {
-                    setPendingRange(null);
-                    return;
-                  }
-                  setPendingRange({
-                    from: startOfDay(range.from),
-                    to: range.to ? startOfDay(range.to) : undefined,
-                  });
+                  if (!range?.from) { setPendingRange(null); return; }
+                  const from = startOfDay(range.from);
+                  const to = range.to ? startOfDay(range.to) : from;
+                  setPendingRange({ from, to });
+                  setPendingPeriod(null);
                 }}
                 disabled={(date) => date > new Date()}
                 numberOfMonths={2}
                 locale={ptBR}
                 className="pointer-events-auto"
               />
+              {/* Pré-visualização */}
+              {pendingLabel && (
+                <p className="text-xs text-center text-muted-foreground mt-2 mb-1">{pendingLabel}</p>
+              )}
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-7 text-xs text-muted-foreground"
                   onClick={() => {
-                    setCustomRange(null);
+                    // Limpar: volta para "Hoje" sem fechar o popover
                     setPendingRange(null);
-                    setPeriod(0);
-                    setPopoverOpen(false);
-                    syncFromAPI({ periodDays: 1 });
+                    setPendingPeriod(0);
                   }}
                 >
                   <X className="w-3.5 h-3.5 mr-1" />
@@ -696,16 +729,8 @@ export default function MercadoLivre() {
                 <Button
                   size="sm"
                   className="h-7 text-xs"
-                  disabled={!pendingRange?.from}
-                  onClick={() => {
-                    if (pendingRange?.from) {
-                      const resolvedTo = pendingRange.to ?? pendingRange.from;
-                      const resolvedRange = { from: pendingRange.from, to: resolvedTo };
-                      setCustomRange(resolvedRange);
-                      setPopoverOpen(false);
-                      syncFromAPI({ from: resolvedRange.from, to: resolvedRange.to });
-                    }
-                  }}
+                  disabled={!canConfirm}
+                  onClick={handleConfirm}
                 >
                   <Check className="w-3.5 h-3.5 mr-1" />
                   Confirmar
