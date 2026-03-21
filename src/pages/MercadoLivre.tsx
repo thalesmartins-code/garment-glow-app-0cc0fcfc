@@ -467,43 +467,24 @@ export default function MercadoLivre() {
           rangeStart.setDate(today.getDate() - days + 1);
         }
 
-        const CHUNK_DAYS = 2;
-        const chunks: Array<{ date_from: string; date_to: string }> = [];
-        const cursor = new Date(rangeStart);
-        while (cursor <= rangeEnd) {
-          const chunkStart = new Date(cursor);
-          const chunkEnd = new Date(cursor);
-          chunkEnd.setDate(chunkEnd.getDate() + CHUNK_DAYS - 1);
-          if (chunkEnd > rangeEnd) chunkEnd.setTime(rangeEnd.getTime());
-          chunks.push({
-            date_from: chunkStart.toISOString().substring(0, 10),
-            date_to: chunkEnd.toISOString().substring(0, 10),
-          });
-          cursor.setDate(cursor.getDate() + CHUNK_DAYS);
-        }
-
-        let lastUserInfo: MLUser | null = null;
-        const chunkResults = await Promise.all(
-          chunks.map((chunk) =>
-            supabase.functions.invoke("mercado-libre-integration", {
-              body: {
-                access_token: accessToken,
-                user_id: user.id,
-                date_from: chunk.date_from,
-                date_to: chunk.date_to,
-              },
-            }),
-          ),
-        );
-
-        for (const { data, error } of chunkResults) {
-          if (error) throw error;
-          if (!data?.success) throw new Error(data?.error || "Sync failed");
-          if (data.user) lastUserInfo = data.user as MLUser;
-        }
-
         const fromDateStr = rangeStart.toISOString().substring(0, 10);
         const toDateStr = rangeEnd.toISOString().substring(0, 10);
+
+        const { data: syncData, error: syncError } = await supabase.functions.invoke(
+          "mercado-libre-integration",
+          {
+            body: {
+              access_token: accessToken,
+              user_id: user.id,
+              date_from: fromDateStr,
+              date_to: toDateStr,
+            },
+          },
+        );
+
+        if (syncError) throw syncError;
+        if (!syncData?.success) throw new Error(syncData?.error || "Sync failed");
+        const lastUserInfo: MLUser | null = syncData.user ?? null;
 
         let hourlyDateOverride: string | null;
         if (effectiveFrom) {
@@ -524,7 +505,7 @@ export default function MercadoLivre() {
         setLastSyncedAt(now);
         localStorage.setItem(LAST_ML_SYNC_KEY, now);
         localStorage.setItem(LAST_ML_SYNC_TS_KEY, String(Date.now()));
-        toast({ title: "Sincronizado", description: `Dados atualizados (${chunks.length} bloco(s)).` });
+        toast({ title: "Sincronizado", description: `Dados atualizados: ${fromDateStr} → ${toDateStr}.` });
       } catch (err: any) {
         toast({ title: "Erro", description: err.message, variant: "destructive" });
       } finally {
