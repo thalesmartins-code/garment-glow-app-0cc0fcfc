@@ -68,6 +68,15 @@ async function fetchOrdersChunk(
   return allOrders;
 }
 
+async function fetchActiveListings(sellerId: number, accessToken: string): Promise<number> {
+  try {
+    const data = await mlFetch(`/users/${sellerId}/items/search?status=active&limit=0`, accessToken);
+    return data.paging?.total || 0;
+  } catch {
+    return 0;
+  }
+}
+
 async function fetchVisits(
   sellerId: number,
   dateFrom: string,
@@ -176,15 +185,21 @@ serve(async (req) => {
       });
     }
 
+    const rangeFromStr = rangeStart.toISOString().substring(0, 10);
+    const rangeToStr = rangeEnd.toISOString().substring(0, 10);
+
     console.log(
       `Fetching orders from ${rangeStart.toISOString()} to ${rangeEnd.toISOString()} in ${chunks.length} chunks`,
     );
 
-    let allOrders: any[] = [];
-    for (const chunk of chunks) {
-      const chunkOrders = await fetchOrdersChunk(sellerId, chunk.from, chunk.to, access_token);
-      allOrders = allOrders.concat(chunkOrders);
-    }
+    // Paraleliza: todos os chunks de pedidos + visitas + anúncios ativos simultaneamente
+    const [chunkResults, dailyVisits, activeListings] = await Promise.all([
+      Promise.all(chunks.map((chunk) => fetchOrdersChunk(sellerId, chunk.from, chunk.to, access_token))),
+      fetchVisits(sellerId, rangeFromStr, rangeToStr, access_token),
+      fetchActiveListings(sellerId, access_token),
+    ]);
+
+    let allOrders: any[] = chunkResults.flat();
 
     const seen = new Set<number>();
     const orders = allOrders.filter((o) => {
@@ -311,23 +326,27 @@ serve(async (req) => {
       }
     }
 
-    // Enrich product thumbnails via multi-get
+    // Enrich product thumbnails via multi-get — todos os batches em paralelo
     try {
       const uniqueItemIds = [...new Set(Object.values(productSales).map((p) => p.item_id))];
+      const thumbnailBatches: string[][] = [];
       for (let i = 0; i < uniqueItemIds.length; i += 20) {
-        const batch = uniqueItemIds.slice(i, i + 20);
-        const idsParam = batch.join(",");
-        const multiGet = await mlFetch(`/items?ids=${idsParam}&attributes=id,thumbnail`, access_token);
-        for (const entry of multiGet) {
-          if (entry.code === 200 && entry.body?.thumbnail) {
-            for (const ps of Object.values(productSales)) {
-              if (ps.item_id === entry.body.id) {
-                ps.thumbnail = entry.body.thumbnail;
+        thumbnailBatches.push(uniqueItemIds.slice(i, i + 20));
+      }
+      await Promise.all(
+        thumbnailBatches.map(async (batch) => {
+          const multiGet = await mlFetch(`/items?ids=${batch.join(",")}&attributes=id,thumbnail`, access_token);
+          for (const entry of multiGet) {
+            if (entry.code === 200 && entry.body?.thumbnail) {
+              for (const ps of Object.values(productSales)) {
+                if (ps.item_id === entry.body.id) {
+                  ps.thumbnail = entry.body.thumbnail;
+                }
               }
             }
           }
-        }
-      }
+        }),
+      );
       console.log(`Enriched thumbnails for ${uniqueItemIds.length} unique items`);
     } catch (thumbErr) {
       console.error("Thumbnail enrichment error (non-critical):", thumbErr);
@@ -351,9 +370,7 @@ serve(async (req) => {
     }
     const totalUniqueBuyers = new Set(orders.map((o) => o.buyer?.id).filter(Boolean)).size;
 
-    const rangeFromStr = rangeStart.toISOString().substring(0, 10);
-    const rangeToStr = rangeEnd.toISOString().substring(0, 10);
-    const dailyVisits = await fetchVisits(sellerId, rangeFromStr, rangeToStr, access_token);
+    // dailyVisits e activeListings já foram buscados em paralelo com os pedidos
     let totalVisits = 0;
     for (const [date, visits] of Object.entries(dailyVisits)) {
       totalVisits += visits;
@@ -375,14 +392,6 @@ serve(async (req) => {
     console.log(
       `Unique buyers: ${totalUniqueBuyers}, daily visit rows: ${Object.keys(dailyVisits).length}, total visits: ${totalVisits}`,
     );
-
-    let activeListings = 0;
-    try {
-      const itemsSearch = await mlFetch(`/users/${sellerId}/items/search?status=active&limit=0`, access_token);
-      activeListings = itemsSearch.paging?.total || 0;
-    } catch {
-      // non-critical
-    }
 
     if (user_id) {
       try {
@@ -412,18 +421,25 @@ serve(async (req) => {
           synced_at: syncedAt,
         }));
 
+        // Paraleliza upserts de daily + hourly + user simultaneamente
+        const upsertPromises: Promise<any>[] = [];
+
         if (dailyRows.length > 0) {
-          const { error: cacheErr } = await supabaseAdmin
-            .from("ml_daily_cache")
-            .upsert(dailyRows, { onConflict: "user_id,date" });
-          if (cacheErr) console.error("Cache upsert error:", cacheErr);
+          upsertPromises.push(
+            supabaseAdmin
+              .from("ml_daily_cache")
+              .upsert(dailyRows, { onConflict: "user_id,date" })
+              .then(({ error }) => { if (error) console.error("Cache upsert error:", error); }),
+          );
         }
 
         if (hourlyRows.length > 0) {
-          const { error: hourlyCacheErr } = await supabaseAdmin
-            .from("ml_hourly_cache")
-            .upsert(hourlyRows, { onConflict: "user_id,date,hour" });
-          if (hourlyCacheErr) console.error("Hourly cache upsert error:", hourlyCacheErr);
+          upsertPromises.push(
+            supabaseAdmin
+              .from("ml_hourly_cache")
+              .upsert(hourlyRows, { onConflict: "user_id,date,hour" })
+              .then(({ error }) => { if (error) console.error("Hourly cache upsert error:", error); }),
+          );
         }
 
         // Upsert product daily cache
@@ -438,17 +454,22 @@ serve(async (req) => {
           synced_at: syncedAt,
         }));
 
+        // Products: fire-and-forget (paralelo internamente)
         if (productRows.length > 0) {
-          // Fire-and-forget product cache upsert to avoid timeout
           (async () => {
             try {
+              const productBatches: typeof productRows[] = [];
               for (let i = 0; i < productRows.length; i += 200) {
-                const batch = productRows.slice(i, i + 200);
-                const { error: prodCacheErr } = await supabaseAdmin
-                  .from("ml_product_daily_cache")
-                  .upsert(batch, { onConflict: "user_id,date,item_id" });
-                if (prodCacheErr) console.error("Product cache upsert error:", prodCacheErr);
+                productBatches.push(productRows.slice(i, i + 200));
               }
+              await Promise.all(
+                productBatches.map((batch) =>
+                  supabaseAdmin
+                    .from("ml_product_daily_cache")
+                    .upsert(batch, { onConflict: "user_id,date,item_id" })
+                    .then(({ error }) => { if (error) console.error("Product cache upsert error:", error); }),
+                ),
+              );
               console.log(`Product cache: ${productRows.length} rows saved`);
             } catch (e) {
               console.error("Product cache async error:", e);
@@ -456,19 +477,26 @@ serve(async (req) => {
           })();
         }
 
-        const { error: userCacheErr } = await supabaseAdmin.from("ml_user_cache").upsert(
-          {
-            user_id,
-            ml_user_id: user.id,
-            nickname: user.nickname,
-            country: user.country_id,
-            permalink: user.permalink,
-            active_listings: activeListings,
-            synced_at: syncedAt,
-          },
-          { onConflict: "user_id" },
+        // User cache junto com daily/hourly em paralelo
+        upsertPromises.push(
+          supabaseAdmin
+            .from("ml_user_cache")
+            .upsert(
+              {
+                user_id,
+                ml_user_id: user.id,
+                nickname: user.nickname,
+                country: user.country_id,
+                permalink: user.permalink,
+                active_listings: activeListings,
+                synced_at: syncedAt,
+              },
+              { onConflict: "user_id" },
+            )
+            .then(({ error }) => { if (error) console.error("User cache upsert error:", error); }),
         );
-        if (userCacheErr) console.error("User cache upsert error:", userCacheErr);
+
+        await Promise.all(upsertPromises);
 
         console.log(
           `Cache updated: ${dailyRows.length} daily rows, ${hourlyRows.length} hourly rows, ${productRows.length} product rows, user cache saved`,

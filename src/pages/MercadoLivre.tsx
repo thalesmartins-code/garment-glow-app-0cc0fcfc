@@ -272,7 +272,12 @@ export default function MercadoLivre() {
   const loadFromCache = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
 
-    const { data: userCache } = await supabase.from("ml_user_cache").select("*").eq("user_id", user.id).maybeSingle();
+    // Paraleliza as 3 queries ao Supabase em vez de sequencial
+    const [{ data: userCache }, { data: dailyCache }, { data: productCache }] = await Promise.all([
+      supabase.from("ml_user_cache").select("*").eq("user_id", user.id).maybeSingle(),
+      supabase.from("ml_daily_cache").select("*").eq("user_id", user.id).order("date", { ascending: false }).limit(1000),
+      (supabase as any).from("ml_product_daily_cache").select("*").eq("user_id", user.id).order("revenue", { ascending: false }).limit(5000),
+    ]);
 
     if (userCache) {
       setMlUser({
@@ -283,13 +288,6 @@ export default function MercadoLivre() {
       });
     }
 
-    const { data: dailyCache } = await supabase
-      .from("ml_daily_cache")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("date", { ascending: false })
-      .limit(1000);
-
     if (!dailyCache || dailyCache.length === 0) {
       setAllDaily([]);
       return !!userCache;
@@ -297,13 +295,6 @@ export default function MercadoLivre() {
 
     setAllDaily(dailyCache.map(mapDailyRow));
     setConnected(true);
-
-    const { data: productCache } = await (supabase as any)
-      .from("ml_product_daily_cache")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("revenue", { ascending: false })
-      .limit(5000);
 
     if (productCache && productCache.length > 0) {
       setAllProductSales(
@@ -452,19 +443,23 @@ export default function MercadoLivre() {
 
         let lastUserInfo: MLUser | null = null;
 
-        for (const chunk of chunks) {
-          const { data, error } = await supabase.functions.invoke("mercado-libre-integration", {
-            body: {
-              access_token: accessToken,
-              user_id: user.id,
-              date_from: chunk.date_from,
-              date_to: chunk.date_to,
-            },
-          });
+        // Dispara todos os chunks em paralelo em vez de sequencial
+        const chunkResults = await Promise.all(
+          chunks.map((chunk) =>
+            supabase.functions.invoke("mercado-libre-integration", {
+              body: {
+                access_token: accessToken,
+                user_id: user.id,
+                date_from: chunk.date_from,
+                date_to: chunk.date_to,
+              },
+            }),
+          ),
+        );
 
+        for (const { data, error } of chunkResults) {
           if (error) throw error;
           if (!data?.success) throw new Error(data?.error || "Sync failed");
-
           if (data.user) lastUserInfo = data.user as MLUser;
         }
 
@@ -512,20 +507,19 @@ export default function MercadoLivre() {
       setConnected(true);
       await Promise.all([loadFromCache(), loadHourlyCache()]);
 
-      try {
-        const { data: invData } = await supabase.functions.invoke("ml-inventory", {
-          body: { access_token: tokenRow.access_token },
-        });
-        if (invData?.items) {
-          const stockMap: Record<string, number> = {};
-          for (const item of invData.items) {
-            stockMap[item.id] = item.available_quantity ?? 0;
+      // Inventário é não-crítico: não bloqueia o setLoading(false)
+      supabase.functions
+        .invoke("ml-inventory", { body: { access_token: tokenRow.access_token } })
+        .then(({ data: invData }) => {
+          if (invData?.items) {
+            const stockMap: Record<string, number> = {};
+            for (const item of invData.items) {
+              stockMap[item.id] = item.available_quantity ?? 0;
+            }
+            setProductStockMap(stockMap);
           }
-          setProductStockMap(stockMap);
-        }
-      } catch {
-        /* non-critical */
-      }
+        })
+        .catch(() => {});
 
       setLoading(false);
 
