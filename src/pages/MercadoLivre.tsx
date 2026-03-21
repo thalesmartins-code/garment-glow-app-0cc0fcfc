@@ -84,11 +84,10 @@ const QUICK_RANGES = [
 
 const LAST_ML_SYNC_KEY = "ml_last_synced_at";
 const LAST_ML_SYNC_TS_KEY = "ml_last_synced_ts";
-const AUTO_SYNC_STALE_MS = 10 * 60 * 1000; // 10 minutos
+const AUTO_SYNC_STALE_MS = 10 * 60 * 1000;
 
 function todayUTC() {
-  const now = new Date();
-  return now.toISOString().substring(0, 10);
+  return new Date().toISOString().substring(0, 10);
 }
 
 function cutoffDateStr(daysBack: number) {
@@ -247,30 +246,36 @@ export default function MercadoLivre() {
       .slice(0, 10);
   })();
 
-  const loadHourlyCache = useCallback(async () => {
-    if (!user) {
-      setAllHourly([]);
-      return [] as HourlyBreakdown[];
-    }
+  const loadHourlyCache = useCallback(
+    async (overrideDate?: string | null) => {
+      if (!user) {
+        setAllHourly([]);
+        return [] as HourlyBreakdown[];
+      }
 
-    let query = (supabase as any)
-      .from("ml_hourly_cache")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("date", { ascending: false })
-      .order("hour", { ascending: true });
+      let query = (supabase as any)
+        .from("ml_hourly_cache")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("date", { ascending: false })
+        .order("hour", { ascending: true });
 
-    if (isHourlyAvailable && hourlyTargetDate) {
-      query = query.eq("date", hourlyTargetDate).limit(24);
-    } else {
-      query = query.limit(1000);
-    }
+      const dateToFilter = overrideDate !== undefined ? overrideDate : hourlyTargetDate;
+      const filterByDate = overrideDate !== undefined ? !!overrideDate : isHourlyAvailable && !!hourlyTargetDate;
 
-    const { data } = await query;
-    const mapped = (data || []).map(mapHourlyRow);
-    setAllHourly(mapped);
-    return mapped;
-  }, [user, isHourlyAvailable, hourlyTargetDate]);
+      if (filterByDate && dateToFilter) {
+        query = query.eq("date", dateToFilter).limit(24);
+      } else {
+        query = query.limit(1000);
+      }
+
+      const { data } = await query;
+      const mapped = (data || []).map(mapHourlyRow);
+      setAllHourly(mapped);
+      return mapped;
+    },
+    [user, isHourlyAvailable, hourlyTargetDate],
+  );
 
   const loadFromCache = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
@@ -474,7 +479,19 @@ export default function MercadoLivre() {
           if (data.user) lastUserInfo = data.user as MLUser;
         }
 
-        await Promise.all([loadFromCache(), loadHourlyCache()]);
+        // Calcula a data exata sincronizada para recarregar o horário correto,
+        // ignorando o closure desatualizado de hourlyTargetDate
+        let hourlyDateOverride: string | null;
+        if (effectiveFrom) {
+          const fromStr = format(startOfDay(effectiveFrom), "yyyy-MM-dd");
+          const toStr = format(startOfDay(effectiveTo ?? effectiveFrom), "yyyy-MM-dd");
+          hourlyDateOverride = fromStr === toStr ? fromStr : null;
+        } else {
+          const days = opts?.periodDays ?? (period > 0 ? period : 1);
+          hourlyDateOverride = days <= 1 ? todayUTC() : null;
+        }
+
+        await Promise.all([loadFromCache(), loadHourlyCache(hourlyDateOverride)]);
         if (lastUserInfo) setMlUser(lastUserInfo);
 
         const now = new Date().toLocaleString("pt-BR");
