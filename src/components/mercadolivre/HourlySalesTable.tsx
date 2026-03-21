@@ -54,13 +54,13 @@ export function HourlySalesTable({ hourly }: Props) {
   const top12Set = new Set(rankedByRevenue.slice(0, 12).map((r) => r.h));
   const rankMap = new Map(rankedByRevenue.map((r, i) => [r.h, i])); // 0 = melhor
 
-  // Gradiente: rank 0 = mais forte, rank 11 = mais fraco
-  function getRowBg(h: number, revenue: number): string {
+  // Degradê: rank 0 = mais forte, rank 11 = mais fraco
+  function getCellBg(h: number, revenue: number): string {
     if (revenue === 0 || !top12Set.has(h)) return "";
     const rank = rankMap.get(h) ?? 12;
-    // Opacidade varia de 0.28 (rank 0) até 0.04 (rank 11)
-    const opacity = 0.28 - rank * (0.24 / 11);
-    return `rgba(34, 197, 94, ${opacity.toFixed(3)})`; // verde
+    // Opacidade de 0.45 (1º) até 0.06 (12º)
+    const opacity = 0.45 - rank * (0.39 / 11);
+    return `rgba(34, 197, 94, ${opacity.toFixed(3)})`;
   }
 
   function handleSort(key: SortKey) {
@@ -145,39 +145,37 @@ export function HourlySalesTable({ hourly }: Props) {
             {displayRows.map(({ h, revenue, sales }) => {
               const isEmpty = revenue === 0 && sales === 0;
               const barWidth = maxRevenue > 0 ? (revenue / maxRevenue) * 100 : 0;
-              const bg = getRowBg(h, revenue);
+              const cellBg = getCellBg(h, revenue);
+              const cellStyle = cellBg ? { backgroundColor: cellBg } : undefined;
 
               return (
-                <tr
-                  key={h}
-                  className="border-b border-border/50 transition-colors"
-                  style={bg ? { backgroundColor: bg } : undefined}
-                >
-                  <td className="py-1.5 px-2 tabular-nums" style={{ width: 80 }}>
+                <tr key={h} className="border-b border-border/50">
+                  {/* Hora */}
+                  <td className="py-1.5 px-2 tabular-nums" style={{ width: 80, ...cellStyle }}>
                     {String(h).padStart(2, "0")}:00
                   </td>
 
-                  {/* Receita — barra + valor sempre alinhados à direita */}
-                  <td className="py-1.5 px-2">
+                  {/* Receita — valor à esquerda, barra à direita */}
+                  <td className="py-1.5 px-2" style={cellStyle}>
                     {isEmpty ? (
-                      <span className="flex justify-end text-muted-foreground">—</span>
+                      <span className="text-muted-foreground">—</span>
                     ) : (
-                      <div className="flex items-center justify-end gap-2">
-                        <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden shrink-0">
+                      <div className="flex items-center gap-2">
+                        <span className="tabular-nums font-medium" style={{ minWidth: "7rem" }}>
+                          {currencyFmt(revenue)}
+                        </span>
+                        <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
                           <div
                             className="h-full rounded-full bg-primary/60"
                             style={{ width: `${barWidth}%` }}
                           />
                         </div>
-                        <span className="tabular-nums font-medium text-right" style={{ minWidth: "7rem" }}>
-                          {currencyFmt(revenue)}
-                        </span>
                       </div>
                     )}
                   </td>
 
                   {/* Vendas */}
-                  <td className="py-1.5 px-2 text-right" style={{ width: 80 }}>
+                  <td className="py-1.5 px-2 text-right" style={{ width: 80, ...cellStyle }}>
                     {isEmpty ? (
                       <span className="text-muted-foreground">—</span>
                     ) : (
