@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Package, PackageX, AlertTriangle, Boxes, RefreshCw, Search, ExternalLink, Plug, ChevronDown, ChevronRight,
 } from "lucide-react";
@@ -17,6 +18,9 @@ import type { ProductVariation } from "@/contexts/MLInventoryContext";
 
 const currencyFmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+type StockFilter = "all" | "in_stock" | "low" | "out";
+type SortBy = "stock_desc" | "stock_asc" | "price_desc" | "price_asc" | "title";
 
 const stockBadge = (qty: number) => {
   if (qty === 0) return <Badge variant="destructive" className="text-xs">Sem estoque</Badge>;
@@ -30,6 +34,8 @@ const variationLabel = (v: ProductVariation) =>
 export default function MLEstoque() {
   const { items, summary, loading, hasToken, lastUpdated, refresh } = useMLInventory();
   const [search, setSearch] = useState("");
+  const [stockFilter, setStockFilter] = useState<StockFilter>("all");
+  const [sortBy, setSortBy] = useState<SortBy>("stock_asc");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [hideOutOfStock, setHideOutOfStock] = useState(false);
 
@@ -42,10 +48,22 @@ export default function MLEstoque() {
     });
   };
 
-  const filtered = items.filter((item) =>
-    item.title.toLowerCase().includes(search.toLowerCase()) ||
-    item.id.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = items
+    .filter((item) => {
+      const matchesSearch = item.title.toLowerCase().includes(search.toLowerCase()) || item.id.toLowerCase().includes(search.toLowerCase());
+      if (!matchesSearch) return false;
+      if (stockFilter === "out") return item.available_quantity === 0;
+      if (stockFilter === "low") return item.available_quantity > 0 && item.available_quantity <= 5;
+      if (stockFilter === "in_stock") return item.available_quantity > 0;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === "stock_desc") return b.available_quantity - a.available_quantity;
+      if (sortBy === "stock_asc") return a.available_quantity - b.available_quantity;
+      if (sortBy === "price_desc") return b.price - a.price;
+      if (sortBy === "price_asc") return a.price - b.price;
+      return a.title.localeCompare(b.title);
+    });
 
   if (hasToken === false) {
     return (
@@ -94,9 +112,9 @@ export default function MLEstoque() {
       {/* Search + Table */}
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <CardTitle className="text-base">Anúncios</CardTitle>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox
                   checked={hideOutOfStock}
@@ -104,15 +122,34 @@ export default function MLEstoque() {
                 />
                 <span className="text-sm text-muted-foreground whitespace-nowrap">Ocultar sem estoque</span>
               </label>
-              <div className="relative w-64">
+              <div className="relative flex-1 sm:w-56">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por título ou ID..."
+                  placeholder="Buscar..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9 h-9 text-sm"
                 />
               </div>
+              <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
+                <SelectTrigger className="w-32 h-9 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="in_stock">Com estoque</SelectItem>
+                  <SelectItem value="low">Estoque baixo</SelectItem>
+                  <SelectItem value="out">Sem estoque</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
+                <SelectTrigger className="w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="stock_asc">Menor estoque</SelectItem>
+                  <SelectItem value="stock_desc">Maior estoque</SelectItem>
+                  <SelectItem value="price_desc">Maior preço</SelectItem>
+                  <SelectItem value="price_asc">Menor preço</SelectItem>
+                  <SelectItem value="title">A–Z</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardHeader>
@@ -284,6 +321,11 @@ export default function MLEstoque() {
                   })}
                 </TableBody>
               </Table>
+            </div>
+          )}
+          {filtered.length > 0 && (
+            <div className="px-4 py-3 border-t text-xs text-muted-foreground">
+              Exibindo {filtered.length} de {items.length} anúncios
             </div>
           )}
         </CardContent>
