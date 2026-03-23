@@ -112,9 +112,9 @@ export default function MLEstoque() {
       {/* Search + Table */}
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <CardTitle className="text-base">Anúncios</CardTitle>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox
                   checked={hideOutOfStock}
@@ -122,15 +122,34 @@ export default function MLEstoque() {
                 />
                 <span className="text-sm text-muted-foreground whitespace-nowrap">Ocultar sem estoque</span>
               </label>
-              <div className="relative w-64">
+              <div className="relative flex-1 sm:w-56">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por título ou ID..."
+                  placeholder="Buscar..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9 h-9 text-sm"
                 />
               </div>
+              <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
+                <SelectTrigger className="w-32 h-9 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="in_stock">Com estoque</SelectItem>
+                  <SelectItem value="low">Estoque baixo</SelectItem>
+                  <SelectItem value="out">Sem estoque</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
+                <SelectTrigger className="w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="stock_asc">Menor estoque</SelectItem>
+                  <SelectItem value="stock_desc">Maior estoque</SelectItem>
+                  <SelectItem value="price_desc">Maior preço</SelectItem>
+                  <SelectItem value="price_asc">Menor preço</SelectItem>
+                  <SelectItem value="title">A–Z</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardHeader>
