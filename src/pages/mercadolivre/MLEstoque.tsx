@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMLInventory } from "@/contexts/MLInventoryContext";
+import { Checkbox } from "@/components/ui/checkbox";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -30,6 +31,7 @@ export default function MLEstoque() {
   const { items, summary, loading, hasToken, lastUpdated, refresh } = useMLInventory();
   const [search, setSearch] = useState("");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [hideOutOfStock, setHideOutOfStock] = useState(false);
 
   const toggleRow = (id: string) => {
     setExpandedRows((prev) => {
@@ -92,16 +94,25 @@ export default function MLEstoque() {
       {/* Search + Table */}
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <CardTitle className="text-base">Anúncios</CardTitle>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por título ou ID..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-9 text-sm"
-              />
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={hideOutOfStock}
+                  onCheckedChange={(v) => setHideOutOfStock(!!v)}
+                />
+                <span className="text-sm text-muted-foreground whitespace-nowrap">Ocultar sem estoque</span>
+              </label>
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por título ou ID..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9 h-9 text-sm"
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -241,7 +252,7 @@ export default function MLEstoque() {
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {item.variations.map((v) => (
+                                    {(hideOutOfStock ? item.variations.filter(v => v.available_quantity > 0) : item.variations).map((v) => (
                                       <TableRow key={v.variation_id} className="border-b border-border/30 last:border-0">
                                         <TableCell className="py-2 text-xs font-medium">
                                           {variationLabel(v)}
