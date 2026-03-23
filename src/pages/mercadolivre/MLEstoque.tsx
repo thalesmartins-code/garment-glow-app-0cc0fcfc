@@ -35,7 +35,7 @@ export default function MLEstoque() {
   const { items, summary, loading, hasToken, lastUpdated, refresh } = useMLInventory();
   const [search, setSearch] = useState("");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
-  const [sortBy, setSortBy] = useState<SortBy>("stock_asc");
+  const [sortBy, setSortBy] = useState<SortBy>("stock_desc");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [hideOutOfStock, setHideOutOfStock] = useState(false);
 
