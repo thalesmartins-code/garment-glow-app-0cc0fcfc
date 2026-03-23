@@ -37,7 +37,7 @@ export default function MLEstoque() {
   const [stockFilter, setStockFilter] = useState<StockFilter>("in_stock");
   const [sortBy, setSortBy] = useState<SortBy>("stock_desc");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [hideOutOfStock, setHideOutOfStock] = useState(false);
+  const [hideOutOfStock, setHideOutOfStock] = useState(true);
 
   const toggleRow = (id: string) => {
     setExpandedRows((prev) => {
