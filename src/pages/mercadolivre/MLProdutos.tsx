@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMLInventory } from "@/contexts/MLInventoryContext";
+import { useMLCoverage, COVERAGE_PERIODS, COVERAGE_CLASS_LABELS } from "@/hooks/useMLCoverage";
+import type { CoveragePeriod, CoverageClass, CoverageData } from "@/hooks/useMLCoverage";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ShoppingBag, RefreshCw, Search, ExternalLink, Plug, DollarSign, Tag, TrendingUp, Package,
-  ChevronDown, ChevronRight,
+  ChevronDown, ChevronRight, Clock,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,12 +22,8 @@ const currencyFmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 type StockFilter = "all" | "in_stock" | "low" | "out";
-
-const stockBadge = (qty: number) => {
-  if (qty === 0) return <Badge variant="destructive" className="text-xs">Sem estoque</Badge>;
-  if (qty <= 5) return <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">Baixo</Badge>;
-  return <Badge variant="outline" className="text-xs border-emerald-500 text-emerald-600">OK</Badge>;
-};
+type CoverageFilter = "all" | CoverageClass;
+type SortBy = "price_desc" | "price_asc" | "sold" | "title" | "coverage_asc";
 
 const healthBadge = (health: number | null) => {
   if (health === null) return <span className="text-xs text-muted-foreground">—</span>;
@@ -34,17 +32,51 @@ const healthBadge = (health: number | null) => {
   return <Badge variant="destructive" className="text-xs">Baixa</Badge>;
 };
 
+const stockBadge = (qty: number) => {
+  if (qty === 0) return <Badge variant="destructive" className="text-xs">Sem estoque</Badge>;
+  if (qty <= 5) return <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">Baixo</Badge>;
+  return <Badge variant="outline" className="text-xs border-emerald-500 text-emerald-600">OK</Badge>;
+};
+
 const variationLabel = (v: ProductVariation) =>
   v.attribute_combinations.map((a) => a.value).join(" / ") || `Var. ${v.variation_id}`;
 
 const MAX_PILLS = 5;
 
+function CoverageChip({ data, title }: { data: CoverageData | undefined; title?: string }) {
+  if (!data) return <span className="text-xs text-muted-foreground">—</span>;
+  if (data.coverage_class === "ruptura")
+    return <Badge variant="destructive" className="text-[10px]">Ruptura</Badge>;
+  if (data.coverage_class === "sem_giro")
+    return <span className="text-xs text-muted-foreground" title={title}>Sem giro</span>;
+  const cls =
+    data.coverage_class === "critico"
+      ? "border-orange-500 text-orange-600"
+      : data.coverage_class === "alerta"
+      ? "border-amber-500 text-amber-600"
+      : "border-emerald-500 text-emerald-600";
+  return (
+    <Badge variant="outline" className={`text-[10px] ${cls}`} title={title}>
+      {data.coverage_days}d
+    </Badge>
+  );
+}
+
 export default function MLProdutos() {
   const { items, loading, hasToken, lastUpdated, refresh } = useMLInventory();
   const [search, setSearch] = useState("");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
-  const [sortBy, setSortBy] = useState<"price_desc" | "price_asc" | "sold" | "title">("sold");
+  const [coverageFilter, setCoverageFilter] = useState<CoverageFilter>("all");
+  const [sortBy, setSortBy] = useState<SortBy>("sold");
+  const [coveragePeriod, setCoveragePeriod] = useState<CoveragePeriod>("monthly");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const inventoryForCoverage = useMemo(
+    () => items.map((i) => ({ id: i.id, available_quantity: i.available_quantity })),
+    [items],
+  );
+
+  const { coverageMap } = useMLCoverage(inventoryForCoverage, coveragePeriod);
 
   const toggleRow = (id: string) => {
     setExpandedRows((prev) => {
@@ -62,21 +94,36 @@ export default function MLProdutos() {
   const totalSoldRevenue = items.reduce((s, i) => s + i.sold_quantity * i.price, 0);
 
   // Filter + sort
-  const filtered = items
-    .filter((item) => {
-      const matchesSearch = item.title.toLowerCase().includes(search.toLowerCase()) || item.id.toLowerCase().includes(search.toLowerCase());
-      if (!matchesSearch) return false;
-      if (stockFilter === "out") return item.available_quantity === 0;
-      if (stockFilter === "low") return item.available_quantity > 0 && item.available_quantity <= 5;
-      if (stockFilter === "in_stock") return item.available_quantity > 0;
-      return true;
-    })
-    .sort((a, b) => {
-      if (sortBy === "price_desc") return b.price - a.price;
-      if (sortBy === "price_asc") return a.price - b.price;
-      if (sortBy === "sold") return b.sold_quantity - a.sold_quantity;
-      return a.title.localeCompare(b.title);
-    });
+  const filtered = useMemo(() => {
+    return items
+      .filter((item) => {
+        const matchesSearch =
+          item.title.toLowerCase().includes(search.toLowerCase()) ||
+          item.id.toLowerCase().includes(search.toLowerCase());
+        if (!matchesSearch) return false;
+        if (stockFilter === "out" && item.available_quantity !== 0) return false;
+        if (stockFilter === "low" && !(item.available_quantity > 0 && item.available_quantity <= 5)) return false;
+        if (stockFilter === "in_stock" && item.available_quantity === 0) return false;
+        if (coverageFilter !== "all") {
+          const c = coverageMap.get(item.id);
+          if (!c || c.coverage_class !== coverageFilter) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === "price_desc") return b.price - a.price;
+        if (sortBy === "price_asc") return a.price - b.price;
+        if (sortBy === "sold") return b.sold_quantity - a.sold_quantity;
+        if (sortBy === "coverage_asc") {
+          const ca = coverageMap.get(a.id);
+          const cb = coverageMap.get(b.id);
+          const da = ca?.coverage_class === "sem_giro" ? 999999 : (ca?.coverage_days ?? 999998);
+          const db = cb?.coverage_class === "sem_giro" ? 999999 : (cb?.coverage_days ?? 999998);
+          return da - db;
+        }
+        return a.title.localeCompare(b.title);
+      });
+  }, [items, search, stockFilter, coverageFilter, sortBy, coverageMap]);
 
   if (hasToken === false) {
     return (
@@ -102,6 +149,30 @@ export default function MLProdutos() {
         </Button>
       </MLPageHeader>
 
+      {/* Period Selector */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5">
+          <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground font-medium">Cobertura baseada em:</span>
+        </div>
+        <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
+          {COVERAGE_PERIODS.map((p) => (
+            <button
+              key={p.value}
+              title={p.description}
+              onClick={() => setCoveragePeriod(p.value)}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                coveragePeriod === p.value
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {loading && items.length === 0 ? (
@@ -123,11 +194,14 @@ export default function MLProdutos() {
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <CardTitle className="text-base">Catálogo de Anúncios</CardTitle>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-56">
+            <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+              {/* Search */}
+              <div className="relative flex-1 sm:w-52">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
               </div>
+
+              {/* Stock filter */}
               <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
                 <SelectTrigger className="w-32 h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -137,10 +211,24 @@ export default function MLProdutos() {
                   <SelectItem value="out">Sem estoque</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-                <SelectTrigger className="w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
+
+              {/* Coverage class filter */}
+              <Select value={coverageFilter} onValueChange={(v) => setCoverageFilter(v as CoverageFilter)}>
+                <SelectTrigger className="w-40 h-9 text-sm"><SelectValue placeholder="Cobertura" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toda cobertura</SelectItem>
+                  {(Object.keys(COVERAGE_CLASS_LABELS) as CoverageClass[]).map((k) => (
+                    <SelectItem key={k} value={k}>{COVERAGE_CLASS_LABELS[k]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Sort */}
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
+                <SelectTrigger className="w-40 h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="sold">Mais vendidos</SelectItem>
+                  <SelectItem value="coverage_asc">Menor cobertura</SelectItem>
                   <SelectItem value="price_desc">Maior preço</SelectItem>
                   <SelectItem value="price_asc">Menor preço</SelectItem>
                   <SelectItem value="title">A–Z</SelectItem>
@@ -149,6 +237,7 @@ export default function MLProdutos() {
             </div>
           </div>
         </CardHeader>
+
         <CardContent className="p-0">
           {loading && items.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
@@ -158,7 +247,7 @@ export default function MLProdutos() {
           ) : filtered.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               <ShoppingBag className="w-10 h-10 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">{search || stockFilter !== "all" ? "Nenhum produto encontrado" : "Nenhum produto ativo"}</p>
+              <p className="text-sm">{search || stockFilter !== "all" || coverageFilter !== "all" ? "Nenhum produto encontrado" : "Nenhum produto ativo"}</p>
             </div>
           ) : (
             <div className="max-h-[600px] overflow-auto">
@@ -175,6 +264,7 @@ export default function MLProdutos() {
                     <TableHead className="text-center w-20">% Part.</TableHead>
                     <TableHead className="text-center w-20">Visitas</TableHead>
                     <TableHead className="text-center w-20">Conv.</TableHead>
+                    <TableHead className="text-center w-28">Cobertura</TableHead>
                     <TableHead className="text-center w-20">Saúde</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
@@ -185,6 +275,10 @@ export default function MLProdutos() {
                     const participation = totalSoldRevenue > 0 ? (soldRevenue / totalSoldRevenue) * 100 : 0;
                     const conversion = item.visits > 0 ? (item.sold_quantity / item.visits) * 100 : 0;
                     const isExpanded = expandedRows.has(item.id);
+                    const coverage = coverageMap.get(item.id);
+                    const coverageTooltip = coverage
+                      ? `${coverage.avg_daily_sales.toFixed(1)} unid/dia · ${COVERAGE_PERIODS.find((p) => p.value === coveragePeriod)?.description}`
+                      : undefined;
 
                     const visiblePills = item.has_variations ? item.variations.slice(0, MAX_PILLS) : [];
                     const extraPills = item.has_variations ? item.variations.length - MAX_PILLS : 0;
@@ -196,7 +290,6 @@ export default function MLProdutos() {
                           className={item.has_variations ? "cursor-pointer hover:bg-muted/50" : ""}
                           onClick={() => item.has_variations && toggleRow(item.id)}
                         >
-                          {/* Expand toggle */}
                           <TableCell className="p-1 pl-3">
                             {item.has_variations ? (
                               isExpanded
@@ -205,7 +298,6 @@ export default function MLProdutos() {
                             ) : null}
                           </TableCell>
 
-                          {/* Thumbnail */}
                           <TableCell className="p-2" onClick={(e) => e.stopPropagation()}>
                             {item.thumbnail ? (
                               <img src={item.thumbnail.replace("http://", "https://")} alt="" className="w-10 h-10 rounded object-cover" loading="lazy" />
@@ -216,7 +308,6 @@ export default function MLProdutos() {
                             )}
                           </TableCell>
 
-                          {/* Title + variation pills */}
                           <TableCell>
                             <p className="text-sm font-medium line-clamp-2 leading-tight">{item.title}</p>
                             <div className="flex items-center gap-1 mt-0.5 flex-wrap">
@@ -248,6 +339,9 @@ export default function MLProdutos() {
                           <TableCell className="text-center text-sm text-muted-foreground">{participation.toFixed(1)}%</TableCell>
                           <TableCell className="text-center text-sm text-muted-foreground">{item.visits.toLocaleString("pt-BR")}</TableCell>
                           <TableCell className="text-center text-sm text-muted-foreground">{conversion.toFixed(1)}%</TableCell>
+                          <TableCell className="text-center">
+                            <CoverageChip data={coverage} title={coverageTooltip} />
+                          </TableCell>
                           <TableCell className="text-center">{healthBadge(item.health)}</TableCell>
                           <TableCell onClick={(e) => e.stopPropagation()}>
                             <a href={`https://produto.mercadolivre.com.br/${item.id.replace(/^(MLB)(\d+)$/, "$1-$2")}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
@@ -259,7 +353,7 @@ export default function MLProdutos() {
                         {/* Expanded variations sub-table */}
                         {item.has_variations && isExpanded && (
                           <TableRow key={`${item.id}-variations`}>
-                            <TableCell colSpan={12} className="p-0 bg-muted/20 border-b">
+                            <TableCell colSpan={13} className="p-0 bg-muted/20 border-b">
                               <div className="px-10 py-3">
                                 <Table>
                                   <TableHeader>
@@ -268,31 +362,50 @@ export default function MLProdutos() {
                                       <TableHead className="text-xs h-8 font-medium text-right">Preço</TableHead>
                                       <TableHead className="text-xs h-8 font-medium text-center">Disponível</TableHead>
                                       <TableHead className="text-xs h-8 font-medium text-center">Vendidos</TableHead>
+                                      <TableHead className="text-xs h-8 font-medium text-center">Cobertura Est.</TableHead>
                                       <TableHead className="text-xs h-8 font-medium text-center">Status</TableHead>
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
-                                    {item.variations.map((v) => (
-                                      <TableRow key={v.variation_id} className="border-b border-border/30 last:border-0">
-                                        <TableCell className="py-2 text-xs font-medium">
-                                          {variationLabel(v)}
-                                        </TableCell>
-                                        <TableCell className="py-2 text-xs text-right">
-                                          {currencyFmt(v.price)}
-                                        </TableCell>
-                                        <TableCell className="py-2 text-center">
-                                          <span className={`text-xs font-semibold ${v.available_quantity === 0 ? "text-destructive" : v.available_quantity <= 5 ? "text-amber-600" : "text-foreground"}`}>
-                                            {v.available_quantity}
-                                          </span>
-                                        </TableCell>
-                                        <TableCell className="py-2 text-xs text-center text-muted-foreground">
-                                          {v.sold_quantity}
-                                        </TableCell>
-                                        <TableCell className="py-2 text-center">
-                                          {stockBadge(v.available_quantity)}
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
+                                    {item.variations.map((v) => {
+                                      const parentAvg = coverage?.avg_daily_sales ?? 0;
+                                      const varShare =
+                                        item.available_quantity > 0
+                                          ? v.available_quantity / item.available_quantity
+                                          : 1 / item.variations.length;
+                                      const varAvg = parentAvg * varShare;
+                                      const varCoverageDays =
+                                        varAvg > 0 ? Math.floor(v.available_quantity / varAvg) : null;
+                                      const varClass =
+                                        v.available_quantity === 0
+                                          ? "ruptura"
+                                          : varCoverageDays === null
+                                          ? "sem_giro"
+                                          : varCoverageDays < 7
+                                          ? "critico"
+                                          : varCoverageDays < 30
+                                          ? "alerta"
+                                          : "ok";
+                                      return (
+                                        <TableRow key={v.variation_id} className="border-b border-border/30 last:border-0">
+                                          <TableCell className="py-2 text-xs font-medium">{variationLabel(v)}</TableCell>
+                                          <TableCell className="py-2 text-xs text-right">{currencyFmt(v.price)}</TableCell>
+                                          <TableCell className="py-2 text-center">
+                                            <span className={`text-xs font-semibold ${v.available_quantity === 0 ? "text-destructive" : v.available_quantity <= 5 ? "text-amber-600" : "text-foreground"}`}>
+                                              {v.available_quantity}
+                                            </span>
+                                          </TableCell>
+                                          <TableCell className="py-2 text-xs text-center text-muted-foreground">{v.sold_quantity}</TableCell>
+                                          <TableCell className="py-2 text-center">
+                                            <CoverageChip
+                                              data={{ avg_daily_sales: varAvg, coverage_days: varCoverageDays, coverage_class: varClass as any, total_sold: 0 }}
+                                              title="Estimativa proporcional ao estoque total"
+                                            />
+                                          </TableCell>
+                                          <TableCell className="py-2 text-center">{stockBadge(v.available_quantity)}</TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
                                   </TableBody>
                                 </Table>
                               </div>
