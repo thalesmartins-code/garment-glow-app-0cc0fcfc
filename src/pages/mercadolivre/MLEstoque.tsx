@@ -34,8 +34,8 @@ const variationLabel = (v: ProductVariation) =>
 export default function MLEstoque() {
   const { items, summary, loading, hasToken, lastUpdated, refresh } = useMLInventory();
   const [search, setSearch] = useState("");
-  const [stockFilter, setStockFilter] = useState<StockFilter>("all");
-  const [sortBy, setSortBy] = useState<SortBy>("stock_asc");
+  const [stockFilter, setStockFilter] = useState<StockFilter>("in_stock");
+  const [sortBy, setSortBy] = useState<SortBy>("stock_desc");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [hideOutOfStock, setHideOutOfStock] = useState(false);
 
@@ -134,7 +134,7 @@ export default function MLEstoque() {
               <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
                 <SelectTrigger className="w-32 h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
+                  
                   <SelectItem value="in_stock">Com estoque</SelectItem>
                   <SelectItem value="low">Estoque baixo</SelectItem>
                   <SelectItem value="out">Sem estoque</SelectItem>
