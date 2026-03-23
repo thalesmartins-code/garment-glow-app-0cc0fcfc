@@ -31,6 +31,7 @@ export default function MLEstoque() {
   const { items, summary, loading, hasToken, lastUpdated, refresh } = useMLInventory();
   const [search, setSearch] = useState("");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [hideOutOfStock, setHideOutOfStock] = useState(false);
 
   const toggleRow = (id: string) => {
     setExpandedRows((prev) => {
