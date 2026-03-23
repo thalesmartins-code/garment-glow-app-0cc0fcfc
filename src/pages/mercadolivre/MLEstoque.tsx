@@ -52,9 +52,6 @@ export default function MLEstoque() {
     .filter((item) => {
       const matchesSearch = item.title.toLowerCase().includes(search.toLowerCase()) || item.id.toLowerCase().includes(search.toLowerCase());
       if (!matchesSearch) return false;
-      if (stockFilter === "out") return item.available_quantity === 0;
-      if (stockFilter === "low") return item.available_quantity > 0 && item.available_quantity <= 5;
-      if (stockFilter === "in_stock") return item.available_quantity > 0;
       return true;
     })
     .sort((a, b) => {
