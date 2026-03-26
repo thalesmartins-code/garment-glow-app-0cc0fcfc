@@ -1,5 +1,5 @@
 import { Bell, Check, ChevronDown, LogOut, SlidersHorizontal, Store, User } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
