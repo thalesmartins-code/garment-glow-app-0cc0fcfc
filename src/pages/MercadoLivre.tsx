@@ -1050,8 +1050,8 @@ export default function MercadoLivre() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        {isHourlyAvailable &&
-          (syncing && hourly.length === 0 ? (
+        {(isML ? isHourlyAvailable : true) &&
+          (effectiveSyncing && effectiveHourly.length === 0 ? (
             <Card className="flex flex-col h-full">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Venda por Hora</CardTitle>
@@ -1063,10 +1063,10 @@ export default function MercadoLivre() {
                 </div>
               </CardContent>
             </Card>
-          ) : hourly.length > 0 ? (
-            <HourlySalesTable hourly={hourly} />
+          ) : effectiveHourly.length > 0 ? (
+            <HourlySalesTable hourly={effectiveHourly} />
           ) : null)}
-        <TopSellingProducts products={filteredTopProducts} loading={loading} />
+        <TopSellingProducts products={effectiveProducts} loading={effectiveLoading} />
       </div>
     </div>
   );
