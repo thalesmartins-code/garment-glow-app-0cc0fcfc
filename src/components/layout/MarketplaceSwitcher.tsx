@@ -20,20 +20,50 @@ export function MarketplaceSwitcher() {
       ? null
       : marketplaces.find((m) => m.id === selectedMarketplace);
 
-  const label = selected ? selected.name : "Todos os marketplaces";
-  const Icon = selected?.icon ?? Layers;
+  const label = selected ? selected.name : "Todos";
+  const Icon = selected?.icon;
+  const gradientClass = selected?.color ?? "";
+
+  const allDotsExpanded = (
+    <div className="flex items-center gap-1">
+      {marketplaces.map((mp) => {
+        const MpIcon = mp.icon;
+        return (
+          <div
+            key={mp.id}
+            className={`flex h-5 w-5 items-center justify-center rounded-md bg-gradient-to-br ${mp.color}`}
+          >
+            <MpIcon className="h-2.5 w-2.5 text-white" />
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="h-10 gap-2.5 rounded-xl border-0 bg-secondary/50 px-3 hover:bg-secondary"
+          className="h-auto gap-2.5 rounded-xl border border-border/50 bg-secondary/40 px-3 py-2 hover:bg-secondary/60"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted">
-            <Icon className="h-4 w-4 text-foreground" />
+          {selected ? (
+            <div
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br shadow-sm ${gradientClass}`}
+            >
+              {Icon && <Icon className="h-3.5 w-3.5 text-white" />}
+            </div>
+          ) : (
+            allDotsExpanded
+          )}
+          <div className="hidden text-left sm:block">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium leading-tight">
+              Marketplace
+            </p>
+            <p className="text-xs font-semibold text-foreground leading-tight">
+              {label}
+            </p>
           </div>
-          <span className="hidden text-sm font-medium text-foreground sm:inline">{label}</span>
           <ChevronDown className="ml-0.5 h-3.5 w-3.5 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
