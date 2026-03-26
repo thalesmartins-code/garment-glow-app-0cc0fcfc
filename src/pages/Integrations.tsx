@@ -161,6 +161,10 @@ export default function Integrations() {
   const [syncing, setSyncing] = useState(false);
   const [mlCodeDialog, setMlCodeDialog] = useState(false);
   const [mlCodeInput, setMlCodeInput] = useState("");
+  const [disconnectTarget, setDisconnectTarget] = useState<string | null>(null);
+  const [disconnectPassword, setDisconnectPassword] = useState("");
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [disconnectError, setDisconnectError] = useState("");
   const [mlMetrics, setMlMetrics] = useState<{
     total_revenue: number;
     approved_revenue: number;
@@ -779,7 +783,7 @@ export default function Integrations() {
                         variant="outline"
                         size="sm"
                         className="flex-1"
-                        onClick={() => handleDisconnect(integration.id)}
+                        onClick={() => { setDisconnectTarget(integration.id); setDisconnectPassword(""); setDisconnectError(""); }}
                       >
                         <Link2Off className="w-4 h-4 mr-1.5" />
                         Desconectar
@@ -896,6 +900,59 @@ export default function Integrations() {
                 <>
                   <Link2 className="w-4 h-4 mr-1.5" />
                   Salvar e conectar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Disconnect Confirmation Dialog */}
+      <Dialog open={!!disconnectTarget} onOpenChange={(open) => { if (!open) { setDisconnectTarget(null); setDisconnectPassword(""); setDisconnectError(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-destructive" />
+              Confirmar desconexão
+            </DialogTitle>
+            <DialogDescription>
+              Para desconectar esta integração, digite sua senha para confirmar. Todos os tokens e dados de cache serão removidos.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="disconnect-password">Senha</Label>
+              <Input
+                id="disconnect-password"
+                type="password"
+                placeholder="Digite sua senha..."
+                value={disconnectPassword}
+                onChange={(e) => { setDisconnectPassword(e.target.value); setDisconnectError(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter" && disconnectPassword.trim()) handleConfirmDisconnect(); }}
+              />
+              {disconnectError && (
+                <p className="text-xs text-destructive">{disconnectError}</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDisconnectTarget(null)} disabled={disconnecting}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDisconnect}
+              disabled={disconnecting || !disconnectPassword.trim()}
+            >
+              {disconnecting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-1.5 animate-spin" />
+                  Verificando...
+                </>
+              ) : (
+                <>
+                  <Link2Off className="w-4 h-4 mr-1.5" />
+                  Desconectar
                 </>
               )}
             </Button>
