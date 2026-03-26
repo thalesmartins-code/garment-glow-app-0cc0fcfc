@@ -7,8 +7,8 @@ import { motion } from "framer-motion";
 const environments = [
   {
     id: "sheets",
-    title: "Google Sheets",
-    description: "Dashboard, Vendas, Importação, Sellers e Usuários",
+    title: "Marketplaces via Planilha",
+    description: "Dashboard, Vendas, Importação, Sellers e Usuários — dados sincronizados via Google Sheets",
     icon: FileSpreadsheet,
     path: "/sheets",
     gradient: "from-emerald-600 to-teal-500",
@@ -16,8 +16,8 @@ const environments = [
   },
   {
     id: "mercado-livre",
-    title: "Mercado Livre",
-    description: "Vendas, Estoque, Anúncios, Pedidos, Publicidade e Integrações",
+    title: "Marketplaces via API",
+    description: "Vendas, Estoque, Anúncios, Pedidos, Publicidade e Integrações — dados em tempo real via API",
     icon: Store,
     path: "/mercado-livre",
     gradient: "from-yellow-500 to-amber-500",
