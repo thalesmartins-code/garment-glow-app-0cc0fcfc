@@ -14,6 +14,7 @@ import { HistoricalSyncModal } from "@/components/mercadolivre/HistoricalSyncMod
 import { TopSellingProducts, type ProductSalesRow } from "@/components/mercadolivre/TopSellingProducts";
 import { HourlySalesTable } from "@/components/mercadolivre/HourlySalesTable";
 import { MLStoreSelector } from "@/components/mercadolivre/MLStoreSelector";
+import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
 import {
   DollarSign,
   ShoppingCart,
