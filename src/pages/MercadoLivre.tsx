@@ -830,7 +830,7 @@ export default function MercadoLivre() {
         </div>
       </div>
 
-      {!loading && connected && !hasData && (
+      {isML && !effectiveLoading && connected && !hasData && (
         <Card className="border-dashed">
           <CardContent className="flex items-center gap-3 py-6">
             <Info className="w-5 h-5 text-muted-foreground flex-shrink-0" />
