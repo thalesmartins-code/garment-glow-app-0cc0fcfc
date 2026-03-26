@@ -127,7 +127,7 @@ export default function MLEstoque() {
       });
   }, [items, search, hideOutOfStock, stockFilter, coverageFilter, sortBy, coverageMap]);
 
-  if (hasToken === false) {
+  if (isML && hasToken === false) {
     return (
       <div className="space-y-6">
         <Card>
@@ -148,11 +148,16 @@ export default function MLEstoque() {
 
   return (
     <div className="space-y-6">
-      <MLPageHeader title="Estoque" lastUpdated={lastUpdated}>
-        <Button onClick={refresh} disabled={loading} size="sm" variant="outline">
-          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-          Atualizar
-        </Button>
+      <MLPageHeader title={`Estoque — ${marketplaceName}`} lastUpdated={isML ? lastUpdated : new Date()}>
+        {isML && (
+          <Button onClick={refresh} disabled={loading} size="sm" variant="outline">
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+            Atualizar
+          </Button>
+        )}
+        {!isML && (
+          <Badge variant="secondary" className="text-xs">Dados simulados</Badge>
+        )}
       </MLPageHeader>
 
       {/* Period Selector */}
