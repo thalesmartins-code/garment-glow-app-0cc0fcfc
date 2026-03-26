@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useMLInventory } from "@/contexts/MLInventoryContext";
 import { useMarketplace } from "@/contexts/MarketplaceContext";
-import { getMarketplaceInventory, getMarketplaceName } from "@/data/marketplaceMockData";
+import { getMarketplaceInventory, getMarketplaceName, getAllMarketplaceInventory } from "@/data/marketplaceMockData";
 import { useMLCoverage, COVERAGE_PERIODS, COVERAGE_CLASS_LABELS } from "@/hooks/useMLCoverage";
 import type { CoveragePeriod, CoverageClass, CoverageData } from "@/hooks/useMLCoverage";
 import { CoverageAlerts } from "@/components/mercadolivre/CoverageAlerts";
@@ -60,13 +60,43 @@ function CoverageChip({ data, title }: { data: CoverageData | undefined; title?:
 export default function MLEstoque() {
   const { items: mlItems, summary: mlSummary, loading: mlLoading, hasToken, lastUpdated, refresh } = useMLInventory();
   const { selectedMarketplace, activeMarketplace } = useMarketplace();
-  const isML = selectedMarketplace === "mercado-livre" || selectedMarketplace === "all";
+  const isML = selectedMarketplace === "mercado-livre";
+  const isAll = selectedMarketplace === "all";
+  const useRealData = isML || isAll;
 
-  const mockData = useMemo(() => !isML ? getMarketplaceInventory(selectedMarketplace) : null, [isML, selectedMarketplace]);
-  const items = isML ? mlItems : (mockData?.items as any[] ?? []);
-  const summary = isML ? mlSummary : (mockData?.summary ?? null);
-  const loading = isML ? mlLoading : false;
-  const marketplaceName = activeMarketplace ? activeMarketplace.name : "Mercado Livre";
+  const mockData = useMemo(() => {
+    if (isAll) return getAllMarketplaceInventory();
+    if (!isML) return getMarketplaceInventory(selectedMarketplace);
+    return null;
+  }, [isAll, isML, selectedMarketplace]);
+
+  const items = useMemo(() => {
+    if (isAll) {
+      // Merge ML real items + mock items from other marketplaces
+      const mockItems = mockData?.items ?? [];
+      return [...mlItems, ...mockItems] as any[];
+    }
+    if (isML) return mlItems;
+    return (mockData?.items as any[]) ?? [];
+  }, [isAll, isML, mlItems, mockData]);
+
+  const summary = useMemo(() => {
+    if (isAll) {
+      const mockSummary = mockData?.summary ?? { totalItems: 0, totalStock: 0, outOfStock: 0, lowStock: 0 };
+      if (!mlSummary) return mockSummary;
+      return {
+        totalItems: mlSummary.totalItems + mockSummary.totalItems,
+        totalStock: mlSummary.totalStock + mockSummary.totalStock,
+        outOfStock: mlSummary.outOfStock + mockSummary.outOfStock,
+        lowStock: mlSummary.lowStock + mockSummary.lowStock,
+      };
+    }
+    if (isML) return mlSummary;
+    return mockData?.summary ?? null;
+  }, [isAll, isML, mlSummary, mockData]);
+
+  const loading = useRealData ? mlLoading : false;
+  const marketplaceName = isAll ? "Todos os Marketplaces" : (activeMarketplace ? activeMarketplace.name : "Mercado Livre");
   const [search, setSearch] = useState("");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
   const [coverageFilter, setCoverageFilter] = useState<CoverageFilter>("all");
@@ -148,15 +178,18 @@ export default function MLEstoque() {
 
   return (
     <div className="space-y-6">
-      <MLPageHeader title="Estoque" lastUpdated={isML ? lastUpdated : new Date()}>
+      <MLPageHeader title="Estoque" lastUpdated={useRealData ? lastUpdated : new Date()}>
         {isML && (
           <Button onClick={refresh} disabled={loading} size="sm" variant="outline">
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Atualizar
           </Button>
         )}
-        {!isML && (
+        {!useRealData && (
           <Badge variant="secondary" className="text-xs">Dados simulados</Badge>
+        )}
+        {isAll && (
+          <Badge variant="secondary" className="text-xs">Dados agregados</Badge>
         )}
       </MLPageHeader>
 

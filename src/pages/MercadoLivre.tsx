@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMLStore } from "@/contexts/MLStoreContext";
 import { useMarketplace } from "@/contexts/MarketplaceContext";
 import { KPICard } from "@/components/dashboard/KPICard";
-import { getMarketplaceDailyData, getMarketplaceHourlyData, getMarketplaceProducts, getMarketplaceName } from "@/data/marketplaceMockData";
+import { getMarketplaceDailyData, getMarketplaceHourlyData, getMarketplaceProducts, getMarketplaceName, getAllMarketplaceMockDaily, getAllMarketplaceMockHourly, getAllMarketplaceMockProducts } from "@/data/marketplaceMockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -158,8 +158,10 @@ export default function MercadoLivre() {
   const { toast } = useToast();
   const { stores, selectedStore } = useMLStore();
   const { selectedMarketplace, activeMarketplace } = useMarketplace();
-  const isML = selectedMarketplace === "mercado-livre" || selectedMarketplace === "all";
-  const marketplaceName = activeMarketplace ? activeMarketplace.name : "Mercado Livre";
+  const isML = selectedMarketplace === "mercado-livre";
+  const isAll = selectedMarketplace === "all";
+  const useRealData = isML || isAll;
+  const marketplaceName = activeMarketplace ? activeMarketplace.name : "Todos os Marketplaces";
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [connected, setConnected] = useState(false);
@@ -655,32 +657,94 @@ export default function MercadoLivre() {
   }, [pendingRange, pendingPeriod, syncFromAPI]);
 
   // --- Mock data for non-ML marketplaces ---
-  const mockDaily = useMemo(() => !isML ? getMarketplaceDailyData(selectedMarketplace, 30) : [], [isML, selectedMarketplace]);
-  const mockHourly = useMemo(() => !isML ? getMarketplaceHourlyData(selectedMarketplace) : [], [isML, selectedMarketplace]);
-  const mockProducts = useMemo(() => !isML ? getMarketplaceProducts(selectedMarketplace) : [], [isML, selectedMarketplace]);
+  // Mock data for non-ML or aggregated mode
+  const mockDaily = useMemo(() => {
+    if (isAll) return getAllMarketplaceMockDaily(30);
+    if (!useRealData) return getMarketplaceDailyData(selectedMarketplace, 30);
+    return [];
+  }, [isAll, useRealData, selectedMarketplace]);
 
-  const effectiveDaily = isML ? daily : mockDaily;
-  const effectiveHourly = isML ? hourly : mockHourly;
-  const effectiveProducts = isML ? filteredTopProducts : mockProducts;
-  const effectiveMetrics = isML
-    ? metrics
-    : effectiveDaily.length > 0
-      ? (() => {
-          const m = {
-            total_revenue: effectiveDaily.reduce((s, d) => s + d.total, 0),
-            approved_revenue: effectiveDaily.reduce((s, d) => s + d.approved, 0),
-            total_orders: effectiveDaily.reduce((s, d) => s + d.qty, 0),
-            units_sold: effectiveDaily.reduce((s, d) => s + d.units_sold, 0),
-            unique_visits: effectiveDaily.reduce((s, d) => s + (d.unique_visits || 0), 0),
-            unique_buyers: effectiveDaily.reduce((s, d) => s + (d.unique_buyers || 0), 0),
-            avg_ticket: 0,
-            conversion_rate: 0,
-          };
-          if (m.total_orders > 0) m.avg_ticket = m.total_revenue / m.total_orders;
-          if (m.unique_visits > 0) m.conversion_rate = (m.unique_buyers / m.unique_visits) * 100;
-          return m;
-        })()
-      : null;
+  const mockHourly = useMemo(() => {
+    if (isAll) return getAllMarketplaceMockHourly();
+    if (!useRealData) return getMarketplaceHourlyData(selectedMarketplace);
+    return [];
+  }, [isAll, useRealData, selectedMarketplace]);
+
+  const mockProducts = useMemo(() => {
+    if (isAll) return getAllMarketplaceMockProducts();
+    if (!useRealData) return getMarketplaceProducts(selectedMarketplace);
+    return [];
+  }, [isAll, useRealData, selectedMarketplace]);
+
+  // Merge real ML data with mock data when "all"
+  const effectiveDaily = useMemo(() => {
+    if (isAll) {
+      // Merge real daily + mock daily by date
+      const dateMap = new Map<string, DailyBreakdown>();
+      for (const d of daily) dateMap.set(d.date, { ...d });
+      for (const d of mockDaily) {
+        const existing = dateMap.get(d.date);
+        if (existing) {
+          existing.total += d.total;
+          existing.approved += d.approved;
+          existing.qty += d.qty;
+          existing.units_sold += d.units_sold;
+          existing.cancelled += d.cancelled;
+          existing.shipped += d.shipped;
+          existing.unique_visits += d.unique_visits;
+          existing.unique_buyers += d.unique_buyers;
+        } else {
+          dateMap.set(d.date, { ...d });
+        }
+      }
+      return Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+    }
+    if (isML) return daily;
+    return mockDaily;
+  }, [isAll, isML, daily, mockDaily]);
+
+  const effectiveHourly = useMemo(() => {
+    if (isAll) {
+      const hourMap = new Map<number, HourlyBreakdown>();
+      for (const h of hourly) hourMap.set(h.hour, { ...h });
+      for (const h of mockHourly) {
+        const existing = hourMap.get(h.hour);
+        if (existing) {
+          existing.total += h.total;
+          existing.approved += h.approved;
+          existing.qty += h.qty;
+        } else {
+          hourMap.set(h.hour, { ...h });
+        }
+      }
+      return Array.from(hourMap.values()).sort((a, b) => a.hour - b.hour);
+    }
+    if (isML) return hourly;
+    return mockHourly;
+  }, [isAll, isML, hourly, mockHourly]);
+
+  const effectiveProducts = useMemo(() => {
+    if (isAll) return [...filteredTopProducts, ...mockProducts].sort((a, b) => b.revenue - a.revenue).slice(0, 15);
+    if (isML) return filteredTopProducts;
+    return mockProducts;
+  }, [isAll, isML, filteredTopProducts, mockProducts]);
+
+  const effectiveMetrics = useMemo(() => {
+    if (effectiveDaily.length === 0) return null;
+    const m = {
+      total_revenue: effectiveDaily.reduce((s, d) => s + d.total, 0),
+      approved_revenue: effectiveDaily.reduce((s, d) => s + d.approved, 0),
+      total_orders: effectiveDaily.reduce((s, d) => s + d.qty, 0),
+      units_sold: effectiveDaily.reduce((s, d) => s + d.units_sold, 0),
+      unique_visits: effectiveDaily.reduce((s, d) => s + (d.unique_visits || 0), 0),
+      unique_buyers: effectiveDaily.reduce((s, d) => s + (d.unique_buyers || 0), 0),
+      avg_ticket: 0,
+      conversion_rate: 0,
+    };
+    if (m.total_orders > 0) m.avg_ticket = m.total_revenue / m.total_orders;
+    if (m.unique_visits > 0) m.conversion_rate = (m.unique_buyers / m.unique_visits) * 100;
+    return m;
+  }, [effectiveDaily]);
 
   if (isML && !loading && !connected) {
     return (
@@ -695,8 +759,8 @@ export default function MercadoLivre() {
     );
   }
 
-  const effectiveLoading = isML ? loading : false;
-  const effectiveSyncing = isML ? syncing : false;
+  const effectiveLoading = useRealData ? loading : false;
+  const effectiveSyncing = useRealData ? syncing : false;
 
   const dailyChartData = [...effectiveDaily].reverse().map((d) => ({
     label: format(parseISO(d.date), "dd/MM", { locale: ptBR }),
@@ -706,16 +770,16 @@ export default function MercadoLivre() {
   }));
 
   const hourlyChartData = buildHourlyChartData(effectiveHourly);
-  const showHourlyChart = (isML ? isHourlyAvailable : true) && chartMode === "hourly";
+  const showHourlyChart = (useRealData ? isHourlyAvailable : true) && chartMode === "hourly";
   const chartData = showHourlyChart ? hourlyChartData : dailyChartData;
-  const hasData = isML ? allDaily.length > 0 : effectiveDaily.length > 0;
+  const hasData = useRealData ? allDaily.length > 0 || effectiveDaily.length > 0 : effectiveDaily.length > 0;
   const hasHourlyData = effectiveHourly.length > 0;
   const chartTitle = showHourlyChart ? `Venda por Hora — ${periodLabel}` : `Vendas Diárias — ${periodLabel}`;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <MLPageHeader title="Vendas" lastUpdated={isML && lastSyncedAt ? new Date(lastSyncedAt) : null} />
+        <MLPageHeader title="Vendas" lastUpdated={useRealData && lastSyncedAt ? new Date(lastSyncedAt) : null} />
         <div className="flex items-center gap-2 flex-wrap">
           {isML && <MLStoreSelector />}
           <Popover
@@ -1038,7 +1102,7 @@ export default function MercadoLivre() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        {(isML ? isHourlyAvailable : true) &&
+        {(useRealData ? isHourlyAvailable : true) &&
           (effectiveSyncing && effectiveHourly.length === 0 ? (
             <Card className="flex flex-col h-full">
               <CardHeader className="pb-3">

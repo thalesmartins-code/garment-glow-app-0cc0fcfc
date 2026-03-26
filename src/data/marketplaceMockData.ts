@@ -191,6 +191,68 @@ export function getMarketplaceInventory(marketplaceId: string): { items: MockInv
   return generateInventoryItems(cfg.seed, marketplaceId, cfg.inventoryCount, cfg.ticket);
 }
 
+// Aggregate mock data from Amazon + Shopee + Magalu
+const MOCK_MARKETPLACE_IDS = ["amazon", "shopee", "magalu"];
+
+export function getAllMarketplaceMockDaily(daysBack = 30): DailyBreakdown[] {
+  const allData = MOCK_MARKETPLACE_IDS.map((id) => getMarketplaceDailyData(id, daysBack));
+  const dateMap = new Map<string, DailyBreakdown>();
+  for (const list of allData) {
+    for (const d of list) {
+      const existing = dateMap.get(d.date);
+      if (existing) {
+        existing.total += d.total;
+        existing.approved += d.approved;
+        existing.qty += d.qty;
+        existing.units_sold += d.units_sold;
+        existing.cancelled += d.cancelled;
+        existing.shipped += d.shipped;
+        existing.unique_visits += d.unique_visits;
+        existing.unique_buyers += d.unique_buyers;
+      } else {
+        dateMap.set(d.date, { ...d });
+      }
+    }
+  }
+  return Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function getAllMarketplaceMockHourly(date?: string): HourlyBreakdown[] {
+  const allData = MOCK_MARKETPLACE_IDS.map((id) => getMarketplaceHourlyData(id, date));
+  const hourMap = new Map<number, HourlyBreakdown>();
+  for (const list of allData) {
+    for (const h of list) {
+      const existing = hourMap.get(h.hour);
+      if (existing) {
+        existing.total += h.total;
+        existing.approved += h.approved;
+        existing.qty += h.qty;
+      } else {
+        hourMap.set(h.hour, { ...h });
+      }
+    }
+  }
+  return Array.from(hourMap.values()).sort((a, b) => a.hour - b.hour);
+}
+
+export function getAllMarketplaceMockProducts(): ProductSalesRow[] {
+  return MOCK_MARKETPLACE_IDS.flatMap((id) => getMarketplaceProducts(id));
+}
+
+export function getAllMarketplaceInventory(): { items: MockInventoryItem[]; summary: MockInventorySummary } {
+  const allItems: MockInventoryItem[] = [];
+  let totalItems = 0, totalStock = 0, outOfStock = 0, lowStock = 0;
+  for (const id of MOCK_MARKETPLACE_IDS) {
+    const { items, summary } = getMarketplaceInventory(id);
+    allItems.push(...items);
+    totalItems += summary.totalItems;
+    totalStock += summary.totalStock;
+    outOfStock += summary.outOfStock;
+    lowStock += summary.lowStock;
+  }
+  return { items: allItems, summary: { totalItems, totalStock, outOfStock, lowStock } };
+}
+
 export function getMarketplaceName(id: string): string {
   const names: Record<string, string> = {
     "mercado-livre": "Mercado Livre",
