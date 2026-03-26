@@ -1,12 +1,12 @@
 export const routeTitles: Record<string, { title: string; subtitle: string }> = {
-  "/": { title: "Dashboard", subtitle: "Monitoramento de performance por marketplace" },
-  "/vendas-diarias": { title: "Vendas", subtitle: "Acompanhe o desempenho diário de vendas" },
-  "/importacao": { title: "Importação", subtitle: "Importe dados de vendas via CSV ou Excel" },
-  "/configuracoes": { title: "Configurações", subtitle: "Configure metas e distribuição de PMT" },
-  "/sellers": { title: "Sellers", subtitle: "Gerencie sellers e marketplaces ativos" },
-  "/usuarios": { title: "Usuários", subtitle: "Gerencie usuários e permissões do sistema" },
+  "/sheets": { title: "Dashboard", subtitle: "Monitoramento de performance por marketplace" },
+  "/sheets/vendas-diarias": { title: "Vendas", subtitle: "Acompanhe o desempenho diário de vendas" },
+  "/sheets/importacao": { title: "Importação", subtitle: "Importe dados de vendas via CSV ou Excel" },
+  "/sheets/configuracoes": { title: "Configurações", subtitle: "Configure metas e distribuição de PMT" },
+  "/sheets/sellers": { title: "Sellers", subtitle: "Gerencie sellers e marketplaces ativos" },
+  "/sheets/usuarios": { title: "Usuários", subtitle: "Gerencie usuários e permissões do sistema" },
   "/perfil": { title: "Perfil", subtitle: "Gerencie suas informações pessoais" },
-  "/integracoes": {
+  "/sheets/integracoes": {
     title: "Integrações",
     subtitle: "Conecte suas contas de marketplaces para sincronizar dados automaticamente",
   },
