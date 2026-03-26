@@ -1102,7 +1102,7 @@ export default function MercadoLivre() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        {(isML ? isHourlyAvailable : true) &&
+        {(useRealData ? isHourlyAvailable : true) &&
           (effectiveSyncing && effectiveHourly.length === 0 ? (
             <Card className="flex flex-col h-full">
               <CardHeader className="pb-3">
