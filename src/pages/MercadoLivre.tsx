@@ -759,8 +759,8 @@ export default function MercadoLivre() {
     );
   }
 
-  const effectiveLoading = isML ? loading : false;
-  const effectiveSyncing = isML ? syncing : false;
+  const effectiveLoading = useRealData ? loading : false;
+  const effectiveSyncing = useRealData ? syncing : false;
 
   const dailyChartData = [...effectiveDaily].reverse().map((d) => ({
     label: format(parseISO(d.date), "dd/MM", { locale: ptBR }),
@@ -770,16 +770,16 @@ export default function MercadoLivre() {
   }));
 
   const hourlyChartData = buildHourlyChartData(effectiveHourly);
-  const showHourlyChart = (isML ? isHourlyAvailable : true) && chartMode === "hourly";
+  const showHourlyChart = (useRealData ? isHourlyAvailable : true) && chartMode === "hourly";
   const chartData = showHourlyChart ? hourlyChartData : dailyChartData;
-  const hasData = isML ? allDaily.length > 0 : effectiveDaily.length > 0;
+  const hasData = useRealData ? allDaily.length > 0 || effectiveDaily.length > 0 : effectiveDaily.length > 0;
   const hasHourlyData = effectiveHourly.length > 0;
   const chartTitle = showHourlyChart ? `Venda por Hora — ${periodLabel}` : `Vendas Diárias — ${periodLabel}`;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <MLPageHeader title="Vendas" lastUpdated={isML && lastSyncedAt ? new Date(lastSyncedAt) : null} />
+        <MLPageHeader title="Vendas" lastUpdated={useRealData && lastSyncedAt ? new Date(lastSyncedAt) : null} />
         <div className="flex items-center gap-2 flex-wrap">
           {isML && <MLStoreSelector />}
           <Popover
