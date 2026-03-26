@@ -1,15 +1,20 @@
-import { BarChart3, FileUp, ShieldCheck, Store, TrendingUp, Users } from "lucide-react";
+import { ArrowLeft, BarChart3, FileUp, ShieldCheck, TrendingUp, Users } from "lucide-react";
 import { EnvironmentSidebar } from "./EnvironmentSidebar";
 
 const mainItems = [
-  { icon: BarChart3, label: "Dashboard", path: "/" },
-  { icon: TrendingUp, label: "Vendas", path: "/vendas-diarias" },
-  { icon: FileUp, label: "Importação", path: "/importacao" },
-  { icon: Users, label: "Sellers", path: "/sellers" },
-  { icon: ShieldCheck, label: "Usuários", path: "/usuarios" },
-  { icon: Store, label: "Mercado Livre", path: "/mercado-livre" },
+  { icon: BarChart3, label: "Dashboard", path: "/sheets" },
+  { icon: TrendingUp, label: "Vendas", path: "/sheets/vendas-diarias" },
+  { icon: FileUp, label: "Importação", path: "/sheets/importacao" },
+  { icon: Users, label: "Sellers", path: "/sheets/sellers" },
+  { icon: ShieldCheck, label: "Usuários", path: "/sheets/usuarios" },
 ];
 
+const backToHub = {
+  icon: ArrowLeft,
+  label: "Voltar ao painel",
+  path: "/",
+};
+
 export function MainSidebar() {
-  return <EnvironmentSidebar items={mainItems} />;
+  return <EnvironmentSidebar items={mainItems} footerItem={backToHub} />;
 }
