@@ -1,47 +1,48 @@
 
 
-## Páginas de Vendas e Estoque reagindo ao marketplace selecionado
+## Comportamento "Todos" — Dados agregados de todos os marketplaces
+
+### Problema atual
+
+Quando "Todos" esta selecionado, as paginas de Vendas e Estoque tratam como se fosse apenas Mercado Livre (`isML = selectedMarketplace === "mercado-livre" || selectedMarketplace === "all"`). Dados de Amazon, Shopee e Magalu sao ignorados.
 
 ### Abordagem
 
-Criar um layer de dados mockados para Amazon, Shopee e Magalu, e fazer as páginas `/api` (Vendas) e `/api/estoque` (Estoque) consumirem o `useMarketplace()` para decidir entre dados reais (ML) ou mock.
+Quando `selectedMarketplace === "all"`, carregar dados reais do ML **e** dados mock dos outros 3 marketplaces, somando/mesclando tudo em uma unica visao agregada.
 
-### Mudanças
+### Mudancas
 
-**1. Criar arquivo de mock data (`src/data/marketplaceMockData.ts`)**
-- Gerar dados diários, horários e de produtos mock para cada marketplace (Amazon, Shopee, Magalu)
-- Gerar itens de estoque mock com variações de preço, quantidade e cobertura
-- Estruturas compatíveis com os tipos já usados nas páginas (DailyBreakdown, HourlyBreakdown, ProductSalesRow, InventoryItem)
+**1. `src/data/marketplaceMockData.ts` — Nova funcao de agregacao**
+- Criar `getAllMarketplaceMockData()` que retorna daily, hourly e products de Amazon + Shopee + Magalu ja somados
+- Criar `getAllMarketplaceInventory()` que retorna itens de estoque dos 3 marketplaces concatenados
 
-**2. Modificar `MercadoLivre.tsx` (página de Vendas em `/api`)**
-- Importar `useMarketplace()` no topo
-- Quando `selectedMarketplace` for "mercado-livre" ou "all": manter comportamento atual (dados reais do Supabase)
-- Quando for "amazon", "shopee" ou "magalu": carregar dados mock do arquivo criado, sem chamar Supabase
-- Atualizar o título da página para mostrar o nome do marketplace ativo em vez de sempre "Mercado Livre"
-- Esconder botões ML-específicos (Sync, Histórico, Perfil ML, Store Selector) quando outro marketplace estiver selecionado
+**2. `src/pages/MercadoLivre.tsx` (Vendas)**
+- Mudar logica: `isML` passa a ser apenas `selectedMarketplace === "mercado-livre"`
+- Novo estado `isAll = selectedMarketplace === "all"`
+- Quando `isAll`:
+  - Carregar dados ML reais do Supabase normalmente
+  - Carregar mock data dos outros 3 marketplaces
+  - Mesclar daily data (somar valores por data), hourly (somar por hora), products (concatenar)
+  - KPIs mostram totais agregados
+  - Esconder botoes ML-especificos (Historico, Store Selector)
+- Quando marketplace individual nao-ML: manter comportamento mock atual
 
-**3. Modificar `MLEstoque.tsx` (página de Estoque em `/api/estoque`)**
-- Importar `useMarketplace()` 
-- Quando marketplace não for ML: renderizar uma tabela de estoque com itens mock (mesma estrutura visual, dados fictícios)
-- Esconder funcionalidades ML-específicas (refresh de inventário real, link para integrações ML)
-- Manter KPIs e filtros funcionais com dados mock
+**3. `src/pages/mercadolivre/MLEstoque.tsx` (Estoque)**
+- Mesma logica: separar `isML` de `isAll`
+- Quando `isAll`:
+  - Concatenar itens de estoque ML reais + mock dos outros 3
+  - KPIs somam tudo
+  - Badge indicando origem (ML real vs simulado) em cada item
+- Esconder botao "Atualizar" especifico do ML quando `isAll`
 
-**4. Atualizar `MarketplaceContext.tsx`**
-- Sem mudanças estruturais — já tem tudo necessário
-
-### Dados mock por marketplace
-
-| Marketplace | Vendas/dia | Ticket médio | Produtos em estoque |
-|-------------|-----------|-------------|-------------------|
-| Amazon | 15-45 pedidos | R$80-250 | 25 itens |
-| Shopee | 30-80 pedidos | R$40-120 | 20 itens |
-| Magalu | 10-30 pedidos | R$100-350 | 15 itens |
+**4. `src/pages/mercadolivre/MLAnuncios.tsx` (Anuncios)**
+- Pagina ainda e placeholder "Em breve" — sem mudanca necessaria por enquanto
 
 ### Arquivos impactados
 
-| Arquivo | Mudança |
+| Arquivo | Mudanca |
 |---------|---------|
-| `src/data/marketplaceMockData.ts` | **Novo** — mock data para 3 marketplaces |
-| `src/pages/MercadoLivre.tsx` | Condicional por marketplace, título dinâmico |
-| `src/pages/mercadolivre/MLEstoque.tsx` | Condicional por marketplace, estoque mock |
+| `src/data/marketplaceMockData.ts` | Adicionar funcoes de agregacao |
+| `src/pages/MercadoLivre.tsx` | Separar `isAll` de `isML`, mesclar dados |
+| `src/pages/mercadolivre/MLEstoque.tsx` | Separar `isAll` de `isML`, concatenar inventario |
 
