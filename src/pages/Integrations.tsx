@@ -515,6 +515,7 @@ export default function Integrations() {
     } finally {
       setDisconnecting(false);
     }
+  };
 
   const handleConfirmConnect = async () => {
     if (!connectDialog) return;
