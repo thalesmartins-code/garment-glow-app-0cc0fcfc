@@ -25,7 +25,7 @@ const environments = [
   },
 ];
 
-const ease = [0.4, 0, 0.2, 1];
+const ease = [0.4, 0, 0.2, 1] as const;
 
 export default function AppSelector() {
   const navigate = useNavigate();
