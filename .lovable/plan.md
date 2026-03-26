@@ -1,66 +1,47 @@
 
 
-## Evolução do Ambiente API para Multi-Marketplace
+## Páginas de Vendas e Estoque reagindo ao marketplace selecionado
 
-### Contexto
-Atualmente o ambiente "Marketplaces via API" é totalmente centrado no Mercado Livre — rotas, sidebar, layout, contexts e páginas usam nomenclatura "mercado-livre" ou "ML". O objetivo é tornar esse ambiente genérico para suportar múltiplos marketplaces (Amazon, Shopee, Magalu, etc.), mantendo as páginas existentes do ML funcionando.
+### Abordagem
 
-### O que pode ser melhorado
+Criar um layer de dados mockados para Amazon, Shopee e Magalu, e fazer as páginas `/api` (Vendas) e `/api/estoque` (Estoque) consumirem o `useMarketplace()` para decidir entre dados reais (ML) ou mock.
 
-**1. Renomear rotas e estrutura de `/mercado-livre` para `/api`**
-- Rotas passam de `/mercado-livre/*` para `/api/*` (ex: `/api/vendas`, `/api/estoque`, `/api/pedidos`)
-- Isso desacopla a URL de um marketplace específico e permite que todas as integrações API compartilhem a mesma estrutura
+### Mudanças
 
-**2. Sidebar multi-marketplace**
-- Renomear `MercadoLivreSidebar` → `ApiSidebar`
-- Adicionar seções ou agrupamentos por marketplace na sidebar (ex: cabeçalho "Mercado Livre", "Amazon", etc.) conforme forem sendo integrados
-- Manter os itens genéricos (Vendas, Estoque, Anúncios, Pedidos, Publicidade, Integrações) como menu principal
+**1. Criar arquivo de mock data (`src/data/marketplaceMockData.ts`)**
+- Gerar dados diários, horários e de produtos mock para cada marketplace (Amazon, Shopee, Magalu)
+- Gerar itens de estoque mock com variações de preço, quantidade e cobertura
+- Estruturas compatíveis com os tipos já usados nas páginas (DailyBreakdown, HourlyBreakdown, ProductSalesRow, InventoryItem)
 
-**3. Seletor de Marketplace no header (similar ao seller switcher)**
-- Criar um `MarketplaceSwitcher` no header do ambiente API que permite alternar entre marketplaces conectados (Mercado Livre, Amazon, Shopee, etc.)
-- Os dados das páginas (Vendas, Estoque, etc.) seriam filtrados pelo marketplace selecionado
-- Opção "Todos" para visão agregada
+**2. Modificar `MercadoLivre.tsx` (página de Vendas em `/api`)**
+- Importar `useMarketplace()` no topo
+- Quando `selectedMarketplace` for "mercado-livre" ou "all": manter comportamento atual (dados reais do Supabase)
+- Quando for "amazon", "shopee" ou "magalu": carregar dados mock do arquivo criado, sem chamar Supabase
+- Atualizar o título da página para mostrar o nome do marketplace ativo em vez de sempre "Mercado Livre"
+- Esconder botões ML-específicos (Sync, Histórico, Perfil ML, Store Selector) quando outro marketplace estiver selecionado
 
-**4. Renomear Layout e Contexts**
-- `MercadoLivreLayout` → `ApiLayout`
-- `MLStoreContext` e `MLInventoryContext` continuam existindo mas ficam sob um contexto mais amplo de "marketplace ativo"
-- Criar um `MarketplaceContext` que gerencia qual marketplace está selecionado e encapsula os sub-contexts
+**3. Modificar `MLEstoque.tsx` (página de Estoque em `/api/estoque`)**
+- Importar `useMarketplace()` 
+- Quando marketplace não for ML: renderizar uma tabela de estoque com itens mock (mesma estrutura visual, dados fictícios)
+- Esconder funcionalidades ML-específicas (refresh de inventário real, link para integrações ML)
+- Manter KPIs e filtros funcionais com dados mock
 
-**5. Generalizar páginas**
-- As páginas atuais (Vendas, Estoque, etc.) passam a receber o marketplace ativo via context e renderizam dados conforme a integração selecionada
-- As páginas ML existentes continuam funcionando — apenas passam a ser condicionais ao marketplace "mercado-livre" estar ativo
+**4. Atualizar `MarketplaceContext.tsx`**
+- Sem mudanças estruturais — já tem tudo necessário
 
-**6. Atualizar `routeMeta.ts` e `roleAccess.ts`**
-- Trocar todos os paths `/mercado-livre/*` para `/api/*`
-- Atualizar títulos para remover "Mercado Livre —" e usar nomenclatura genérica (ex: "Vendas via API", "Estoque via API")
+### Dados mock por marketplace
 
-### Estrutura proposta de rotas
-
-```text
-/api              → Dashboard de Vendas (filtrado por marketplace selecionado)
-/api/estoque      → Gestão de Estoque
-/api/anuncios     → Anúncios/Produtos
-/api/pedidos      → Pedidos
-/api/publicidade  → Publicidade
-/api/integracoes  → Integrações (conectar marketplaces)
-/api/perfil       → Perfil
-```
+| Marketplace | Vendas/dia | Ticket médio | Produtos em estoque |
+|-------------|-----------|-------------|-------------------|
+| Amazon | 15-45 pedidos | R$80-250 | 25 itens |
+| Shopee | 30-80 pedidos | R$40-120 | 20 itens |
+| Magalu | 10-30 pedidos | R$100-350 | 15 itens |
 
 ### Arquivos impactados
 
 | Arquivo | Mudança |
 |---------|---------|
-| `App.tsx` | Trocar rotas `/mercado-livre/*` → `/api/*` |
-| `MercadoLivreLayout.tsx` → `ApiLayout.tsx` | Renomear componente |
-| `MercadoLivreSidebar.tsx` → `ApiSidebar.tsx` | Renomear e atualizar paths |
-| `AppSelector.tsx` | Atualizar path do card API para `/api` |
-| `Header.tsx` | Trocar detecção `isML` para `isApi`, atualizar paths |
-| `routeMeta.ts` | Atualizar entradas para `/api/*` |
-| `roleAccess.ts` | Atualizar entradas para `/api/*` |
-| `MLPageHeader.tsx` | Generalizar para mostrar marketplace ativo |
-| Páginas ML (`MercadoLivre.tsx`, `MLEstoque.tsx`, etc.) | Manter lógica, apenas atualizar imports de layout |
-
-### Recomendação de prioridade
-
-Sugiro começar pelo **item 1 (renomear rotas)** + **item 2 (sidebar)** + **item 4 (layout)** + **item 6 (meta/access)** como primeira fase, pois são mudanças estruturais que habilitam todo o resto. O seletor de marketplace (item 3) e a generalização das páginas (item 5) podem vir numa segunda fase quando houver mais integrações conectadas.
+| `src/data/marketplaceMockData.ts` | **Novo** — mock data para 3 marketplaces |
+| `src/pages/MercadoLivre.tsx` | Condicional por marketplace, título dinâmico |
+| `src/pages/mercadolivre/MLEstoque.tsx` | Condicional por marketplace, estoque mock |
 
