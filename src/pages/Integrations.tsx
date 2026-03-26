@@ -481,6 +481,41 @@ export default function Integrations() {
     });
   };
 
+  const handleConfirmDisconnect = async () => {
+    if (!disconnectTarget || !disconnectPassword.trim()) return;
+    setDisconnecting(true);
+    setDisconnectError("");
+
+    try {
+      // Verify password by re-authenticating
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) {
+        setDisconnectError("Não foi possível verificar o usuário.");
+        setDisconnecting(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: disconnectPassword,
+      });
+
+      if (error) {
+        setDisconnectError("Senha incorreta. Tente novamente.");
+        setDisconnecting(false);
+        return;
+      }
+
+      // Password verified, proceed with disconnect
+      await handleDisconnect(disconnectTarget);
+      setDisconnectTarget(null);
+      setDisconnectPassword("");
+    } catch (e) {
+      setDisconnectError("Erro ao verificar senha.");
+    } finally {
+      setDisconnecting(false);
+    }
+
   const handleConfirmConnect = async () => {
     if (!connectDialog) return;
     setConnecting(true);
