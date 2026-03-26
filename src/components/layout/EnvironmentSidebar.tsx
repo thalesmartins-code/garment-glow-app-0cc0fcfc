@@ -15,10 +15,9 @@ export interface SidebarNavItem {
 interface EnvironmentSidebarProps {
   items: SidebarNavItem[];
   footerItem?: SidebarNavItem;
-  headerSlot?: (collapsed: boolean) => React.ReactNode;
 }
 
-export function EnvironmentSidebar({ items, footerItem, headerSlot }: EnvironmentSidebarProps) {
+export function EnvironmentSidebar({ items, footerItem }: EnvironmentSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { role } = useAuth();
