@@ -119,29 +119,6 @@ export function MLPageHeader({ title, children, lastUpdated }: Props) {
           <p className="text-xs text-muted-foreground/70">
             {formattedDate ? `Última sinc: ${formattedDate}` : "Nunca sincronizado"}
           </p>
-          {syncLogs.length > 0 && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <p className="text-xs text-muted-foreground/60 flex items-center gap-1 cursor-help">
-                  <Database className="h-3 w-3" />
-                  {syncSummary}
-                </p>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-sm">
-                <div className="space-y-1 text-xs">
-                  <p className="font-semibold">Períodos sincronizados:</p>
-                  {syncLogs.slice(0, 10).map((log, i) => (
-                    <div key={i} className="flex justify-between gap-4">
-                      <span>{formatSyncRange(log)} ({log.source})</span>
-                      <span className="text-muted-foreground">
-                        {log.orders_fetched} ped · {new Date(log.synced_at).toLocaleDateString("pt-BR")}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          )}
         </div>
       </div>
       {children && <div className="flex items-center gap-2">{children}</div>}
