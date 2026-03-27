@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -870,22 +871,34 @@ export default function MercadoLivre() {
               >
                 {showMpBreakdown ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
               </Button>
-              {showMpBreakdown && (
-                <div className="grid grid-cols-4 gap-2 mt-2">
-                  {perMarketplaceRevenue.map((mp) => (
-                    <div
-                      key={mp.id}
-                      className="flex flex-col items-center gap-1 rounded-lg border bg-card/50 p-2 min-w-[80px]"
-                    >
-                      <div className={`flex items-center justify-center rounded-md bg-gradient-to-br ${mp.color} p-1.5 text-white`}>
-                        <mp.icon className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="text-[10px] font-medium text-muted-foreground">{mp.name}</span>
-                      <span className="text-xs font-bold text-foreground">{currencyFmt(mp.revenue)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <AnimatePresence>
+                {showMpBreakdown && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="grid grid-cols-4 gap-2 mt-2 overflow-hidden"
+                  >
+                    {perMarketplaceRevenue.map((mp, index) => (
+                      <motion.div
+                        key={mp.id}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.25, delay: index * 0.05, ease: "easeOut" }}
+                        className="flex flex-col items-center gap-1 rounded-lg border bg-card/50 p-2 min-w-[80px]"
+                      >
+                        <div className={`flex items-center justify-center rounded-md bg-gradient-to-br ${mp.color} p-1.5 text-white`}>
+                          <mp.icon className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="text-[10px] font-medium text-muted-foreground">{mp.name}</span>
+                        <span className="text-xs font-bold text-foreground">{currencyFmt(mp.revenue)}</span>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </>
           )}
         </div>
