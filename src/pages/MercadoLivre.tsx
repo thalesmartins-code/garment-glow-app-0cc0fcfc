@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { HistoricalSyncModal } from "@/components/mercadolivre/HistoricalSyncModal";
 import { TopSellingProducts, type ProductSalesRow } from "@/components/mercadolivre/TopSellingProducts";
 import { HourlySalesTable } from "@/components/mercadolivre/HourlySalesTable";
