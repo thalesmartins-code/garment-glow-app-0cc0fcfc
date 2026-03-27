@@ -152,8 +152,6 @@ export function KPICard({
             {icon}
           </div>
         )}
-          </div>
-        )}
       </CardContent>
     </Card>
   );
