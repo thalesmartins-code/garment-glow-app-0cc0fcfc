@@ -8,6 +8,7 @@ type CardVariant = "default" | "success" | "warning" | "danger" | "info" | "neut
 
 interface KPICardProps {
   title: string;
+  iconClassName?: string;
   refreshing?: boolean;
   value: string;
   rawValue?: number;
@@ -57,6 +58,7 @@ export function KPICard({
   valueDecimals = 0,
   progressValue,
   tooltip,
+  iconClassName,
 }: KPICardProps) {
   const displayValue = value;
 
@@ -140,7 +142,7 @@ export function KPICard({
         )}
         </div>
         {icon && (
-          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 self-center", styles.icon)}>
+          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 self-center", iconClassName || styles.icon)}>
             {icon}
           </div>
         )}
