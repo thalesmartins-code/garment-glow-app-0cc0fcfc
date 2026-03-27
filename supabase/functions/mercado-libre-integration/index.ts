@@ -476,7 +476,7 @@ serve(async (req) => {
                 active_listings: activeListings,
                 synced_at: syncedAt,
               },
-              { onConflict: "user_id" },
+              { onConflict: "user_id,ml_user_id" },
             )
             .then(({ error }) => { if (error) console.error("User cache upsert error:", error); }),
         );
