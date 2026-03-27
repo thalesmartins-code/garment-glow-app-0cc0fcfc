@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useMLStore } from "@/contexts/MLStoreContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,9 @@ import {
   Tag,
   TrendingUp,
   Store,
+  Pencil,
+  Check as CheckIcon,
+  X,
 } from "lucide-react";
 
 interface MarketplaceIntegration {
