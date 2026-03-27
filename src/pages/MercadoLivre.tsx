@@ -99,7 +99,7 @@ const QUICK_RANGES = [
 const LAST_ML_SYNC_KEY = "ml_last_synced_at";
 const LAST_ML_SYNC_TS_KEY = "ml_last_synced_ts";
 const AUTO_SYNC_STALE_MS = 10 * 60 * 1000;
-const SYNC_CHUNK_DAYS = 2;
+const SYNC_CHUNK_DAYS = 1;
 
 function todayUTC() {
   return format(new Date(), "yyyy-MM-dd");
@@ -381,10 +381,13 @@ export default function MercadoLivre() {
       userCacheQuery = userCacheQuery.eq("ml_user_id", Number(selectedStore));
     }
 
+    const { fromDate: filterFrom, toDate: filterTo } = getFilterDates(customRange, period);
     let dailyCacheQuery = supabase
       .from("ml_daily_cache")
       .select("*")
       .eq("user_id", user.id)
+      .gte("date", filterFrom)
+      .lte("date", filterTo)
       .order("date", { ascending: false })
       .limit(1000);
     if (selectedStore !== "all") {
@@ -413,7 +416,7 @@ export default function MercadoLivre() {
     setAllDaily(dailyCache.map(mapDailyRow));
     setConnected(true);
     return true;
-  }, [user, selectedStore]);
+  }, [user, selectedStore, customRange, period]);
 
   const saveToCache = useCallback(
     async (
@@ -539,8 +542,8 @@ export default function MercadoLivre() {
           rangeStart.setDate(today.getDate() - days);
         }
 
-        const fromDateStr = rangeStart.toISOString().substring(0, 10);
-        const toDateStr = rangeEnd.toISOString().substring(0, 10);
+        const fromDateStr = format(rangeStart, "yyyy-MM-dd");
+        const toDateStr = format(rangeEnd, "yyyy-MM-dd");
 
         // Sync each token in small chunks to avoid API truncation on larger periods
         let lastUserInfo: MLUser | null = null;
@@ -594,6 +597,24 @@ export default function MercadoLivre() {
         setLastSyncedAt(now);
         localStorage.setItem(LAST_ML_SYNC_KEY, now);
         localStorage.setItem(LAST_ML_SYNC_TS_KEY, String(Date.now()));
+
+        // Log sync to ml_sync_log
+        const daysCount = Math.round((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        for (const tokenInfo of tokensToSync) {
+          await supabase.from("ml_sync_log" as any).upsert(
+            {
+              user_id: user.id,
+              ml_user_id: tokenInfo.ml_user_id,
+              date_from: fromDateStr,
+              date_to: toDateStr,
+              days_synced: daysCount,
+              source: "auto",
+              synced_at: now,
+            },
+            { onConflict: "user_id,ml_user_id,date_from,date_to,source" },
+          );
+        }
+
         toast({ title: "Sincronizado", description: `Dados atualizados: ${fromDateStr} → ${toDateStr}.` });
       } catch (err: any) {
         toast({ title: "Erro", description: err.message, variant: "destructive" });

@@ -174,6 +174,23 @@ export function HistoricalSyncModal({ accessToken, onSyncComplete, saveToCache }
         if (saveToCache && (dailyData.length > 0 || hourlyData.length > 0)) {
           await saveToCache(dailyData, hourlyData);
         }
+
+        // Log to ml_sync_log
+        if (user) {
+          await supabase.from("ml_sync_log" as any).upsert(
+            {
+              user_id: user.id,
+              ml_user_id: "",
+              date_from: chunk.date_from,
+              date_to: chunk.date_to,
+              days_synced: dailyData.length,
+              orders_fetched: dailyData.reduce((s, d) => s + d.qty, 0),
+              source: "historical",
+              synced_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id,ml_user_id,date_from,date_to,source" },
+          );
+        }
       }
 
       setProgressPercent(100);
