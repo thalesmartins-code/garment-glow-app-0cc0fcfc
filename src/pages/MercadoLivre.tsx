@@ -56,6 +56,7 @@ import {
 import { format, parseISO, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 
 interface MLUser {
   id: number;
@@ -188,6 +189,7 @@ export default function MercadoLivre() {
   const [pendingRange, setPendingRange] = useState<DateRange>(null);
   const [pendingPeriod, setPendingPeriod] = useState<number | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(() => salesCache.lastSyncedAt ?? localStorage.getItem(LAST_ML_SYNC_KEY));
+  const [syncProgress, setSyncProgress] = useState<{ current: number; total: number } | null>(null);
   const cacheLoadedRef = useRef(salesCache.daily.length > 0);
 
   // Sync local state back to context on changes
@@ -550,6 +552,11 @@ export default function MercadoLivre() {
         const toDateStr = format(rangeEnd, "yyyy-MM-dd");
 
         // Sync each token in small chunks to avoid API truncation on larger periods
+        const totalDays = Math.round((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const totalChunks = Math.ceil(totalDays / SYNC_CHUNK_DAYS) * tokensToSync.length;
+        let chunksDone = 0;
+        setSyncProgress({ current: 0, total: totalChunks });
+
         let lastUserInfo: MLUser | null = null;
         for (const tokenInfo of tokensToSync) {
           let cursor = new Date(rangeStart);
@@ -577,6 +584,9 @@ export default function MercadoLivre() {
             if (syncError) throw syncError;
             if (!syncData?.success) throw new Error(syncData?.error || "Sync failed");
             if (syncData.user) lastUserInfo = syncData.user;
+
+            chunksDone++;
+            setSyncProgress({ current: chunksDone, total: totalChunks });
 
             cursor.setDate(cursor.getDate() + SYNC_CHUNK_DAYS);
           }
@@ -624,6 +634,7 @@ export default function MercadoLivre() {
         toast({ title: "Erro", description: err.message, variant: "destructive" });
       } finally {
         setSyncing(false);
+        setSyncProgress(null);
       }
     },
     [user, toast, period, customRange, selectedStore, stores, loadFromCache, loadHourlyCache, loadProductCache],
@@ -890,6 +901,26 @@ export default function MercadoLivre() {
 
   return (
     <div className="space-y-6">
+      <AnimatePresence>
+        {syncProgress && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2"
+          >
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span>Sincronizando dia {syncProgress.current} de {syncProgress.total}...</span>
+              <span className="ml-auto text-muted-foreground">
+                {Math.round((syncProgress.current / syncProgress.total) * 100)}%
+              </span>
+            </div>
+            <Progress value={(syncProgress.current / syncProgress.total) * 100} className="h-2" />
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="flex items-start gap-4">
         <div className="flex-1 min-w-0">
           <MLPageHeader title="Vendas" lastUpdated={useRealData && lastSyncedAt ? new Date(lastSyncedAt) : null} />
