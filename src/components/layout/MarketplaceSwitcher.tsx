@@ -33,10 +33,15 @@ export function MarketplaceSwitcher() {
 
   const mlMarketplace = marketplaces.find(m => m.id === "mercado-livre");
 
+  // For single ML store with custom name, show it when ML is selected
+  const singleMLName = !hasMultipleMLStores && mlStores.length === 1 && mlStores[0].custom_name
+    ? mlStores[0].custom_name
+    : null;
+
   const label = selectedMLStore
     ? `ML - ${selectedMLStore.displayName}`
     : selected
-      ? selected.name
+      ? (selected.id === "mercado-livre" && singleMLName ? singleMLName : selected.name)
       : "Todos";
   const Icon = selectedMLStore ? mlMarketplace?.icon : selected?.icon;
   const gradientClass = selectedMLStore
@@ -245,7 +250,7 @@ export function MarketplaceSwitcher() {
               <span
                 className={`flex-1 text-sm ${isActive ? "font-semibold" : "font-medium"}`}
               >
-                {mp.name}
+                {mp.id === "mercado-livre" && singleMLName ? singleMLName : mp.name}
               </span>
               {!mp.connected && (
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0">
