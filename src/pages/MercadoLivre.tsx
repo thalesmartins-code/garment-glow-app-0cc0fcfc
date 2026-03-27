@@ -1084,13 +1084,15 @@ export default function MercadoLivre() {
                   <Clock3 className="mr-1 h-4 w-4" /> Venda / Hora
                 </Button>
               )}
-              <Button
-                size="sm"
-                variant={chartMode === "daily" ? "default" : "outline"}
-                onClick={() => setChartMode("daily")}
-              >
-                Diário
-              </Button>
+              {!isHourlyAvailable && (
+                <Button
+                  size="sm"
+                  variant={chartMode === "daily" ? "default" : "outline"}
+                  onClick={() => setChartMode("daily")}
+                >
+                  Diário
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent>
