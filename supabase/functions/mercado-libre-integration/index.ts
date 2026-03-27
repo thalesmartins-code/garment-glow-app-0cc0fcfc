@@ -377,8 +377,10 @@ serve(async (req) => {
     if (user_id) {
       try {
         const syncedAt = new Date().toISOString();
+        const mlUserIdStr = String(sellerId);
         const dailyRows = Object.entries(dailySales).map(([date, data]) => ({
           user_id,
+          ml_user_id: mlUserIdStr,
           date,
           total_revenue: data.total,
           approved_revenue: data.approved,
@@ -393,6 +395,7 @@ serve(async (req) => {
 
         const hourlyRows = Object.values(hourlySales).map((data) => ({
           user_id,
+          ml_user_id: mlUserIdStr,
           date: data.date,
           hour: data.hour,
           total_revenue: data.total,
@@ -409,7 +412,7 @@ serve(async (req) => {
           upsertPromises.push(
             supabaseAdmin
               .from("ml_daily_cache")
-              .upsert(dailyRows, { onConflict: "user_id,date" })
+              .upsert(dailyRows, { onConflict: "user_id,ml_user_id,date" })
               .then(({ error }) => { if (error) console.error("Cache upsert error:", error); }),
           );
         }
@@ -418,7 +421,7 @@ serve(async (req) => {
           upsertPromises.push(
             supabaseAdmin
               .from("ml_hourly_cache")
-              .upsert(hourlyRows, { onConflict: "user_id,date,hour" })
+              .upsert(hourlyRows, { onConflict: "user_id,ml_user_id,date,hour" })
               .then(({ error }) => { if (error) console.error("Hourly cache upsert error:", error); }),
           );
         }
@@ -426,6 +429,7 @@ serve(async (req) => {
         // Upsert product daily cache
         const productRows = Object.values(productSales).map((p) => ({
           user_id,
+          ml_user_id: mlUserIdStr,
           date: p.date,
           item_id: p.item_id,
           title: p.title,
@@ -447,7 +451,7 @@ serve(async (req) => {
                 productBatches.map((batch) =>
                   supabaseAdmin
                     .from("ml_product_daily_cache")
-                    .upsert(batch, { onConflict: "user_id,date,item_id" })
+                    .upsert(batch, { onConflict: "user_id,ml_user_id,date,item_id" })
                     .then(({ error }) => { if (error) console.error("Product cache upsert error:", error); }),
                 ),
               );
