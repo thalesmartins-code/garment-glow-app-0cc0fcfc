@@ -13,6 +13,7 @@ interface HourlyBreakdown {
 interface Props {
   hourly: HourlyBreakdown[];
   title?: string;
+  titleIcon?: React.ReactNode;
   compact?: boolean;
 }
 
@@ -26,7 +27,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   return dir === "desc" ? <ArrowDown className="w-3 h-3 text-primary" /> : <ArrowUp className="w-3 h-3 text-primary" />;
 }
 
-export function HourlySalesTable({ hourly, title, compact }: Props) {
+export function HourlySalesTable({ hourly, title, titleIcon, compact }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("hour");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
@@ -82,7 +83,12 @@ export function HourlySalesTable({ hourly, title, compact }: Props) {
       <CardHeader className={compact ? "pb-2 px-3 pt-3" : "pb-3"}>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className={compact ? "text-sm" : "text-base"}>{title || "Venda por Hora"}</CardTitle>
+            <CardTitle className={compact ? "text-sm" : "text-base"}>
+              <span className="inline-flex items-center gap-1.5">
+                {titleIcon}
+                {title || "Venda por Hora"}
+              </span>
+            </CardTitle>
             {peakHour.revenue > 0 && (
               <p className="text-xs text-muted-foreground mt-1">
                 🔥 Pico{" "}

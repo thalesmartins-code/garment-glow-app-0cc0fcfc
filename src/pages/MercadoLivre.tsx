@@ -32,6 +32,10 @@ import {
   X,
   Clock3,
   Loader2,
+  Handshake,
+  ShoppingBag,
+  Store,
+  Building2,
 } from "lucide-react";
 import {
   ComposedChart,
@@ -759,10 +763,10 @@ export default function MercadoLivre() {
   const perMarketplaceHourly = useMemo(() => {
     if (!isAll) return null;
     const mpList = [
-      { id: "mercado-livre", name: "Mercado Livre", data: hourly },
-      { id: "amazon", name: "Amazon", data: getMarketplaceHourlyData("amazon") },
-      { id: "shopee", name: "Shopee", data: getMarketplaceHourlyData("shopee") },
-      { id: "magalu", name: "Magalu", data: getMarketplaceHourlyData("magalu") },
+      { id: "mercado-livre", name: "Mercado Livre", data: hourly, icon: <Handshake className="w-4 h-4 text-amber-500" /> },
+      { id: "amazon", name: "Amazon", data: getMarketplaceHourlyData("amazon"), icon: <ShoppingBag className="w-4 h-4 text-orange-500" /> },
+      { id: "shopee", name: "Shopee", data: getMarketplaceHourlyData("shopee"), icon: <Store className="w-4 h-4 text-red-500" /> },
+      { id: "magalu", name: "Magalu", data: getMarketplaceHourlyData("magalu"), icon: <Building2 className="w-4 h-4 text-blue-500" /> },
     ];
     return mpList.map((mp) => ({
       ...mp,
@@ -1001,7 +1005,12 @@ export default function MercadoLivre() {
           {perMarketplaceHourly.map((mp) => (
             <Card key={mp.id}>
               <CardHeader className="pb-2 px-4 pt-4">
-                <CardTitle className="text-sm">Venda por Hora — {mp.name}</CardTitle>
+                <CardTitle className="text-sm">
+                  <span className="inline-flex items-center gap-1.5">
+                    {mp.icon}
+                    Venda por Hora — {mp.name}
+                  </span>
+                </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <ResponsiveContainer width="100%" height={220}>
@@ -1164,7 +1173,7 @@ export default function MercadoLivre() {
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {perMarketplaceHourly.map((mp) => (
-              <HourlySalesTable key={mp.id} hourly={mp.data} title={`Venda por Hora — ${mp.name}`} compact />
+              <HourlySalesTable key={mp.id} hourly={mp.data} title={`Venda por Hora — ${mp.name}`} titleIcon={mp.icon} compact />
             ))}
           </div>
           <TopSellingProducts products={effectiveProducts} loading={effectiveLoading} showOrigin={isAll} />
