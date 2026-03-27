@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMarketplace } from "@/contexts/MarketplaceContext";
-import { Layers, Database } from "lucide-react";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Layers } from "lucide-react";
 import { format } from "date-fns";
 
 interface SyncLogEntry {
