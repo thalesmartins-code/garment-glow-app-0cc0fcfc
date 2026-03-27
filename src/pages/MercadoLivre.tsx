@@ -530,7 +530,7 @@ export default function MercadoLivre() {
         } else {
           const days = opts?.periodDays ?? (period > 0 ? period : 1);
           rangeStart = new Date(today);
-          rangeStart.setDate(today.getDate() - days + 1);
+          rangeStart.setDate(today.getDate() - days);
         }
 
         const fromDateStr = rangeStart.toISOString().substring(0, 10);
