@@ -902,24 +902,26 @@ export default function MercadoLivre() {
   return (
     <div className="space-y-6">
       <AnimatePresence>
-        {syncProgress && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2"
-          >
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              <span>Sincronizando dia {syncProgress.current} de {syncProgress.total}...</span>
-              <span className="ml-auto text-muted-foreground">
-                {Math.round((syncProgress.current / syncProgress.total) * 100)}%
-              </span>
-            </div>
-            <Progress value={(syncProgress.current / syncProgress.total) * 100} className="h-2" />
-          </motion.div>
-        )}
+        {syncProgress && (() => {
+          const pct = Math.round((syncProgress.current / syncProgress.total) * 100);
+          const barColor = pct >= 100 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-400" : "bg-primary";
+          return (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center gap-3 px-3 py-1.5 rounded-md border border-border/50 bg-muted/30 text-xs text-muted-foreground"
+            >
+              <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+              <span>{syncProgress.current}/{syncProgress.total} dias</span>
+              <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-300 ${barColor}`} style={{ width: `${pct}%` }} />
+              </div>
+              <span className="tabular-nums">{pct}%</span>
+            </motion.div>
+          );
+        })()}
       </AnimatePresence>
       <div className="flex items-start gap-4">
         <div className="flex-1 min-w-0">
