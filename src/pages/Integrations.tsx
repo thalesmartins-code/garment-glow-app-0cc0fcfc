@@ -662,6 +662,24 @@ export default function Integrations() {
     }
   };
 
+  const handleRenameStore = async (mlUserId: string) => {
+    if (!editingStoreName.trim()) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase
+        .from("ml_user_cache")
+        .update({ custom_name: editingStoreName.trim() } as any)
+        .eq("user_id", user.id)
+        .eq("ml_user_id", Number(mlUserId));
+      setEditingStoreId(null);
+      setEditingStoreName("");
+      await refreshMLStores();
+      toast({ title: "Nome atualizado!", description: "O nome da loja foi alterado com sucesso." });
+    } catch (e) {
+      toast({ title: "Erro", description: "Não foi possível renomear a loja.", variant: "destructive" });
+    }
+  };
 
   const sellerMarketplaces = selectedSeller?.activeMarketplaces?.filter((id) => id !== "total") || [];
   const filteredIntegrations = integrations.filter((i) => sellerMarketplaces.includes(i.id));
