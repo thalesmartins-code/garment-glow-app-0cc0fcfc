@@ -815,9 +815,11 @@ export default function MercadoLivre() {
               value={effectiveMetrics ? currencyFmt(effectiveMetrics.total_revenue) : "—"}
               icon={<DollarSign className="w-5 h-5" />}
               variant="default"
+              size="compact"
               loading={effectiveLoading}
               refreshing={effectiveSyncing}
               subtitle={periodLabel}
+              className="text-center [&_div]:justify-center [&_span]:justify-center [&_p]:text-center"
             />
           </div>
         </div>
