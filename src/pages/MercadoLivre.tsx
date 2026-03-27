@@ -818,7 +818,7 @@ export default function MercadoLivre() {
               loading={effectiveLoading}
               refreshing={effectiveSyncing}
               subtitle={periodLabel}
-              className="text-center [&_div]:justify-center [&_span]:justify-center [&_p]:text-center [&>div]:py-1.5 bg-gradient-to-br from-primary/8 via-primary/3 to-transparent border-primary/15 [&_p]:text-2xl [&_p]:font-bold"
+              className="text-center [&_div]:justify-center [&_span]:justify-center [&_p]:text-center [&>div]:py-1.5 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-[0_0_12px_hsl(var(--primary)/0.12)] border-primary/15 [&_p]:text-2xl [&_p]:font-bold"
             />
           </div>
         </div>
