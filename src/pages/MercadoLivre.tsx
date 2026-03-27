@@ -1005,7 +1005,12 @@ export default function MercadoLivre() {
           {perMarketplaceHourly.map((mp) => (
             <Card key={mp.id}>
               <CardHeader className="pb-2 px-4 pt-4">
-                <CardTitle className="text-sm">Venda por Hora — {mp.name}</CardTitle>
+                <CardTitle className="text-sm">
+                  <span className="inline-flex items-center gap-1.5">
+                    {mp.icon}
+                    Venda por Hora — {mp.name}
+                  </span>
+                </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <ResponsiveContainer width="100%" height={220}>
