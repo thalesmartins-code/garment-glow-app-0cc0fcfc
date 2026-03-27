@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+﻿import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -729,7 +729,13 @@ export default function MercadoLivre() {
       setCustomRange(resolvedRange);
       setPeriod(0);
       setPopoverOpen(false);
-      syncFromAPI({ from: resolvedRange.from, to: resolvedRange.to });
+      // Only call the API if the range includes today or future dates.
+      // Historical ranges load from cache (filled by historical sync).
+      const todayStr = format(new Date(), "yyyy-MM-dd");
+      const toStr = format(startOfDay(resolvedRange.to), "yyyy-MM-dd");
+      if (toStr >= todayStr) {
+        syncFromAPI({ from: resolvedRange.from, to: resolvedRange.to });
+      }
     } else if (pendingPeriod !== null) {
       setCustomRange(null);
       setPeriod(pendingPeriod);
@@ -1087,7 +1093,7 @@ export default function MercadoLivre() {
             <HistoricalSyncModal
               accessToken={cachedAccessToken}
               onSyncComplete={reloadCache}
-              saveToCache={(dailyData, hourlyData) => saveToCache(dailyData, hourlyData)}
+              mlUserId={selectedStore !== "all" ? selectedStore : undefined}
             />
           )}
         </div>

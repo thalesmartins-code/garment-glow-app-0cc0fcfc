@@ -29,6 +29,7 @@ import MLEstoque from "./pages/mercadolivre/MLEstoque";
 import MLProdutos from "./pages/mercadolivre/MLProdutos";
 import MLPedidos from "./pages/mercadolivre/MLPedidos";
 import MLAnuncios from "./pages/mercadolivre/MLAnuncios";
+import MLSincronizacoes from "./pages/mercadolivre/MLSincronizacoes";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -105,6 +106,10 @@ const App = () => (
                           element={<RoleRoute><MLAnuncios /></RoleRoute>}
                         />
                         <Route
+                        <Route
+                          path="/api/sincronizacoes"
+                          element={<RoleRoute><MLSincronizacoes /></RoleRoute>}
+                        />
                           path="/api/integracoes"
                           element={<RoleRoute><Integrations /></RoleRoute>}
                         />
