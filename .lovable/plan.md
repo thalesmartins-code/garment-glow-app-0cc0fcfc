@@ -1,31 +1,39 @@
 
 
-## Diagnóstico: Por que dados de dias anteriores desaparecem
+## Barra de progresso durante sincronização
 
-### Causa raiz encontrada
+### O que será feito
 
-A **API de visitas** retorna dados para datas **fora** do range do chunk. Os logs confirmam: `"daily visit rows: 3"` para um chunk de 1 dia.
+Adicionar uma barra de progresso visível no topo da página do Mercado Livre que aparece durante a sincronização, mostrando o progresso chunk-a-chunk (ex: "Sincronizando 3/7 dias...").
 
-No código da Edge Function (linhas 356-371), quando visits retorna uma data fora do chunk (ex: 03/25 no chunk de 03/26), ela **cria uma entrada diária vazia** para essa data com `total=0, qty=0` mas com visitas. Essa entrada é então salva via upsert, **sobrescrevendo** os dados reais desse dia que foram gravados pelo chunk correto anterior.
+### Como funciona
+
+Atualmente a sincronização itera chunks diários em um loop `while` (linhas 556-582). Vamos:
+
+1. **Calcular total de chunks antes do loop** — número total de iterações (dias × lojas)
+2. **Novo estado `syncProgress`** — `{ current: number, total: number, label: string } | null`
+3. **Atualizar a cada chunk** — incrementar `current` e atualizar `label` com a data sendo processada
+4. **Exibir barra de progresso** — componente `Progress` (já existe em `src/components/ui/progress.tsx`) fixo no topo do conteúdo, com animação de entrada/saída via `AnimatePresence` (já importado)
+
+### Mudanças técnicas
+
+**Arquivo: `src/pages/MercadoLivre.tsx`**
+
+- Novo state: `const [syncProgress, setSyncProgress] = useState<{current: number; total: number} | null>(null)`
+- Antes do loop de chunks: calcular `totalChunks` (número de dias × número de lojas)
+- Dentro do loop: `setSyncProgress({ current: ++chunksDone, total: totalChunks })`
+- Após o loop: `setSyncProgress(null)`
+- No JSX, acima dos KPIs: renderizar uma barra `Progress` com `value={(syncProgress.current / syncProgress.total) * 100}` envolvida em `AnimatePresence` para fade in/out
+- Texto auxiliar: "Sincronizando dia X de Y..." com ícone de loading
+
+### Visual
 
 ```text
-Fluxo do bug:
-1. Chunk 03/25 roda → grava 03/25 com receita R$50k ✓
-2. Chunk 03/26 roda → visits API retorna dados de 03/25 e 03/26
-   → Cria dailySales["2026-03-25"] = {total:0, visits:X}
-   → Upsert SOBRESCREVE 03/25 com receita R$0 ✗
-3. Resultado: dia 25 aparece zerado no gráfico
+┌──────────────────────────────────────────────┐
+│ ⟳ Sincronizando 3 de 7 dias...              │
+│ ████████████░░░░░░░░░░░░░░░  43%            │
+└──────────────────────────────────────────────┘
 ```
 
-### Correção
-
-**Edge Function** (`supabase/functions/mercado-libre-integration/index.ts`):
-- Filtrar `dailyVisits` para incluir apenas datas dentro do range solicitado (`date_from` a `date_to`) antes de mesclar no `dailySales`
-- Filtrar também os pedidos para garantir que apenas datas BRT dentro do range gerem entradas no `dailySales`
-- Isso impede que o upsert sobrescreva dados de outros dias com valores zerados
-
-Mudança concreta (linhas ~356-371): ao iterar `dailyVisits`, pular datas onde `date < date_from` ou `date > date_to`. Mesmo tratamento para pedidos com datas BRT fora do range.
-
-### Arquivos afetados
-- `supabase/functions/mercado-libre-integration/index.ts` — filtrar visits e orders por range antes de salvar
+Aparece com fade-in ao iniciar e fade-out ao concluir. Usa o componente `Progress` existente com cor primary.
 
