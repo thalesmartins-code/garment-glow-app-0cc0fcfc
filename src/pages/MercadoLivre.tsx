@@ -36,6 +36,8 @@ import {
   ShoppingBag,
   Store,
   Building2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import {
   ComposedChart,
@@ -791,6 +793,24 @@ export default function MercadoLivre() {
     }));
   }, [isAll, hourly]);
 
+  const [showMpBreakdown, setShowMpBreakdown] = useState(false);
+
+  const perMarketplaceRevenue = useMemo(() => {
+    if (!isAll) return [];
+    const marketplaceConfigs = [
+      { id: "mercado-livre", name: "Mercado Livre", icon: Handshake, color: "from-yellow-500 to-amber-500" },
+      { id: "amazon", name: "Amazon", icon: ShoppingBag, color: "from-orange-500 to-amber-600" },
+      { id: "shopee", name: "Shopee", icon: Store, color: "from-orange-600 to-red-500" },
+      { id: "magalu", name: "Magalu", icon: Building2, color: "from-blue-600 to-indigo-500" },
+    ];
+    return marketplaceConfigs.map((mp) => {
+      const mpDaily = mp.id === "mercado-livre" ? daily : getMarketplaceDailyData(mp.id, 30);
+      const revenue = mpDaily.reduce((s, d) => s + d.total, 0);
+      return { ...mp, revenue };
+    });
+  }, [isAll, daily]);
+
+
   if (isML && !loading && !connected) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -827,7 +847,7 @@ export default function MercadoLivre() {
         <div className="flex-1 min-w-0">
           <MLPageHeader title="Vendas" lastUpdated={useRealData && lastSyncedAt ? new Date(lastSyncedAt) : null} />
         </div>
-        <div className="hidden md:flex flex-shrink-0 justify-center">
+        <div className="hidden md:flex flex-shrink-0 flex-col items-center">
           <div className="w-72">
             <KPICard
               title="Receita Total"
@@ -840,6 +860,34 @@ export default function MercadoLivre() {
               className="text-center [&_div]:justify-center [&_span]:justify-center [&_p]:text-center [&>div]:py-1.5 bg-gradient-to-br from-[hsl(217,70%,45%)]/10 via-[hsl(217,70%,45%)]/5 to-transparent shadow-[0_0_12px_hsl(217,70%,45%,0.12)] border-[hsl(217,70%,45%)]/15 [&_p]:text-2xl [&_p]:font-bold"
             />
           </div>
+          {isAll && (
+            <>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-5 w-5 p-0 mt-1"
+                onClick={() => setShowMpBreakdown(!showMpBreakdown)}
+              >
+                {showMpBreakdown ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              </Button>
+              {showMpBreakdown && (
+                <div className="grid grid-cols-4 gap-2 mt-2">
+                  {perMarketplaceRevenue.map((mp) => (
+                    <div
+                      key={mp.id}
+                      className="flex flex-col items-center gap-1 rounded-lg border bg-card/50 p-2 min-w-[80px]"
+                    >
+                      <div className={`flex items-center justify-center rounded-md bg-gradient-to-br ${mp.color} p-1.5 text-white`}>
+                        <mp.icon className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="text-[10px] font-medium text-muted-foreground">{mp.name}</span>
+                      <span className="text-xs font-bold text-foreground">{currencyFmt(mp.revenue)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
         <div className="flex-1 min-w-0 flex items-center justify-end gap-2 flex-wrap">
           {isML && <MLStoreSelector />}
