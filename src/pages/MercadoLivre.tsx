@@ -401,8 +401,10 @@ export default function MercadoLivre() {
       if (!user || dailyData.length === 0) return;
       try {
         const syncedAt = new Date().toISOString();
+        const mlId = selectedStore !== "all" ? selectedStore : (mlUserInfo ? String(mlUserInfo.id) : "");
         const dailyRows = dailyData.map((d) => ({
           user_id: user.id,
+          ml_user_id: mlId,
           date: d.date,
           total_revenue: d.total,
           approved_revenue: d.approved,
@@ -415,12 +417,13 @@ export default function MercadoLivre() {
         }));
 
         for (let i = 0; i < dailyRows.length; i += 200) {
-          await supabase.from("ml_daily_cache").upsert(dailyRows.slice(i, i + 200), { onConflict: "user_id,date" });
+          await supabase.from("ml_daily_cache").upsert(dailyRows.slice(i, i + 200), { onConflict: "user_id,ml_user_id,date" });
         }
 
         if (hourlyData.length > 0) {
           const hourlyRows = hourlyData.map((h) => ({
             user_id: user.id,
+            ml_user_id: mlId,
             date: h.date,
             hour: h.hour,
             total_revenue: h.total,
@@ -431,7 +434,7 @@ export default function MercadoLivre() {
           for (let i = 0; i < hourlyRows.length; i += 200) {
             await (supabase as any)
               .from("ml_hourly_cache")
-              .upsert(hourlyRows.slice(i, i + 200), { onConflict: "user_id,date,hour" });
+              .upsert(hourlyRows.slice(i, i + 200), { onConflict: "user_id,ml_user_id,date,hour" });
           }
         }
 
