@@ -879,7 +879,7 @@ export default function MercadoLivre() {
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3, ease: "easeInOut" }}
-                    className="grid grid-cols-2 gap-2 mt-2 overflow-hidden"
+                    className="grid grid-cols-4 gap-2 mt-2 overflow-hidden"
                   >
                     {perMarketplaceRevenue.map((mp, index) => {
                       const totalRevenue = perMarketplaceRevenue.reduce((sum, m) => sum + m.revenue, 0);
@@ -894,17 +894,13 @@ export default function MercadoLivre() {
                               transition={{ duration: 0.25, delay: index * 0.05, ease: "easeOut" }}
                             >
                               <Card className="cursor-default">
-                                <CardContent className="p-3 flex gap-3">
-                                  <div className="flex-1 min-w-0">
-                                    <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                                      <mp.icon className="h-3.5 w-3.5" />
-                                      {mp.name}
-                                    </span>
-                                    <p className="text-lg font-bold leading-tight">{currencyFmt(mp.revenue)}</p>
+                                <CardContent className="p-2 flex flex-col items-center gap-1">
+                                  <div className={`rounded-lg w-7 h-7 flex items-center justify-center bg-gradient-to-br ${mp.color} text-white`}>
+                                    <mp.icon className="h-3.5 w-3.5" />
                                   </div>
-                                  <div className={`rounded-xl w-8 h-8 flex items-center justify-center shrink-0 self-center bg-gradient-to-br ${mp.color} text-white`}>
-                                    <mp.icon className="h-4 w-4" />
-                                  </div>
+                                  <span className="text-[10px] font-medium text-muted-foreground leading-tight">{mp.name}</span>
+                                  <p className="text-xs font-bold leading-tight">{currencyFmt(mp.revenue)}</p>
+                                  <span className="text-[10px] text-muted-foreground">{pct}%</span>
                                 </CardContent>
                               </Card>
                             </motion.div>
