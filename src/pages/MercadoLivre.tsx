@@ -32,6 +32,10 @@ import {
   X,
   Clock3,
   Loader2,
+  Handshake,
+  ShoppingBag,
+  Store,
+  Building2,
 } from "lucide-react";
 import {
   ComposedChart,

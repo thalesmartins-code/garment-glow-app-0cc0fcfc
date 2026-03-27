@@ -13,6 +13,7 @@ interface HourlyBreakdown {
 interface Props {
   hourly: HourlyBreakdown[];
   title?: string;
+  titleIcon?: React.ReactNode;
   compact?: boolean;
 }
 
