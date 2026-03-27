@@ -542,24 +542,37 @@ export default function MercadoLivre() {
         const fromDateStr = rangeStart.toISOString().substring(0, 10);
         const toDateStr = rangeEnd.toISOString().substring(0, 10);
 
-        // Sync each token sequentially
+        // Sync each token in small chunks to avoid API truncation on larger periods
         let lastUserInfo: MLUser | null = null;
         for (const tokenInfo of tokensToSync) {
-          const { data: syncData, error: syncError } = await supabase.functions.invoke(
-            "mercado-libre-integration",
-            {
-              body: {
-                access_token: tokenInfo.access_token,
-                user_id: user.id,
-                date_from: fromDateStr,
-                date_to: toDateStr,
-              },
-            },
-          );
+          let cursor = new Date(rangeStart);
+          while (cursor <= rangeEnd) {
+            const chunkStart = new Date(cursor);
+            const chunkEnd = new Date(cursor);
+            chunkEnd.setDate(chunkEnd.getDate() + (SYNC_CHUNK_DAYS - 1));
+            if (chunkEnd > rangeEnd) chunkEnd.setTime(rangeEnd.getTime());
 
-          if (syncError) throw syncError;
-          if (!syncData?.success) throw new Error(syncData?.error || "Sync failed");
-          if (syncData.user) lastUserInfo = syncData.user;
+            const chunkFrom = format(chunkStart, "yyyy-MM-dd");
+            const chunkTo = format(chunkEnd, "yyyy-MM-dd");
+
+            const { data: syncData, error: syncError } = await supabase.functions.invoke(
+              "mercado-libre-integration",
+              {
+                body: {
+                  access_token: tokenInfo.access_token,
+                  user_id: user.id,
+                  date_from: chunkFrom,
+                  date_to: chunkTo,
+                },
+              },
+            );
+
+            if (syncError) throw syncError;
+            if (!syncData?.success) throw new Error(syncData?.error || "Sync failed");
+            if (syncData.user) lastUserInfo = syncData.user;
+
+            cursor.setDate(cursor.getDate() + SYNC_CHUNK_DAYS);
+          }
         }
 
         let hourlyDateOverride: string | null;
