@@ -6,6 +6,7 @@ import { useMLStore } from "@/contexts/MLStoreContext";
 import { useMarketplace } from "@/contexts/MarketplaceContext";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { getMarketplaceDailyData, getMarketplaceHourlyData, getMarketplaceProducts, getMarketplaceName, getAllMarketplaceMockDaily, getAllMarketplaceMockHourly, getAllMarketplaceMockProducts } from "@/data/marketplaceMockData";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
