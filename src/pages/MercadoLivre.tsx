@@ -845,7 +845,7 @@ export default function MercadoLivre() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-start gap-4">
         <div className="flex-1 min-w-0">
           <MLPageHeader title="Vendas" lastUpdated={useRealData && lastSyncedAt ? new Date(lastSyncedAt) : null} />
         </div>
