@@ -591,7 +591,7 @@ export default function MercadoLivre() {
         }
 
         await Promise.all([
-          loadFromCache(),
+          loadFromCache(fromDateStr, toDateStr),
           loadHourlyCache(hourlyDateOverride),
           loadProductCache(fromDateStr, toDateStr),
         ]);
