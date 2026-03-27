@@ -483,6 +483,22 @@ serve(async (req) => {
 
         await Promise.all(upsertPromises);
 
+        // Log sync to ml_sync_log
+        const daysCount = Object.keys(dailySales).length;
+        await supabaseAdmin.from("ml_sync_log").upsert(
+          {
+            user_id,
+            ml_user_id: mlUserIdStr,
+            date_from: date_from || rangeFromStr,
+            date_to: date_to || rangeToStr,
+            days_synced: daysCount,
+            orders_fetched: orders.length,
+            source: "auto",
+            synced_at: syncedAt,
+          },
+          { onConflict: "user_id,ml_user_id,date_from,date_to,source" },
+        ).then(({ error }) => { if (error) console.error("Sync log error:", error); });
+
         console.log(
           `Cache updated: ${dailyRows.length} daily rows, ${hourlyRows.length} hourly rows, ${productRows.length} product rows, user cache saved`,
         );

@@ -597,6 +597,24 @@ export default function MercadoLivre() {
         setLastSyncedAt(now);
         localStorage.setItem(LAST_ML_SYNC_KEY, now);
         localStorage.setItem(LAST_ML_SYNC_TS_KEY, String(Date.now()));
+
+        // Log sync to ml_sync_log
+        const daysCount = Math.round((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        for (const tokenInfo of tokensToSync) {
+          await supabase.from("ml_sync_log" as any).upsert(
+            {
+              user_id: user.id,
+              ml_user_id: tokenInfo.ml_user_id,
+              date_from: fromDateStr,
+              date_to: toDateStr,
+              days_synced: daysCount,
+              source: "auto",
+              synced_at: now,
+            },
+            { onConflict: "user_id,ml_user_id,date_from,date_to,source" },
+          );
+        }
+
         toast({ title: "Sincronizado", description: `Dados atualizados: ${fromDateStr} → ${toDateStr}.` });
       } catch (err: any) {
         toast({ title: "Erro", description: err.message, variant: "destructive" });
