@@ -250,7 +250,7 @@ export function MarketplaceSwitcher() {
               <span
                 className={`flex-1 text-sm ${isActive ? "font-semibold" : "font-medium"}`}
               >
-                {mp.name}
+                {mp.id === "mercado-livre" && singleMLName ? singleMLName : mp.name}
               </span>
               {!mp.connected && (
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0">
