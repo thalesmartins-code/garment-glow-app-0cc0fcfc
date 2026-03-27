@@ -56,6 +56,7 @@ import {
 import { format, parseISO, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 
 interface MLUser {
   id: number;
@@ -188,6 +189,7 @@ export default function MercadoLivre() {
   const [pendingRange, setPendingRange] = useState<DateRange>(null);
   const [pendingPeriod, setPendingPeriod] = useState<number | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(() => salesCache.lastSyncedAt ?? localStorage.getItem(LAST_ML_SYNC_KEY));
+  const [syncProgress, setSyncProgress] = useState<{ current: number; total: number } | null>(null);
   const cacheLoadedRef = useRef(salesCache.daily.length > 0);
 
   // Sync local state back to context on changes
@@ -550,6 +552,11 @@ export default function MercadoLivre() {
         const toDateStr = format(rangeEnd, "yyyy-MM-dd");
 
         // Sync each token in small chunks to avoid API truncation on larger periods
+        const totalDays = Math.round((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const totalChunks = Math.ceil(totalDays / SYNC_CHUNK_DAYS) * tokensToSync.length;
+        let chunksDone = 0;
+        setSyncProgress({ current: 0, total: totalChunks });
+
         let lastUserInfo: MLUser | null = null;
         for (const tokenInfo of tokensToSync) {
           let cursor = new Date(rangeStart);
@@ -577,6 +584,9 @@ export default function MercadoLivre() {
             if (syncError) throw syncError;
             if (!syncData?.success) throw new Error(syncData?.error || "Sync failed");
             if (syncData.user) lastUserInfo = syncData.user;
+
+            chunksDone++;
+            setSyncProgress({ current: chunksDone, total: totalChunks });
 
             cursor.setDate(cursor.getDate() + SYNC_CHUNK_DAYS);
           }
@@ -624,6 +634,7 @@ export default function MercadoLivre() {
         toast({ title: "Erro", description: err.message, variant: "destructive" });
       } finally {
         setSyncing(false);
+        setSyncProgress(null);
       }
     },
     [user, toast, period, customRange, selectedStore, stores, loadFromCache, loadHourlyCache, loadProductCache],
