@@ -171,6 +171,10 @@ serve(async (req) => {
     const rangeFromStr = rangeStart.toISOString().substring(0, 10);
     const rangeToStr = rangeEnd.toISOString().substring(0, 10);
 
+    // BRT date boundaries for strict filtering (prevent spillover)
+    const brtDateFrom = date_from || toBRT(rangeStart.toISOString()).date;
+    const brtDateTo = date_to || toBRT(rangeEnd.toISOString()).date;
+
     console.log(
       `Fetching orders from ${rangeStart.toISOString()} to ${rangeEnd.toISOString()}`,
     );
@@ -243,7 +247,8 @@ serve(async (req) => {
         shippedOrders++;
       }
 
-      if (date) {
+      // Strict: only process dates within the requested BRT range
+      if (date && date >= brtDateFrom && date <= brtDateTo) {
         if (!dailySales[date]) {
           dailySales[date] = {
             total: 0,
@@ -352,8 +357,13 @@ serve(async (req) => {
     const totalUniqueBuyers = new Set(orders.map((o) => o.buyer?.id).filter(Boolean)).size;
 
     // dailyVisits e activeListings já foram buscados em paralelo com os pedidos
+    // STRICT: only include visits within the requested BRT date range to prevent spillover
     let totalVisits = 0;
     for (const [date, visits] of Object.entries(dailyVisits)) {
+      if (date < brtDateFrom || date > brtDateTo) {
+        console.log(`Skipping visits for out-of-range date: ${date} (range: ${brtDateFrom} to ${brtDateTo})`);
+        continue;
+      }
       totalVisits += visits;
       if (!dailySales[date]) {
         dailySales[date] = {
