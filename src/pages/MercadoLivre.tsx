@@ -1093,7 +1093,6 @@ export default function MercadoLivre() {
             <HistoricalSyncModal
               accessToken={cachedAccessToken}
               onSyncComplete={reloadCache}
-              mlUserId={selectedStore !== "all" ? selectedStore : undefined}
             />
           )}
         </div>
