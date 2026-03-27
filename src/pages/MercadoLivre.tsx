@@ -161,29 +161,43 @@ function getFilterDates(customRange: DateRange, period: number): { fromDate: str
 export default function MercadoLivre() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { stores, selectedStore } = useMLStore();
+  const { stores, selectedStore, salesCache, setSalesCache } = useMLStore();
   const { selectedMarketplace, activeMarketplace } = useMarketplace();
   const isML = selectedMarketplace === "mercado-livre";
   const isAll = selectedMarketplace === "all";
   const useRealData = isML || isAll;
   const marketplaceName = activeMarketplace ? activeMarketplace.name : "Todos os Marketplaces";
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => salesCache.daily.length === 0);
   const [syncing, setSyncing] = useState(false);
-  const [connected, setConnected] = useState(false);
-  const [mlUser, setMlUser] = useState<MLUser | null>(null);
-  const [cachedAccessToken, setCachedAccessToken] = useState<string | null>(null);
-  const [allDaily, setAllDaily] = useState<DailyBreakdown[]>([]);
-  const [allHourly, setAllHourly] = useState<HourlyBreakdown[]>([]);
-  const [allProductSales, setAllProductSales] = useState<(ProductSalesRow & { date: string })[]>([]);
-  const [productStockMap, setProductStockMap] = useState<Record<string, number>>({});
+  const [connected, setConnected] = useState(() => salesCache.connected);
+  const [mlUser, setMlUser] = useState<MLUser | null>(() => salesCache.mlUser);
+  const [cachedAccessToken, setCachedAccessToken] = useState<string | null>(() => salesCache.accessToken);
+  const [allDaily, setAllDaily] = useState<DailyBreakdown[]>(() => salesCache.daily);
+  const [allHourly, setAllHourly] = useState<HourlyBreakdown[]>(() => salesCache.hourly);
+  const [allProductSales, setAllProductSales] = useState<(ProductSalesRow & { date: string })[]>(() => salesCache.products as any);
+  const [productStockMap, setProductStockMap] = useState<Record<string, number>>(() => salesCache.productStockMap);
   const [period, setPeriod] = useState(0);
   const [customRange, setCustomRange] = useState<DateRange>(null);
   const [chartMode, setChartMode] = useState<ChartMode>("hourly");
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [pendingRange, setPendingRange] = useState<DateRange>(null);
   const [pendingPeriod, setPendingPeriod] = useState<number | null>(null);
-  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(() => localStorage.getItem(LAST_ML_SYNC_KEY));
-  const cacheLoadedRef = useRef(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(() => salesCache.lastSyncedAt ?? localStorage.getItem(LAST_ML_SYNC_KEY));
+  const cacheLoadedRef = useRef(salesCache.daily.length > 0);
+
+  // Sync local state back to context on changes
+  useEffect(() => {
+    setSalesCache(() => ({
+      daily: allDaily,
+      hourly: allHourly,
+      products: allProductSales,
+      mlUser,
+      connected,
+      lastSyncedAt,
+      accessToken: cachedAccessToken,
+      productStockMap,
+    }));
+  }, [allDaily, allHourly, allProductSales, mlUser, connected, lastSyncedAt, cachedAccessToken, productStockMap, setSalesCache]);
 
   const singleDayRange =
     customRange?.from && customRange?.to

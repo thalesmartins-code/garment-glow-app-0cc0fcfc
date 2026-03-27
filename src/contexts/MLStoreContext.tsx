@@ -8,13 +8,74 @@ export interface MLStore {
   access_token: string;
 }
 
+export interface MLSalesDaily {
+  date: string;
+  total: number;
+  approved: number;
+  qty: number;
+  units_sold: number;
+  cancelled: number;
+  shipped: number;
+  unique_visits: number;
+  unique_buyers: number;
+}
+
+export interface MLSalesHourly {
+  date: string;
+  hour: number;
+  total: number;
+  approved: number;
+  qty: number;
+}
+
+export interface MLSalesProduct {
+  item_id: string;
+  date: string;
+  title: string;
+  thumbnail: string | null;
+  qty_sold: number;
+  revenue: number;
+}
+
+export interface MLUserInfo {
+  id: number;
+  nickname: string;
+  country: string;
+  permalink: string;
+}
+
+export interface MLSalesCache {
+  daily: MLSalesDaily[];
+  hourly: MLSalesHourly[];
+  products: MLSalesProduct[];
+  mlUser: MLUserInfo | null;
+  connected: boolean;
+  lastSyncedAt: string | null;
+  accessToken: string | null;
+  productStockMap: Record<string, number>;
+}
+
 interface MLStoreState {
   stores: MLStore[];
-  selectedStore: string; // "all" or ml_user_id
+  selectedStore: string;
   setSelectedStore: (id: string) => void;
   loading: boolean;
   refresh: () => Promise<void>;
+  // Sales data cache
+  salesCache: MLSalesCache;
+  setSalesCache: (updater: (prev: MLSalesCache) => MLSalesCache) => void;
 }
+
+const defaultSalesCache: MLSalesCache = {
+  daily: [],
+  hourly: [],
+  products: [],
+  mlUser: null,
+  connected: false,
+  lastSyncedAt: null,
+  accessToken: null,
+  productStockMap: {},
+};
 
 const MLStoreContext = createContext<MLStoreState | null>(null);
 
@@ -23,6 +84,17 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
   const [stores, setStores] = useState<MLStore[]>([]);
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [salesCache, setSalesCacheRaw] = useState<MLSalesCache>(defaultSalesCache);
+
+  const setSalesCache = useCallback((updater: (prev: MLSalesCache) => MLSalesCache) => {
+    setSalesCacheRaw(updater);
+  }, []);
+
+  // Reset sales cache when store changes
+  const handleSetSelectedStore = useCallback((id: string) => {
+    setSelectedStore(id);
+    setSalesCacheRaw(defaultSalesCache);
+  }, []);
 
   const fetchStores = useCallback(async () => {
     if (!user) {
@@ -32,7 +104,6 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Get all tokens for this user
       const { data: tokens } = await supabase
         .from("ml_tokens")
         .select("ml_user_id, access_token")
@@ -45,7 +116,6 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Get nicknames from cache
       const { data: userCaches } = await supabase
         .from("ml_user_cache")
         .select("ml_user_id, nickname")
@@ -66,7 +136,6 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
 
       setStores(storeList);
 
-      // If only one store, auto-select it
       if (storeList.length === 1) {
         setSelectedStore(storeList[0].ml_user_id);
       }
@@ -83,7 +152,15 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <MLStoreContext.Provider
-      value={{ stores, selectedStore, setSelectedStore, loading, refresh: fetchStores }}
+      value={{
+        stores,
+        selectedStore,
+        setSelectedStore: handleSetSelectedStore,
+        loading,
+        refresh: fetchStores,
+        salesCache,
+        setSalesCache,
+      }}
     >
       {children}
     </MLStoreContext.Provider>
