@@ -1,66 +1,56 @@
 
 
-# Parser Nativo Shopee — Relatórios Diário e Mensal
+# Parser Shopee Pedidos — Ranking de Produtos
 
-## Análise dos Arquivos
+## Análise do Arquivo
 
-Ambos os arquivos seguem o mesmo formato CSV com duas seções:
+O CSV de pedidos tem uma estrutura simples: linha 1 é o cabeçalho, linhas 2+ são os dados. Cada linha é uma linha de pedido (um SKU por linha; pedidos com múltiplos SKUs aparecem em linhas separadas com o mesmo "ID do pedido").
 
-1. **Linha 1-2**: Resumo do período (cabeçalho + 1 linha agregada)
-2. **Linha 3**: Vazia
-3. **Linha 4+**: Dados detalhados (por hora no diário, por dia no mensal)
-
-### Colunas relevantes (Produto Pago)
-| Coluna CSV | Campo interno | Tipo |
+### Colunas relevantes para ranking
+| Coluna CSV | Campo interno | Uso |
 |---|---|---|
-| Data | date | string (dd/mm/yyyy ou dd/mm/yyyy HH:mm) |
-| Vendas (BRL) | revenue | number (formato BR: 10.227,04) |
-| Vendas Sem os Descontos da Shopee | revenue_without_discounts | number |
-| Pedidos | orders | number |
-| Vendas por Pedido | avg_order_value | number |
-| Cliques Por Produto | clicks | number |
-| Visitantes | visitors | number |
-| Taxa de Conversão de Pedidos | conversion_rate | percent string |
-| Pedidos Cancelados | cancelled_orders | number |
-| Vendas Canceladas | cancelled_revenue | number |
-| Pedidos Devolvidos / Reembolsados | returned_orders | number |
-| Vendas Devolvidas / Reembolsadas | returned_revenue | number |
-| # de compradores | buyers | number |
-| # de novos compradores | new_buyers | number |
-| # de compradores existentes | existing_buyers | number |
-| # de compradores em potencial | potential_buyers | number |
-| Repetir Índice de Compras | repeat_purchase_rate | percent string |
+| Nº de referência do SKU principal | sku | Agrupamento por produto |
+| Nome do Produto | product_name | Display no ranking |
+| Preço acordado | agreed_price | Preço unitário real |
+| Quantidade | quantity | Unidades vendidas |
+| Subtotal do produto | subtotal | Valor = preço × qty |
+| Status do pedido | order_status | Filtrar cancelados/devolvidos |
+| Data de criação do pedido | order_date | Data para filtros |
+| ID do pedido | order_id | Identificação única |
+| Nome da variação | variation | Info adicional |
 
-### Detecção automática do tipo
-- Se a coluna Data contém hora (HH:mm) → relatório diário/horário
-- Se a coluna Data contém apenas dd/mm/yyyy → relatório mensal/diário
+### Lógica de ranking
+- Agrupar por `sku` (Nº de referência do SKU principal)
+- Somar `quantity` e `subtotal` apenas de pedidos **não cancelados** (Status ≠ "Cancelado")
+- Ordenar por receita (subtotal) ou quantidade
 
 ## Etapas
 
-### 1. Criar tabela `shopee_sales` no Supabase
-Colunas baseadas nos campos acima, com `user_id`, `date`, `hour` (nullable para mensal), e todas as métricas. Unique constraint em `(user_id, date, hour)` para permitir upserts. RLS por `user_id = auth.uid()`.
+### 1. Criar tabela `shopee_orders`
+Armazena cada linha de pedido individualmente. Colunas: `order_id`, `order_status`, `sku`, `product_name`, `variation`, `agreed_price`, `quantity`, `subtotal`, `order_date`, `user_id`. Unique constraint em `(user_id, order_id, sku, variation)` para upserts. RLS por `user_id`.
 
-### 2. Atualizar parser em `marketplaceParsers.ts`
-Implementar `parseShopeeFile()` que:
-- Pula a seção de resumo (linhas 1-3)
-- Lê os dados detalhados a partir da linha 4
-- Converte números BR (1.234,56 → 1234.56)
-- Converte percentuais (4,57% → 0.0457)
-- Detecta se é horário ou diário pela presença de hora na data
-- Retorna array normalizado de `ParsedImportRow`
+### 2. Criar parser `parseShopeeOrdersCSV`
+Em `marketplaceParsers.ts`:
+- Nova interface `ParsedOrderRow` com os campos acima
+- Nova função que lê o CSV (header na linha 1, dados a partir da linha 2)
+- Reutiliza `splitCsvLine` e `parseBRNumber` existentes
 
-### 3. Atualizar `MLImportacao.tsx`
-- Adicionar colunas extras no preview (visitantes, conversão, cancelados)
-- Conectar botão "Importar" ao Supabase (upsert na `shopee_sales`)
+### 3. Atualizar UI de importação
+Na página `MLImportacao.tsx`, ao selecionar Shopee, oferecer dois tipos de arquivo:
+- **Produto Pago** (relatório de vendas — parser existente)
+- **Pedidos** (relatório de pedidos — novo parser)
 
-### 4. Tabelas Amazon e Magalu
-Ficam pendentes até receber os arquivos de exemplo dessas plataformas.
+Cada tipo tem seu próprio preview e salva em tabela diferente (`shopee_sales` vs `shopee_orders`).
+
+### 4. Criar `ImportOrdersPreviewTable`
+Novo componente para preview de pedidos com colunas: Produto, Variação, Preço, Qty, Subtotal, Status. Botão de importação faz upsert na `shopee_orders`.
 
 ## Arquivos
 
 | Arquivo | Ação |
 |---|---|
-| `supabase/migrations/` | Criar — tabela `shopee_sales` |
-| `src/utils/marketplaceParsers.ts` | Editar — parser nativo Shopee |
-| `src/pages/mercadolivre/MLImportacao.tsx` | Editar — preview + upsert |
+| `supabase/migrations/` | Criar — tabela `shopee_orders` |
+| `src/utils/marketplaceParsers.ts` | Editar — novo tipo + parser de pedidos |
+| `src/pages/mercadolivre/MLImportacao.tsx` | Editar — seletor de tipo de arquivo Shopee |
+| `src/components/import/marketplace/ImportOrdersPreviewTable.tsx` | Criar — preview de pedidos |
 
