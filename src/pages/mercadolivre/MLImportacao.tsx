@@ -20,8 +20,8 @@ const marketplaces: { id: MarketplaceType; label: string; icon: React.ElementTyp
   { id: "shopee", label: "Shopee", icon: ShoppingBag, color: "bg-orange-500/10 text-orange-600 border-orange-500/30" },
   { id: "amazon", label: "Amazon", icon: Package, color: "bg-yellow-500/10 text-yellow-700 border-yellow-500/30" },
   { id: "magalu", label: "Magalu", icon: Store, color: "bg-blue-500/10 text-blue-600 border-blue-500/30" },
-  { id: "dafiti", label: "Dafiti", icon: ShoppingCart, color: "bg-purple-500/10 text-purple-700 border-purple-500/30" },
-  { id: "netshoes", label: "Netshoes", icon: Footprints, color: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30" },
+  { id: "dafiti", label: "Dafiti", icon: ShoppingCart, color: "bg-gray-100 text-gray-900 border-gray-300 dark:bg-gray-800/50 dark:text-gray-100 dark:border-gray-600" },
+  { id: "netshoes", label: "Netshoes", icon: Footprints, color: "bg-purple-500/10 text-purple-700 border-purple-500/30" },
 ];
 
 export default function MLImportacao() {
