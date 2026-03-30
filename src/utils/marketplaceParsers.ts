@@ -1,4 +1,4 @@
-export type MarketplaceType = "shopee" | "amazon" | "magalu";
+export type MarketplaceType = "shopee" | "amazon" | "magalu" | "dafiti" | "netshoes";
 export type ShopeeFileType = "produto_pago" | "pedidos";
 
 export interface ParsedImportRow {
