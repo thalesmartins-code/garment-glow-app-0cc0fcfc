@@ -697,7 +697,7 @@ export default function Integrations() {
     }
   };
 
-  const sellerMarketplaces = selectedSeller?.activeMarketplaces?.filter((id) => id !== "total") || [];
+  const sellerMarketplaces = [...new Set((selectedSeller?.stores ?? []).map((s) => s.marketplace))].filter((id) => id !== "total");
   const filteredIntegrations = integrations.filter((i) => sellerMarketplaces.includes(i.id));
   const connectedCount = filteredIntegrations.filter((i) => i.status === "connected").length;
 

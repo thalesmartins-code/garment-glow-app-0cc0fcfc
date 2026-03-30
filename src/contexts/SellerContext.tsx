@@ -1,163 +1,223 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { Seller, DEFAULT_SELLERS, generateSellerId, generateInitials, ALL_MARKETPLACES } from "@/types/seller";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Seller, SellerStore, ALL_MARKETPLACES, buildSeller, generateInitials } from "@/types/seller";
+
+interface AddStoreInput {
+  marketplace: string;
+  store_name: string;
+  external_id?: string;
+}
 
 interface SellerContextType {
   sellers: Seller[];
   activeSellers: Seller[];
-  selectedSeller: Seller;
+  selectedSeller: Seller | null;
   setSelectedSeller: (sellerId: string) => void;
-  addSeller: (name: string, activeMarketplaces?: string[]) => Seller;
-  updateSeller: (id: string, data: Partial<Omit<Seller, "id" | "createdAt">>) => void;
-  toggleSellerActive: (id: string) => void;
-  deleteSeller: (id: string) => boolean;
-  getActiveMarketplaces: () => typeof ALL_MARKETPLACES;
+  loading: boolean;
+  // Seller CRUD
+  addSeller: (name: string) => Promise<Seller | null>;
+  updateSeller: (id: string, data: { name?: string; is_active?: boolean }) => Promise<void>;
+  deleteSeller: (id: string) => Promise<boolean>;
+  // Store CRUD
+  addStore: (sellerId: string, input: AddStoreInput) => Promise<SellerStore | null>;
+  updateStore: (storeId: string, data: { store_name?: string; external_id?: string; is_active?: boolean }) => Promise<void>;
+  deleteStore: (storeId: string) => Promise<void>;
+  // Legacy helpers
+  getActiveMarketplaces: () => typeof ALL_MARKETPLACES[number][];
   getMarketplaceById: (id: string) => typeof ALL_MARKETPLACES[number] | undefined;
+  // Legacy mutation kept for Sellers.tsx compat
+  toggleSellerActive: (id: string) => Promise<void>;
 }
 
-const STORAGE_KEY = "sellers_data";
-const STORAGE_VERSION_KEY = "sellers_data_version";
-const CURRENT_VERSION = "2";
-const SELECTED_SELLER_KEY = "selected_seller_id";
+const SELECTED_SELLER_KEY = "selected_seller_id_v3";
 
 const SellerContext = createContext<SellerContextType | undefined>(undefined);
 
 export function SellerProvider({ children }: { children: React.ReactNode }) {
-  const [sellers, setSellers] = useState<Seller[]>(() => {
-    try {
-      const version = localStorage.getItem(STORAGE_VERSION_KEY);
-      if (version !== CURRENT_VERSION) {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(SELECTED_SELLER_KEY);
-        localStorage.setItem(STORAGE_VERSION_KEY, CURRENT_VERSION);
-        return DEFAULT_SELLERS;
-      }
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((s: Seller) => ({
-            ...s,
-            isActive: s.isActive !== undefined ? s.isActive : true,
-          }));
-        }
-      }
-    } catch (error) {
-      console.error("Error loading sellers from localStorage:", error);
+  const { user } = useAuth();
+  const [sellers, setSellers] = useState<Seller[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedSellerId, setSelectedSellerId] = useState<string | null>(
+    () => localStorage.getItem(SELECTED_SELLER_KEY)
+  );
+  const loadedRef = useRef(false);
+
+  const loadSellers = useCallback(async () => {
+    if (!user) {
+      setSellers([]);
+      setLoading(false);
+      return;
     }
-    return DEFAULT_SELLERS;
-  });
 
-  const activeSellers = sellers.filter((s) => s.isActive);
-
-  const [selectedSellerId, setSelectedSellerId] = useState<string>(() => {
+    setLoading(true);
     try {
-      const stored = localStorage.getItem(SELECTED_SELLER_KEY);
-      if (stored && sellers.some((s) => s.id === stored)) {
-        return stored;
-      }
-    } catch (error) {
-      console.error("Error loading selected seller:", error);
-    }
-    return sellers[0]?.id || DEFAULT_SELLERS[0].id;
-  });
+      const [{ data: sellerRows }, { data: storeRows }] = await Promise.all([
+        supabase
+          .from("sellers" as any)
+          .select("id, name, initials, is_active, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("seller_stores" as any)
+          .select("id, seller_id, marketplace, store_name, external_id, is_active, created_at")
+          .order("created_at", { ascending: true }),
+      ]);
 
-  // Persist sellers to localStorage
+      const storesBySeller: Record<string, SellerStore[]> = {};
+      for (const s of (storeRows as any[]) || []) {
+        if (!storesBySeller[s.seller_id]) storesBySeller[s.seller_id] = [];
+        storesBySeller[s.seller_id].push(s as SellerStore);
+      }
+
+      const built = ((sellerRows as any[]) || []).map((row) =>
+        buildSeller(row, storesBySeller[row.id] || [])
+      );
+
+      setSellers(built);
+    } catch (err) {
+      console.error("Failed to load sellers:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(sellers));
-    } catch (error) {
-      console.error("Error saving sellers to localStorage:", error);
+    if (!loadedRef.current) {
+      loadedRef.current = true;
+      loadSellers();
     }
-  }, [sellers]);
+  }, [loadSellers]);
 
-  // Persist selected seller
+  // Re-load when user changes
   useEffect(() => {
-    try {
+    loadedRef.current = false;
+    loadSellers();
+  }, [user?.id]);
+
+  // Persist selected seller id
+  useEffect(() => {
+    if (selectedSellerId) {
       localStorage.setItem(SELECTED_SELLER_KEY, selectedSellerId);
-    } catch (error) {
-      console.error("Error saving selected seller:", error);
     }
   }, [selectedSellerId]);
 
-  const selectedSeller = sellers.find((s) => s.id === selectedSellerId) || sellers[0];
+  const activeSellers = sellers.filter((s) => s.is_active);
+
+  const selectedSeller: Seller | null =
+    sellers.find((s) => s.id === selectedSellerId) ??
+    activeSellers[0] ??
+    sellers[0] ??
+    null;
 
   const setSelectedSeller = useCallback((sellerId: string) => {
-    if (sellers.some((s) => s.id === sellerId)) {
-      setSelectedSellerId(sellerId);
-    }
-  }, [sellers]);
-
-  const addSeller = useCallback((name: string, activeMarketplaces?: string[]): Seller => {
-    const id = generateSellerId(name);
-    const initials = generateInitials(name);
-    
-    // Check for duplicate ID
-    let finalId = id;
-    let counter = 1;
-    while (sellers.some((s) => s.id === finalId)) {
-      finalId = `${id}-${counter}`;
-      counter++;
-    }
-
-    const newSeller: Seller = {
-      id: finalId,
-      name,
-      initials,
-      activeMarketplaces: activeMarketplaces || ALL_MARKETPLACES.map((m) => m.id),
-      createdAt: new Date().toISOString(),
-      isActive: true,
-    };
-
-    setSellers((prev) => [...prev, newSeller]);
-    return newSeller;
-  }, [sellers]);
-
-  const toggleSellerActive = useCallback((id: string) => {
-    setSellers((prev) =>
-      prev.map((seller) =>
-        seller.id === id ? { ...seller, isActive: !seller.isActive } : seller
-      )
-    );
+    setSelectedSellerId(sellerId);
   }, []);
 
-  const updateSeller = useCallback((id: string, data: Partial<Omit<Seller, "id" | "createdAt">>) => {
+  const addSeller = useCallback(async (name: string): Promise<Seller | null> => {
+    if (!user) return null;
+    const initials = generateInitials(name);
+    const { data, error } = await supabase
+      .from("sellers" as any)
+      .insert({ user_id: user.id, name, initials, is_active: true })
+      .select()
+      .single();
+    if (error || !data) { console.error(error); return null; }
+    const newSeller = buildSeller(data as any, []);
+    setSellers((prev) => [...prev, newSeller]);
+    return newSeller;
+  }, [user]);
+
+  const updateSeller = useCallback(async (id: string, data: { name?: string; is_active?: boolean }) => {
+    const updates: any = { ...data };
+    if (data.name) updates.initials = generateInitials(data.name);
+    const { error } = await supabase.from("sellers" as any).update(updates).eq("id", id);
+    if (error) { console.error(error); return; }
     setSellers((prev) =>
-      prev.map((seller) => {
-        if (seller.id !== id) return seller;
-        
-        const updated = { ...seller, ...data };
-        
-        // Update initials if name changed
-        if (data.name && data.name !== seller.name) {
-          updated.initials = generateInitials(data.name);
-        }
-        
-        return updated;
+      prev.map((s) => {
+        if (s.id !== id) return s;
+        return buildSeller(
+          { ...s, ...updates, is_active: data.is_active ?? s.is_active },
+          s.stores
+        );
       })
     );
   }, []);
 
-  const deleteSeller = useCallback((id: string): boolean => {
-    // Cannot delete if only one seller remains
-    if (sellers.length <= 1) {
-      return false;
-    }
+  const toggleSellerActive = useCallback(async (id: string) => {
+    const seller = sellers.find((s) => s.id === id);
+    if (!seller) return;
+    await updateSeller(id, { is_active: !seller.is_active });
+  }, [sellers, updateSeller]);
 
+  const deleteSeller = useCallback(async (id: string): Promise<boolean> => {
+    if (sellers.length <= 1) return false;
+    const { error } = await supabase.from("sellers" as any).delete().eq("id", id);
+    if (error) { console.error(error); return false; }
     setSellers((prev) => prev.filter((s) => s.id !== id));
-    
-    // If deleted seller was selected, select the first remaining
     if (selectedSellerId === id) {
       const remaining = sellers.filter((s) => s.id !== id);
-      setSelectedSellerId(remaining[0]?.id);
+      setSelectedSellerId(remaining[0]?.id ?? null);
     }
-
     return true;
   }, [sellers, selectedSellerId]);
 
-  const getActiveMarketplaces = useCallback(() => {
-    return ALL_MARKETPLACES.filter((mp) =>
-      selectedSeller.activeMarketplaces.includes(mp.id)
+  const addStore = useCallback(async (sellerId: string, input: AddStoreInput): Promise<SellerStore | null> => {
+    const { data, error } = await supabase
+      .from("seller_stores" as any)
+      .insert({
+        seller_id: sellerId,
+        marketplace: input.marketplace,
+        store_name: input.store_name,
+        external_id: input.external_id ?? null,
+        is_active: true,
+      })
+      .select()
+      .single();
+    if (error || !data) { console.error(error); return null; }
+    const newStore = data as SellerStore;
+    setSellers((prev) =>
+      prev.map((s) => {
+        if (s.id !== sellerId) return s;
+        return buildSeller({ ...s }, [...s.stores, newStore]);
+      })
     );
+    return newStore;
+  }, []);
+
+  const updateStore = useCallback(async (
+    storeId: string,
+    data: { store_name?: string; external_id?: string; is_active?: boolean }
+  ) => {
+    const { error } = await supabase.from("seller_stores" as any).update(data).eq("id", storeId);
+    if (error) { console.error(error); return; }
+    setSellers((prev) =>
+      prev.map((s) => {
+        const storeIdx = s.stores.findIndex((st) => st.id === storeId);
+        if (storeIdx === -1) return s;
+        const updatedStores = s.stores.map((st) =>
+          st.id === storeId ? { ...st, ...data } : st
+        );
+        return buildSeller({ ...s }, updatedStores);
+      })
+    );
+  }, []);
+
+  const deleteStore = useCallback(async (storeId: string) => {
+    const { error } = await supabase.from("seller_stores" as any).delete().eq("id", storeId);
+    if (error) { console.error(error); return; }
+    setSellers((prev) =>
+      prev.map((s) => {
+        const has = s.stores.some((st) => st.id === storeId);
+        if (!has) return s;
+        return buildSeller({ ...s }, s.stores.filter((st) => st.id !== storeId));
+      })
+    );
+  }, []);
+
+  const getActiveMarketplaces = useCallback(() => {
+    const mpIds = new Set(selectedSeller?.stores.map((s) => s.marketplace) ?? []);
+    return ALL_MARKETPLACES.filter((mp) => mpIds.has(mp.id));
   }, [selectedSeller]);
 
   const getMarketplaceById = useCallback((id: string) => {
@@ -171,12 +231,16 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
         activeSellers,
         selectedSeller,
         setSelectedSeller,
+        loading,
         addSeller,
         updateSeller,
-        toggleSellerActive,
         deleteSeller,
+        addStore,
+        updateStore,
+        deleteStore,
         getActiveMarketplaces,
         getMarketplaceById,
+        toggleSellerActive,
       }}
     >
       {children}
@@ -186,8 +250,6 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
 
 export function useSeller() {
   const context = useContext(SellerContext);
-  if (context === undefined) {
-    throw new Error("useSeller must be used within a SellerProvider");
-  }
+  if (context === undefined) throw new Error("useSeller must be used within a SellerProvider");
   return context;
 }
