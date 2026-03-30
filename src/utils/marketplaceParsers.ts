@@ -1,113 +1,124 @@
 export type MarketplaceType = "shopee" | "amazon" | "magalu";
 
 export interface ParsedImportRow {
-  date: string;
-  orderId?: string;
+  date: string;        // yyyy-mm-dd
+  hour: number | null; // 0-23 or null
   revenue: number;
-  quantity: number;
-  productTitle?: string;
-  sku?: string;
+  revenueWithoutDiscounts: number;
+  orders: number;
+  avgOrderValue: number;
+  clicks: number;
+  visitors: number;
+  conversionRate: number;
+  cancelledOrders: number;
+  cancelledRevenue: number;
+  returnedOrders: number;
+  returnedRevenue: number;
+  buyers: number;
+  newBuyers: number;
+  existingBuyers: number;
+  potentialBuyers: number;
+  repeatPurchaseRate: number;
   raw: Record<string, string>;
 }
 
-/**
- * Placeholder parser — será atualizado após análise dos arquivos de exemplo.
- * Por enquanto faz parse genérico de CSV/Excel assumindo colunas comuns.
- */
 export function parseMarketplaceFile(
   marketplace: MarketplaceType,
   content: string | ArrayBuffer,
   fileType: "csv" | "excel"
 ): ParsedImportRow[] {
-  if (fileType === "excel") {
-    return parseExcel(marketplace, content as ArrayBuffer);
+  if (marketplace === "shopee") {
+    if (fileType === "excel") {
+      throw new Error("Shopee: use o arquivo CSV exportado da plataforma.");
+    }
+    return parseShopeeCSV(content as string);
   }
-  return parseCsv(marketplace, content as string);
+  throw new Error(`Parser para ${marketplace} ainda não implementado. Envie um arquivo de exemplo.`);
 }
 
-function parseCsv(marketplace: MarketplaceType, content: string): ParsedImportRow[] {
+// ─── Shopee CSV ────────────────────────────────────────────────
+
+function parseShopeeCSV(content: string): ParsedImportRow[] {
   const lines = content.split(/\r?\n/).filter(l => l.trim());
-  if (lines.length < 2) throw new Error("Arquivo vazio ou sem dados.");
+  // Find second header row (line 4 = index 3 in the array after filtering)
+  // The structure is: header, summary, empty, header, data...
+  // After filtering empty lines: header(0), summary(1), header(2), data(3+)
 
-  const headers = splitCsvLine(lines[0]);
-  const rows: ParsedImportRow[] = [];
-
+  let dataStartIdx = -1;
   for (let i = 1; i < lines.length; i++) {
-    const values = splitCsvLine(lines[i]);
-    const raw: Record<string, string> = {};
-    headers.forEach((h, idx) => { raw[h.trim()] = values[idx]?.trim() || ""; });
-
-    const mapped = mapRow(marketplace, raw);
-    if (mapped) rows.push(mapped);
+    if (lines[i].startsWith("Data,")) {
+      dataStartIdx = i + 1;
+      break;
+    }
   }
 
-  if (rows.length === 0) throw new Error("Nenhuma linha válida encontrada. Verifique se o formato do arquivo corresponde ao marketplace selecionado.");
-  return rows;
-}
-
-function parseExcel(marketplace: MarketplaceType, buffer: ArrayBuffer): ParsedImportRow[] {
-  // Dynamic import would be needed for xlsx in browser
-  // For now, we use the xlsx library that's already installed
-  const XLSX = require("xlsx");
-  const workbook = XLSX.read(buffer, { type: "array" });
-  const sheetName = workbook.SheetNames[0];
-  const sheet = workbook.Sheets[sheetName];
-  const jsonData: Record<string, string>[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-
-  if (!jsonData.length) throw new Error("Planilha vazia ou sem dados.");
+  if (dataStartIdx === -1 || dataStartIdx >= lines.length) {
+    throw new Error("Formato Shopee não reconhecido. Certifique-se de exportar o relatório 'Produto Pago'.");
+  }
 
   const rows: ParsedImportRow[] = [];
-  for (const raw of jsonData) {
-    const stringRaw: Record<string, string> = {};
-    Object.entries(raw).forEach(([k, v]) => { stringRaw[k] = String(v); });
-    const mapped = mapRow(marketplace, stringRaw);
-    if (mapped) rows.push(mapped);
+
+  for (let i = dataStartIdx; i < lines.length; i++) {
+    const values = splitCsvLine(lines[i]);
+    if (values.length < 12 || !values[0]?.trim()) continue;
+
+    const rawDate = values[0].trim();
+    const { date, hour } = parseShopeeDate(rawDate);
+
+    rows.push({
+      date,
+      hour,
+      revenue: parseBRNumber(values[1]),
+      revenueWithoutDiscounts: parseBRNumber(values[2]),
+      orders: parseInt(values[3]) || 0,
+      avgOrderValue: parseBRNumber(values[4]),
+      clicks: parseInt(values[5]) || 0,
+      visitors: parseInt(values[6]) || 0,
+      conversionRate: parsePercent(values[7]),
+      cancelledOrders: parseInt(values[8]) || 0,
+      cancelledRevenue: parseBRNumber(values[9]),
+      returnedOrders: parseInt(values[10]) || 0,
+      returnedRevenue: parseBRNumber(values[11]),
+      buyers: parseInt(values[12]) || 0,
+      newBuyers: parseInt(values[13]) || 0,
+      existingBuyers: parseInt(values[14]) || 0,
+      potentialBuyers: parseInt(values[15]) || 0,
+      repeatPurchaseRate: parsePercent(values[16]),
+      raw: { _raw: lines[i] },
+    });
   }
 
-  if (rows.length === 0) throw new Error("Nenhuma linha válida encontrada.");
+  if (rows.length === 0) throw new Error("Nenhuma linha válida encontrada no arquivo Shopee.");
   return rows;
 }
 
-function mapRow(marketplace: MarketplaceType, raw: Record<string, string>): ParsedImportRow | null {
-  // Placeholder: tenta encontrar colunas comuns por nome
-  // Será substituído por parsers específicos após receber arquivos de exemplo
-  const keys = Object.keys(raw);
-
-  const findCol = (patterns: string[]) =>
-    keys.find(k => patterns.some(p => k.toLowerCase().includes(p)));
-
-  const dateCol = findCol(["data", "date", "fecha", "created"]);
-  const orderCol = findCol(["pedido", "order", "nº do pedido", "order id"]);
-  const revenueCol = findCol(["receita", "revenue", "total", "valor", "amount", "price"]);
-  const qtyCol = findCol(["quantidade", "qty", "quantity", "qtd", "units"]);
-  const productCol = findCol(["produto", "product", "title", "item", "nome"]);
-  const skuCol = findCol(["sku", "código"]);
-
-  const date = dateCol ? raw[dateCol] : "";
-  const revenue = revenueCol ? parseNumber(raw[revenueCol]) : 0;
-  const quantity = qtyCol ? parseInt(raw[qtyCol]) || 1 : 1;
-
-  if (!date && !revenue) return null;
-
-  return {
-    date,
-    orderId: orderCol ? raw[orderCol] : undefined,
-    revenue,
-    quantity,
-    productTitle: productCol ? raw[productCol] : undefined,
-    sku: skuCol ? raw[skuCol] : undefined,
-    raw,
-  };
+/** Parse "dd/mm/yyyy" or "dd/mm/yyyy HH:mm" into { date: "yyyy-mm-dd", hour } */
+function parseShopeeDate(raw: string): { date: string; hour: number | null } {
+  const parts = raw.split(" ");
+  const [d, m, y] = parts[0].split("/");
+  const date = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  let hour: number | null = null;
+  if (parts[1]) {
+    hour = parseInt(parts[1].split(":")[0]) ?? null;
+  }
+  return { date, hour };
 }
 
-function parseNumber(val: string): number {
+/** Parse Brazilian number: "10.227,04" → 10227.04 */
+function parseBRNumber(val: string | undefined): number {
   if (!val) return 0;
-  // Handle Brazilian format: 1.234,56
-  const cleaned = val.replace(/[^\d.,-]/g, "");
+  const cleaned = val.replace(/"/g, "").replace(/[^\d.,-]/g, "");
   if (cleaned.includes(",")) {
     return parseFloat(cleaned.replace(/\./g, "").replace(",", ".")) || 0;
   }
   return parseFloat(cleaned) || 0;
+}
+
+/** Parse "4,57%" → 4.57 (keeps as percentage, not decimal) */
+function parsePercent(val: string | undefined): number {
+  if (!val) return 0;
+  const cleaned = val.replace(/"/g, "").replace("%", "").trim();
+  return parseBRNumber(cleaned);
 }
 
 function splitCsvLine(line: string): string[] {
@@ -119,7 +130,7 @@ function splitCsvLine(line: string): string[] {
     const char = line[i];
     if (char === '"') {
       inQuotes = !inQuotes;
-    } else if ((char === "," || char === ";") && !inQuotes) {
+    } else if (char === "," && !inQuotes) {
       result.push(current);
       current = "";
     } else {
