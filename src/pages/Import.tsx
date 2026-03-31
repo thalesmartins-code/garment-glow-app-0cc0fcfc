@@ -50,7 +50,7 @@ export default function Import() {
 
   const sellerData = getImportedDataForSeller(selectedSeller);
   const hasDataForSeller = hasImportedDataForSeller(selectedSeller);
-  const sellerName = selectedSellerObj?.name;
+  const sellerName = sellerName;
 
   const handleFileSelect = (content: string | ArrayBuffer, fileType: "csv" | "excel") => {
     let result: ImportResult;
@@ -78,7 +78,7 @@ export default function Import() {
       appendSales(parseResult.data, selectedSeller);
       toast({
         title: "Dados importados com sucesso!",
-        description: `${parseResult.validRows} registros foram importados para ${selectedSellerObj?.name}.`,
+        description: `${parseResult.validRows} registros foram importados para ${sellerName}.`,
       });
       setParseResult(null);
     }
@@ -87,7 +87,7 @@ export default function Import() {
   const handleImportWithDuplicates = (replaceExisting: boolean) => {
     if (!parseResult || !duplicateInfo) return;
     
-    const selectedSellerName = selectedSellerObj?.name || selectedSeller;
+    const selectedSellerName = sellerName || selectedSeller;
     
     if (replaceExisting) {
       // Import all data (appendSales will replace duplicates)
@@ -139,7 +139,7 @@ export default function Import() {
               <Database className="w-5 h-5 text-primary" />
               <div>
                 <p className="text-sm font-medium">
-                  {sellerData.length} registros para {selectedSellerObj?.name}
+                  {sellerData.length} registros para {sellerName}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Dados disponíveis no Dashboard e Vendas Diárias
@@ -355,7 +355,7 @@ export default function Import() {
                       {parseResult.validRows > 0 && (
                         <div className="flex flex-wrap gap-3 pt-4 border-t">
                           <Button onClick={handleImportClick}>
-                            Importar {parseResult.validRows} Registros para {selectedSellerObj?.name}
+                            Importar {parseResult.validRows} Registros para {sellerName}
                           </Button>
                         </div>
                       )}
@@ -369,7 +369,7 @@ export default function Import() {
           <TabsContent value="history">
             <ImportHistory
               sellerId={selectedSeller}
-              sellerName={selectedSellerObj?.name || selectedSeller}
+              sellerName={sellerName || selectedSeller}
               data={sellerData}
               onDeleteRecord={handleDeleteRecord}
             />
