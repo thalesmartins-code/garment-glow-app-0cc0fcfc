@@ -1,4 +1,4 @@
-import { Handshake, Package, ShoppingBag, Store, Footprints, ShoppingCart, CircleDot, Home, BarChart3 } from "lucide-react";
+import { Handshake, Package, ShoppingBag, Store, Zap, ShoppingCart, CircleDot, Home, BarChart3 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export interface MarketplaceBrand {
