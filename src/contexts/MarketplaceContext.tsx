@@ -27,6 +27,8 @@ const MP_TO_SELLER: Record<string, string> = {
   "amazon":        "amz",
   "shopee":        "shopee",
   "magalu":        "magalu",
+  "netshoes":      "netshoes",
+  "dafiti":        "dafiti",
 };
 
 const allMarketplaces: MarketplaceDefinition[] = [
