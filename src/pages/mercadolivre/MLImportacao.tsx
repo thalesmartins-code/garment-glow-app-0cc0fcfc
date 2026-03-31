@@ -97,8 +97,8 @@ export default function MLImportacao() {
           onValueChange={(v) => { setShopeeFileType(v as ShopeeFileType); clearFile(); }}
         >
           <TabsList>
-            <TabsTrigger value="produto_pago">Produto Pago (Vendas)</TabsTrigger>
-            <TabsTrigger value="pedidos">Pedidos (Produtos)</TabsTrigger>
+            <TabsTrigger value="produto_pago">Vendas</TabsTrigger>
+            <TabsTrigger value="pedidos">Produtos</TabsTrigger>
           </TabsList>
         </Tabs>
       )}
