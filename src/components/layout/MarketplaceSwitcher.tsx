@@ -85,20 +85,25 @@ export function MarketplaceSwitcher() {
   };
 
   const allDotsExpanded = (
-    <div className="flex items-center gap-1">
-      {sellerStores.slice(0, 4).map((store) => {
+    <div className="flex items-center -space-x-1">
+      {sellerStores.slice(0, 3).map((store) => {
         const mpDef = getMpDef(store.marketplace);
         if (!mpDef) return null;
         const MpIcon = mpDef.icon;
         return (
           <div
             key={store.id}
-            className={`flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br ${mpDef.color}`}
+            className={`flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br ${mpDef.color} ring-1 ring-background`}
           >
-            <MpIcon className="h-[7px] w-[7px] text-white" />
+            <MpIcon className="h-2.5 w-2.5 text-white" />
           </div>
         );
       })}
+      {sellerStores.length > 3 && (
+        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted ring-1 ring-background">
+          <span className="text-[8px] font-semibold text-muted-foreground">+{sellerStores.length - 3}</span>
+        </div>
+      )}
     </div>
   );
 
@@ -107,23 +112,23 @@ export function MarketplaceSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="h-auto gap-2.5 rounded-xl border border-border/50 bg-secondary/40 px-3 py-2 hover:bg-secondary/60"
+          className="h-auto gap-2 rounded-lg border border-border/40 px-2.5 py-1.5 hover:bg-muted/50"
         >
           <AnimatePresence mode="wait">
             {(!allSelected && firstMpDef) ? (
               <motion.div
                 key={selectedStoreIds.join("-")}
-                initial={{ scale: 0.8, opacity: 0 }}
+                initial={{ scale: 0.85, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
+                exit={{ scale: 0.85, opacity: 0 }}
+                transition={{ duration: 0.15 }}
                 className="relative shrink-0"
               >
-                <div className={`flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br shadow-sm ${gradientClass}`}>
+                <div className={`flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br ${gradientClass}`}>
                   {Icon && <Icon className="h-3 w-3 text-white" />}
                 </div>
                 {selectedStoreIds.length > 1 && (
-                  <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground ring-2 ring-background">
+                  <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground ring-1 ring-background">
                     {selectedStoreIds.length}
                   </span>
                 )}
@@ -131,67 +136,50 @@ export function MarketplaceSwitcher() {
             ) : (
               <motion.div
                 key="all"
-                initial={{ scale: 0.8, opacity: 0 }}
+                initial={{ scale: 0.85, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
+                exit={{ scale: 0.85, opacity: 0 }}
+                transition={{ duration: 0.15 }}
               >
                 {sellerStores.length > 0 ? allDotsExpanded : (
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-secondary">
-                    <Layers className="h-4 w-4 text-muted-foreground" />
-                  </div>
+                  <Layers className="h-4 w-4 text-muted-foreground" />
                 )}
               </motion.div>
             )}
           </AnimatePresence>
 
           <div className="hidden text-left sm:block overflow-hidden">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium leading-tight">
-              Loja
-            </p>
             <AnimatePresence mode="wait">
-              <motion.p
+              <motion.span
                 key={label}
-                initial={{ y: 8, opacity: 0 }}
+                initial={{ y: 6, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -8, opacity: 0 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className="text-xs font-semibold text-foreground leading-tight truncate max-w-[120px]"
+                exit={{ y: -6, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="text-xs font-medium text-foreground truncate max-w-[100px] block"
               >
                 {label}
-              </motion.p>
+              </motion.span>
             </AnimatePresence>
           </div>
-          <ChevronDown className="ml-0.5 h-3.5 w-3.5 text-muted-foreground mx-0" />
+          <ChevronDown className="h-3 w-3 text-muted-foreground/60" />
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-56 rounded-xl p-1.5">
-        <DropdownMenuLabel className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground">
-          <StoreIcon className="h-3.5 w-3.5" />
-          Lojas
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-
+      <DropdownMenuContent align="end" className="w-52 rounded-lg p-1">
         {/* "All" option */}
         <DropdownMenuItem
           onClick={handleToggleAll}
-          className={`cursor-pointer gap-2.5 rounded-lg px-2 py-2 ${allSelected ? "bg-accent/10" : ""}`}
+          className={`cursor-pointer gap-2 rounded-md px-2 py-1.5 ${allSelected ? "bg-muted" : ""}`}
         >
-          <div
-            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-              allSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-            }`}
-          >
-            <Layers className="h-4 w-4" />
-          </div>
-          <span className={`flex-1 text-sm ${allSelected ? "font-semibold" : "font-medium"}`}>
+          <Layers className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <span className={`flex-1 text-sm ${allSelected ? "font-medium" : ""}`}>
             Todas as lojas
           </span>
-          {allSelected && <Check className="h-4 w-4 shrink-0 text-accent" />}
+          {allSelected && <Check className="h-3.5 w-3.5 shrink-0 text-foreground" />}
         </DropdownMenuItem>
 
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="my-1" />
 
         {/* Stores grouped by marketplace */}
         {storeGroups.map(({ mpKey, mpDef, stores }, groupIdx) => {
@@ -199,7 +187,7 @@ export function MarketplaceSwitcher() {
           const color = mpDef?.color ?? "from-gray-500 to-gray-600";
           const mpName = mpDef?.name ?? mpKey;
 
-          // Single store: flat item without group header
+          // Single store: flat item
           if (stores.length === 1) {
             const store = stores[0];
             const isChecked = !allSelected && selectedStoreIds.includes(store.id);
@@ -208,37 +196,33 @@ export function MarketplaceSwitcher() {
                 {groupIdx > 0 && <DropdownMenuSeparator className="my-1" />}
                 <DropdownMenuItem
                   onClick={() => handleToggleStore(store.id)}
-                  className={`cursor-pointer gap-2.5 rounded-lg px-2 py-2 ${isChecked ? "bg-accent/10" : ""}`}
+                  className={`cursor-pointer gap-2 rounded-md px-2 py-1.5 ${isChecked ? "bg-muted" : ""}`}
                 >
                   <div
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${color} text-white`}
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded bg-gradient-to-br ${color}`}
                   >
-                    <MpIcon className="h-3.5 w-3.5" />
+                    <MpIcon className="h-2.5 w-2.5 text-white" />
                   </div>
-                  <span className={`flex-1 text-sm truncate ${isChecked ? "font-semibold" : "font-medium"}`}>
+                  <span className={`flex-1 text-sm truncate ${isChecked ? "font-medium" : ""}`}>
                     {store.store_name}
                   </span>
-                  <Checkbox
-                    checked={isChecked}
-                    className="h-3.5 w-3.5 pointer-events-none"
-                    tabIndex={-1}
-                  />
+                  {isChecked && <Check className="h-3.5 w-3.5 shrink-0 text-foreground" />}
                 </DropdownMenuItem>
               </div>
             );
           }
 
-          // Multiple stores: grouped with marketplace header
+          // Multiple stores: grouped
           return (
             <div key={mpKey}>
               {groupIdx > 0 && <DropdownMenuSeparator className="my-1" />}
-              <div className="flex items-center gap-2 px-2 py-1.5">
+              <div className="flex items-center gap-1.5 px-2 py-1">
                 <div
-                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-gradient-to-br ${color} text-white`}
+                  className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded bg-gradient-to-br ${color}`}
                 >
-                  <MpIcon className="h-3 w-3" />
+                  <MpIcon className="h-2 w-2 text-white" />
                 </div>
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
                   {mpName}
                 </span>
               </div>
@@ -248,16 +232,12 @@ export function MarketplaceSwitcher() {
                   <DropdownMenuItem
                     key={store.id}
                     onClick={() => handleToggleStore(store.id)}
-                    className={`cursor-pointer gap-2.5 rounded-lg px-2 py-2 pl-9 ${isChecked ? "bg-accent/10" : ""}`}
+                    className={`cursor-pointer gap-2 rounded-md px-2 py-1.5 pl-7 ${isChecked ? "bg-muted" : ""}`}
                   >
-                    <span className={`flex-1 text-sm truncate ${isChecked ? "font-semibold" : "font-medium"}`}>
+                    <span className={`flex-1 text-sm truncate ${isChecked ? "font-medium" : ""}`}>
                       {store.store_name}
                     </span>
-                    <Checkbox
-                      checked={isChecked}
-                      className="h-3.5 w-3.5 pointer-events-none"
-                      tabIndex={-1}
-                    />
+                    {isChecked && <Check className="h-3.5 w-3.5 shrink-0 text-foreground" />}
                   </DropdownMenuItem>
                 );
               })}
