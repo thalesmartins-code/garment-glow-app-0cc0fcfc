@@ -55,7 +55,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
       const [{ data: sellerRows }, { data: storeRows }] = await Promise.all([
         supabase
           .from("sellers" as any)
-          .select("id, name, initials, is_active, created_at")
+          .select("id, name, initials, logo_url, is_active, created_at")
           .eq("user_id", user.id)
           .order("created_at", { ascending: true }),
         supabase
