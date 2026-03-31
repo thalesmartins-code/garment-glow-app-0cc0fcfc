@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { getMarketplaceBrand } from "@/config/marketplaceConfig";
 import {
   Table,
   TableBody,
