@@ -224,7 +224,7 @@ export default function Sellers() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={async () => {
+                        <AlertDialogAction className="bg-destructive hover:bg-destructive/90 text-destructive-foreground" onClick={async () => {
                           const ok = await deleteSeller(seller.id);
                           if (ok) toast({ title: `${seller.name} removido` });
                           else toast({ title: "Não é possível remover o único seller", variant: "destructive" });
