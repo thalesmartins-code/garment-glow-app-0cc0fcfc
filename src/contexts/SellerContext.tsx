@@ -129,7 +129,10 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
     if (prevSellerIdRef.current === selectedSeller.id) return;
     prevSellerIdRef.current = selectedSeller.id;
     if (selectedMarketplace === "all") return;
-    const validIds = selectedSeller.stores.map((s) => s.marketplace);
+    const validIds = [
+      ...selectedSeller.stores.map((s) => s.marketplace),
+      ...selectedSeller.stores.map((s) => s.id),
+    ];
     if (!validIds.includes(selectedMarketplace)) {
       setSelectedMarketplaceState("all");
       const sid = selectedSeller.id;
