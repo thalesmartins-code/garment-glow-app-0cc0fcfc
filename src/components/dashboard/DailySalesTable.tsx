@@ -52,7 +52,6 @@ interface DailySalesTableProps {
 interface MarketplaceBreakdown {
   id: string;
   name: string;
-  logo: string;
   vendaTotal: number;
   metaVendas: number;
   gap: number;
