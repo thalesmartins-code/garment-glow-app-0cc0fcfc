@@ -161,7 +161,7 @@ function parseShopeeOrdersCSV(content: string): ParsedOrderRow[] {
     });
   }
 
-  if (rows.length === 0) throw new Error("Nenhuma linha válida encontrada no arquivo de pedidos Shopee.");
+  if (rows.length === 0) throw new Error("Nenhuma linha válida encontrada no arquivo de produtos Shopee.");
   return rows;
 }
 

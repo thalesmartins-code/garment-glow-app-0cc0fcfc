@@ -98,7 +98,7 @@ export default function MLImportacao() {
         >
           <TabsList>
             <TabsTrigger value="produto_pago">Vendas</TabsTrigger>
-            <TabsTrigger value="pedidos">Produtos</TabsTrigger>
+            <TabsTrigger value="produtos">Produtos</TabsTrigger>
           </TabsList>
         </Tabs>
       )}
