@@ -13,9 +13,10 @@ import { StoreGroupSelector } from "./StoreGroupSelector";
 
 interface Props {
   className?: string;
+  showStores?: boolean;
 }
 
-export function SellerMarketplaceBar({ className }: Props) {
+export function SellerMarketplaceBar({ className, showStores = true }: Props) {
   const {
     activeSellers,
     sellers,
@@ -107,7 +108,7 @@ export function SellerMarketplaceBar({ className }: Props) {
       </DropdownMenu>
 
       {/* Divider + store group selector */}
-      {hasStores && (
+      {showStores && hasStores && (
         <>
           <div className="h-5 w-px shrink-0 bg-border" />
           <StoreGroupSelector />
