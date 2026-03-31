@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { getMarketplaceBrand } from "@/config/marketplaceConfig";
 import { useMLStore } from "@/contexts/MLStoreContext";
 import { useMarketplace } from "@/contexts/MarketplaceContext";
 import { useSeller } from "@/contexts/SellerContext";
@@ -38,9 +39,6 @@ import {
   Clock3,
   Loader2,
   Handshake,
-  ShoppingBag,
-  Store,
-  Building2,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -871,12 +869,17 @@ export default function MercadoLivre() {
   // Per-marketplace hourly data for "Todos" grid view
   const perMarketplaceHourly = useMemo(() => {
     if (!isAll) return null;
-    const mpList = [
-      { id: "mercado-livre", name: "Mercado Livre", data: hourly, icon: <Handshake className="w-4 h-4 text-amber-500" /> },
-      { id: "amazon", name: "Amazon", data: getMarketplaceHourlyData("amazon"), icon: <ShoppingBag className="w-4 h-4 text-orange-500" /> },
-      { id: "shopee", name: "Shopee", data: getMarketplaceHourlyData("shopee"), icon: <Store className="w-4 h-4 text-red-500" /> },
-      { id: "magalu", name: "Magalu", data: getMarketplaceHourlyData("magalu"), icon: <Building2 className="w-4 h-4 text-blue-500" /> },
-    ];
+    const mpIds = ["mercado-livre", "amazon", "shopee", "magalu"] as const;
+    const mpList = mpIds.map((id) => {
+      const brand = getMarketplaceBrand(id)!;
+      const MpIcon = brand.icon;
+      return {
+        id,
+        name: brand.name,
+        data: id === "mercado-livre" ? hourly : getMarketplaceHourlyData(id),
+        icon: <MpIcon className="w-4 h-4" />,
+      };
+    });
     return mpList.map((mp) => ({
       ...mp,
       chartData: buildHourlyChartData(mp.data),
@@ -887,12 +890,11 @@ export default function MercadoLivre() {
 
   const perMarketplaceRevenue = useMemo(() => {
     if (!isAll) return [];
-    const marketplaceConfigs = [
-      { id: "mercado-livre", name: "Mercado Livre", icon: Handshake, color: "from-yellow-500 to-amber-500" },
-      { id: "amazon", name: "Amazon", icon: ShoppingBag, color: "from-orange-500 to-amber-600" },
-      { id: "shopee", name: "Shopee", icon: Store, color: "from-orange-600 to-red-500" },
-      { id: "magalu", name: "Magalu", icon: Building2, color: "from-blue-600 to-indigo-500" },
-    ];
+    const mpIds = ["mercado-livre", "amazon", "shopee", "magalu"] as const;
+    const marketplaceConfigs = mpIds.map((id) => {
+      const brand = getMarketplaceBrand(id)!;
+      return { id, name: brand.name, icon: brand.icon, color: brand.gradient };
+    });
     return marketplaceConfigs.map((mp) => {
       const mpDaily = mp.id === "mercado-livre" ? daily : getMarketplaceDailyData(mp.id, 30);
       const revenue = mpDaily.reduce((s, d) => s + d.total, 0);

@@ -13,16 +13,7 @@ import { DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMarketplace, type MarketplaceDefinition } from "@/contexts/MarketplaceContext";
 import { useSeller } from "@/contexts/SellerContext";
-import { ALL_MARKETPLACES } from "@/types/seller";
-
-const SELLER_TO_MP_ID: Record<string, string> = {
-  ml: "mercado-livre",
-  amz: "amazon",
-  shopee: "shopee",
-  magalu: "magalu",
-  netshoes: "netshoes",
-  dafiti: "dafiti",
-};
+import { SELLER_TO_MP_ID } from "@/config/marketplaceConfig";
 
 export function MarketplaceSwitcher() {
   const { marketplaces } = useMarketplace();
