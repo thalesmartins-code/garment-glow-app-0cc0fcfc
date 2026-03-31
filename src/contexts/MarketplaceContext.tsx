@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { Store, ShoppingCart, Package, Truck } from "lucide-react";
+import { Store, ShoppingCart, Package, Truck, Footprints, Shirt } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useSeller } from "@/contexts/SellerContext";
 
@@ -17,6 +17,8 @@ const SELLER_TO_MP: Record<string, string> = {
   "amz":    "amazon",
   "shopee": "shopee",
   "magalu": "magalu",
+  "netshoes": "netshoes",
+  "dafiti":   "dafiti",
 };
 
 // Maps MarketplaceContext ids → SellerContext shortcodes
@@ -25,6 +27,8 @@ const MP_TO_SELLER: Record<string, string> = {
   "amazon":        "amz",
   "shopee":        "shopee",
   "magalu":        "magalu",
+  "netshoes":      "netshoes",
+  "dafiti":        "dafiti",
 };
 
 const allMarketplaces: MarketplaceDefinition[] = [
@@ -54,6 +58,20 @@ const allMarketplaces: MarketplaceDefinition[] = [
     name: "Magazine Luiza",
     icon: Truck,
     color: "from-blue-600 to-indigo-500",
+    connected: true,
+  },
+  {
+    id: "netshoes",
+    name: "Netshoes",
+    icon: Footprints,
+    color: "from-purple-600 to-violet-500",
+    connected: true,
+  },
+  {
+    id: "dafiti",
+    name: "Dafiti",
+    icon: Shirt,
+    color: "from-pink-500 to-rose-500",
     connected: true,
   },
 ];
