@@ -197,10 +197,39 @@ export function MarketplaceSwitcher() {
           const color = mpDef?.color ?? "from-gray-500 to-gray-600";
           const mpName = mpDef?.name ?? mpKey;
 
+          // Single store: flat item without group header
+          if (stores.length === 1) {
+            const store = stores[0];
+            const isChecked = !allSelected && selectedStoreIds.includes(store.id);
+            return (
+              <div key={mpKey}>
+                {groupIdx > 0 && <DropdownMenuSeparator className="my-1" />}
+                <DropdownMenuItem
+                  onClick={() => handleToggleStore(store.id)}
+                  className={`cursor-pointer gap-2.5 rounded-lg px-2 py-2 ${isChecked ? "bg-accent/10" : ""}`}
+                >
+                  <div
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${color} text-white`}
+                  >
+                    <MpIcon className="h-3.5 w-3.5" />
+                  </div>
+                  <span className={`flex-1 text-sm truncate ${isChecked ? "font-semibold" : "font-medium"}`}>
+                    {store.store_name}
+                  </span>
+                  <Checkbox
+                    checked={isChecked}
+                    className="h-3.5 w-3.5 pointer-events-none"
+                    tabIndex={-1}
+                  />
+                </DropdownMenuItem>
+              </div>
+            );
+          }
+
+          // Multiple stores: grouped with marketplace header
           return (
             <div key={mpKey}>
               {groupIdx > 0 && <DropdownMenuSeparator className="my-1" />}
-              {/* Marketplace group label */}
               <div className="flex items-center gap-2 px-2 py-1.5">
                 <div
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-gradient-to-br ${color} text-white`}
@@ -211,8 +240,6 @@ export function MarketplaceSwitcher() {
                   {mpName}
                 </span>
               </div>
-
-              {/* Stores in this marketplace */}
               {stores.map((store) => {
                 const isChecked = !allSelected && selectedStoreIds.includes(store.id);
                 return (
