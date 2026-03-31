@@ -291,10 +291,18 @@ export default function Sellers() {
                 )}
                 {seller.stores.map((store) => {
                   const mp = ALL_MARKETPLACES.find((m) => m.id === store.marketplace);
+                  const brand = getMarketplaceBrand(store.marketplace);
+                  const BrandIcon = brand?.icon;
                   return (
                     <div key={store.id} className="flex items-center justify-between gap-2 px-2 py-1 rounded bg-muted/50 text-sm">
                       <span className="flex items-center gap-1.5">
-                        <span>{mp?.logo ?? "🏪"}</span>
+                        {BrandIcon ? (
+                          <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded bg-gradient-to-br ${brand.gradient}`}>
+                            <BrandIcon className="h-2.5 w-2.5 text-white" />
+                          </div>
+                        ) : (
+                          <span>{mp?.logo ?? "🏪"}</span>
+                        )}
                         <span className="font-medium">{store.store_name}</span>
                       </span>
                       <AlertDialog>
