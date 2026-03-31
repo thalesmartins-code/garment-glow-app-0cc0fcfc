@@ -55,10 +55,14 @@ export default function Sellers() {
 
   const handleUpdateSeller = async () => {
     if (!editSellerId || !editSellerName.trim()) return;
-    await updateSeller(editSellerId, { name: editSellerName.trim() });
+    await updateSeller(editSellerId, {
+      name: editSellerName.trim(),
+      logo_url: editSellerLogo.trim() || null,
+    });
     toast({ title: "Seller atualizado" });
     setEditSellerId(null);
     setEditSellerName("");
+    setEditSellerLogo("");
   };
 
   // --- Add store dialog ---
