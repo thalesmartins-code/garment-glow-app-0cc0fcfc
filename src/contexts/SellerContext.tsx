@@ -21,6 +21,10 @@ interface SellerContextType {
   selectedMarketplace: string;
   setSelectedMarketplace: (id: string) => void;
   availableMarketplaces: MarketplaceEntry[];
+  // Multi-store selection ([] = all stores)
+  selectedStoreIds: string[];
+  setSelectedStoreIds: (ids: string[]) => void;
+  toggleStoreId: (id: string) => void;
   // Seller CRUD
   addSeller: (name: string) => Promise<Seller | null>;
   updateSeller: (id: string, data: { name?: string; is_active?: boolean; logo_url?: string | null }) => Promise<void>;
@@ -41,6 +45,10 @@ function sellerMktKey(sellerId: string) {
   return `sel_${sellerId}_mkt`;
 }
 
+function sellerStoreIdsKey(sellerId: string) {
+  return `sel_${sellerId}_storeIds`;
+}
+
 const SellerContext = createContext<SellerContextType | undefined>(undefined);
 
 export function SellerProvider({ children }: { children: React.ReactNode }) {
@@ -53,6 +61,16 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
   const [selectedMarketplace, setSelectedMarketplaceState] = useState<string>(() => {
     const savedSellerId = localStorage.getItem(SELECTED_SELLER_KEY);
     return savedSellerId ? (localStorage.getItem(sellerMktKey(savedSellerId)) ?? "all") : "all";
+  });
+  const [selectedStoreIds, setSelectedStoreIdsState] = useState<string[]>(() => {
+    const savedSellerId = localStorage.getItem(SELECTED_SELLER_KEY);
+    if (!savedSellerId) return [];
+    try {
+      const raw = localStorage.getItem(sellerStoreIdsKey(savedSellerId));
+      return raw ? (JSON.parse(raw) as string[]) : [];
+    } catch {
+      return [];
+    }
   });
   const loadedRef = useRef(false);
   const prevSellerIdRef = useRef<string | null>(null);
@@ -145,6 +163,9 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
     // Restore this seller's saved marketplace preference
     const saved = localStorage.getItem(sellerMktKey(sellerId));
     setSelectedMarketplaceState(saved ?? "all");
+    // Reset multi-store selection on seller change
+    setSelectedStoreIdsState([]);
+    localStorage.setItem(sellerStoreIdsKey(sellerId), JSON.stringify([]));
   }, []);
 
   const setSelectedMarketplace = useCallback((id: string) => {
@@ -152,6 +173,20 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
     const sid = localStorage.getItem(SELECTED_SELLER_KEY);
     if (sid) localStorage.setItem(sellerMktKey(sid), id);
   }, []);
+
+  const setSelectedStoreIds = useCallback((ids: string[]) => {
+    setSelectedStoreIdsState(ids);
+    const sid = localStorage.getItem(SELECTED_SELLER_KEY);
+    if (sid) localStorage.setItem(sellerStoreIdsKey(sid), JSON.stringify(ids));
+  }, []);
+
+  const toggleStoreId = useCallback((id: string) => {
+    setSelectedStoreIds(
+      selectedStoreIds.includes(id)
+        ? selectedStoreIds.filter((s) => s !== id)
+        : [...selectedStoreIds, id]
+    );
+  }, [selectedStoreIds, setSelectedStoreIds]);
 
   // Marketplaces available for the currently selected seller
   const availableMarketplaces = (ALL_MARKETPLACES as unknown as MarketplaceEntry[]).filter((mp) =>
@@ -279,6 +314,9 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
         selectedMarketplace,
         setSelectedMarketplace,
         availableMarketplaces,
+        selectedStoreIds,
+        setSelectedStoreIds,
+        toggleStoreId,
         addSeller,
         updateSeller,
         deleteSeller,

@@ -7,10 +7,10 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useMarketplace, type MarketplaceDefinition } from "@/contexts/MarketplaceContext";
-import { useMLStore } from "@/contexts/MLStoreContext";
 import { useSeller } from "@/contexts/SellerContext";
 import { ALL_MARKETPLACES } from "@/types/seller";
 
@@ -23,12 +23,16 @@ const SELLER_TO_MP_ID: Record<string, string> = {
 };
 
 export function MarketplaceSwitcher() {
-  const { marketplaces, selectedMarketplace, setSelectedMarketplace, connectedMarketplaces } =
-    useMarketplace();
-  const { stores: mlStores, selectedStore, setSelectedStore } = useMLStore();
-  const { selectedSeller } = useSeller();
+  const { marketplaces } = useMarketplace();
+  const {
+    selectedSeller,
+    selectedStoreIds,
+    setSelectedStoreIds,
+    toggleStoreId,
+  } = useSeller();
 
   const sellerStores = selectedSeller?.stores.filter((s) => s.is_active) ?? [];
+  const allSelected = selectedStoreIds.length === 0;
 
   // Find marketplace definition for a seller store
   const getMpDef = (storeMarketplace: string): MarketplaceDefinition | undefined => {
@@ -36,61 +40,43 @@ export function MarketplaceSwitcher() {
     return marketplaces.find((m) => m.id === mpId);
   };
 
-  const getStoreLogo = (storeMarketplace: string): string => {
-    return ALL_MARKETPLACES.find((m) => m.id === storeMarketplace)?.logo ?? "🏪";
-  };
+  const getStoreLogo = (storeMarketplace: string): string =>
+    ALL_MARKETPLACES.find((m) => m.id === storeMarketplace)?.logo ?? "🏪";
 
-  // Build selected label/icon from store selection
-  const isStoreSelected = selectedMarketplace !== "all" && sellerStores.some((s) => s.id === selectedMarketplace);
-  const selectedStoreObj = isStoreSelected ? sellerStores.find((s) => s.id === selectedMarketplace) : null;
-  const selectedMpDef = selectedStoreObj ? getMpDef(selectedStoreObj.marketplace) : null;
-
-  // Fallback: check if it's a legacy marketplace-level or ml-store selection
-  const isMLSubStore = selectedMarketplace.startsWith("ml-store:");
-  const selectedMLStoreId = isMLSubStore ? selectedMarketplace.replace("ml-store:", "") : null;
-  const selectedMLStore = selectedMLStoreId
-    ? mlStores.find((s) => s.ml_user_id === selectedMLStoreId)
+  // Build trigger label + icon
+  const firstSelected = !allSelected
+    ? sellerStores.find((s) => s.id === selectedStoreIds[0])
     : null;
+  const firstMpDef = firstSelected ? getMpDef(firstSelected.marketplace) : null;
 
-  const legacySelected =
-    !isStoreSelected && !isMLSubStore && selectedMarketplace !== "all"
-      ? marketplaces.find((m) => m.id === selectedMarketplace)
-      : null;
+  const label = allSelected
+    ? "Todas"
+    : selectedStoreIds.length === 1
+      ? firstSelected?.store_name ?? "1 loja"
+      : `${selectedStoreIds.length} lojas`;
 
-  const mlMarketplace = marketplaces.find((m) => m.id === "mercado-livre");
+  const Icon = firstMpDef?.icon;
+  const gradientClass = firstMpDef?.color ?? "";
 
-  const label = selectedStoreObj
-    ? selectedStoreObj.store_name
-    : selectedMLStore
-      ? `ML - ${selectedMLStore.displayName}`
-      : legacySelected
-        ? legacySelected.name
-        : "Todos";
+  const handleToggleAll = () => setSelectedStoreIds([]);
 
-  const Icon = selectedStoreObj
-    ? selectedMpDef?.icon
-    : selectedMLStore
-      ? mlMarketplace?.icon
-      : legacySelected?.icon;
-
-  const gradientClass = selectedStoreObj
-    ? selectedMpDef?.color ?? ""
-    : selectedMLStore
-      ? mlMarketplace?.color ?? ""
-      : legacySelected?.color ?? "";
-
-  const handleSelectStore = (storeId: string) => {
-    setSelectedMarketplace(storeId);
-  };
-
-  const handleSelectAll = () => {
-    setSelectedMarketplace("all");
-    setSelectedStore("all");
+  const handleToggleStore = (storeId: string) => {
+    if (allSelected) {
+      // Start specific selection with just this store
+      setSelectedStoreIds([storeId]);
+    } else {
+      if (selectedStoreIds.length === 1 && selectedStoreIds[0] === storeId) {
+        // Deselecting last → revert to "all"
+        setSelectedStoreIds([]);
+      } else {
+        toggleStoreId(storeId);
+      }
+    }
   };
 
   const allDotsExpanded = (
     <div className="flex items-center gap-1">
-      {sellerStores.map((store) => {
+      {sellerStores.slice(0, 4).map((store) => {
         const mpDef = getMpDef(store.marketplace);
         if (!mpDef) return null;
         const MpIcon = mpDef.icon;
@@ -114,9 +100,9 @@ export function MarketplaceSwitcher() {
           className="h-auto gap-2.5 rounded-xl border border-border/50 bg-secondary/40 px-3 py-2 hover:bg-secondary/60"
         >
           <AnimatePresence mode="wait">
-            {(selectedStoreObj || selectedMLStore || legacySelected) ? (
+            {(!allSelected && firstMpDef) ? (
               <motion.div
-                key={selectedStoreObj?.id ?? selectedMLStore?.ml_user_id ?? legacySelected?.id}
+                key={selectedStoreIds.join("-")}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
@@ -124,6 +110,11 @@ export function MarketplaceSwitcher() {
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br shadow-sm ${gradientClass}`}
               >
                 {Icon && <Icon className="h-3 w-3 text-white" />}
+                {selectedStoreIds.length > 1 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                    {selectedStoreIds.length}
+                  </span>
+                )}
               </motion.div>
             ) : (
               <motion.div
@@ -133,10 +124,15 @@ export function MarketplaceSwitcher() {
                 exit={{ scale: 0.8, opacity: 0 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
               >
-                {allDotsExpanded}
+                {sellerStores.length > 0 ? allDotsExpanded : (
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-secondary">
+                    <Layers className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
+
           <div className="hidden text-left sm:block overflow-hidden">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium leading-tight">
               Loja
@@ -157,6 +153,7 @@ export function MarketplaceSwitcher() {
           <ChevronDown className="ml-0.5 h-3.5 w-3.5 text-muted-foreground mx-0" />
         </Button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent align="end" className="w-56 rounded-xl p-1.5">
         <DropdownMenuLabel className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground">
           <Store className="h-3.5 w-3.5" />
@@ -166,60 +163,50 @@ export function MarketplaceSwitcher() {
 
         {/* "All" option */}
         <DropdownMenuItem
-          onClick={handleSelectAll}
-          className={`cursor-pointer gap-2.5 rounded-lg px-2 py-2 ${
-            selectedMarketplace === "all" ? "bg-accent/10" : ""
-          }`}
+          onClick={handleToggleAll}
+          className={`cursor-pointer gap-2.5 rounded-lg px-2 py-2 ${allSelected ? "bg-accent/10" : ""}`}
         >
           <div
             className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-              selectedMarketplace === "all"
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-secondary-foreground"
+              allSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
             }`}
           >
             <Layers className="h-4 w-4" />
           </div>
-          <span
-            className={`flex-1 text-sm ${
-              selectedMarketplace === "all" ? "font-semibold" : "font-medium"
-            }`}
-          >
-            Todas
+          <span className={`flex-1 text-sm ${allSelected ? "font-semibold" : "font-medium"}`}>
+            Todas as lojas
           </span>
-          {selectedMarketplace === "all" && (
-            <Check className="h-4 w-4 shrink-0 text-accent" />
-          )}
+          {allSelected && <Check className="h-4 w-4 shrink-0 text-accent" />}
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
 
-        {/* Individual stores */}
+        {/* Individual stores with checkboxes */}
         {sellerStores.map((store) => {
           const mpDef = getMpDef(store.marketplace);
           const MpIcon = mpDef?.icon ?? Store;
           const color = mpDef?.color ?? "from-gray-500 to-gray-600";
-          const isActive = selectedMarketplace === store.id;
+          const isChecked = !allSelected && selectedStoreIds.includes(store.id);
 
           return (
             <DropdownMenuItem
               key={store.id}
-              onClick={() => handleSelectStore(store.id)}
-              className={`cursor-pointer gap-2.5 rounded-lg px-2 py-2 ${
-                isActive ? "bg-accent/10" : ""
-              }`}
+              onClick={() => handleToggleStore(store.id)}
+              className={`cursor-pointer gap-2.5 rounded-lg px-2 py-2 ${isChecked ? "bg-accent/10" : ""}`}
             >
               <div
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${color} text-white`}
               >
                 <MpIcon className="h-4 w-4" />
               </div>
-              <span
-                className={`flex-1 text-sm truncate ${isActive ? "font-semibold" : "font-medium"}`}
-              >
+              <span className={`flex-1 text-sm truncate ${isChecked ? "font-semibold" : "font-medium"}`}>
                 {store.store_name}
               </span>
-              {isActive && <Check className="h-4 w-4 shrink-0 text-accent" />}
+              <Checkbox
+                checked={isChecked}
+                className="h-3.5 w-3.5 pointer-events-none"
+                tabIndex={-1}
+              />
             </DropdownMenuItem>
           );
         })}

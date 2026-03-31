@@ -5,8 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMLStore } from "@/contexts/MLStoreContext";
 import { useMarketplace } from "@/contexts/MarketplaceContext";
+import { useSeller } from "@/contexts/SellerContext";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { getMarketplaceDailyData, getMarketplaceHourlyData, getMarketplaceProducts, getMarketplaceName, getAllMarketplaceMockDaily, getAllMarketplaceMockHourly, getAllMarketplaceMockProducts } from "@/data/marketplaceMockData";
+import { aggregateStoreDailyData, aggregateStoreHourlyData, aggregateStoreProducts, type StoreRef } from "@/data/storeMockData";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -170,9 +172,21 @@ export default function MercadoLivre() {
   const { toast } = useToast();
   const { stores, selectedStore, salesCache, setSalesCache } = useMLStore();
   const { selectedMarketplace, activeMarketplace } = useMarketplace();
-  const isML = selectedMarketplace === "mercado-livre";
-  const isAll = selectedMarketplace === "all";
-  const useRealData = isML || isAll;
+  const { selectedSeller, selectedStoreIds } = useSeller();
+
+  // Resolve which stores are effectively selected
+  const effectiveStores = useMemo<StoreRef[]>(() => {
+    const allActive = (selectedSeller?.stores ?? []).filter((s) => s.is_active);
+    const base = selectedStoreIds.length === 0 ? allActive : allActive.filter((s) => selectedStoreIds.includes(s.id));
+    return base.map((s) => ({ id: s.id, marketplace: s.marketplace }));
+  }, [selectedSeller, selectedStoreIds]);
+
+  const mlStores = useMemo(() => effectiveStores.filter((s) => s.marketplace === "ml"), [effectiveStores]);
+  const nonMlStores = useMemo(() => effectiveStores.filter((s) => s.marketplace !== "ml"), [effectiveStores]);
+
+  const isML = selectedMarketplace === "mercado-livre" || (selectedStoreIds.length > 0 && mlStores.length > 0 && nonMlStores.length === 0);
+  const isAll = selectedStoreIds.length === 0 && (selectedMarketplace === "all" || selectedMarketplace === "mercado-livre");
+  const useRealData = mlStores.length > 0 || isAll;
   const marketplaceName = activeMarketplace ? activeMarketplace.name : "Todos os Marketplaces";
   const [loading, setLoading] = useState(() => salesCache.daily.length === 0);
   const [syncing, setSyncing] = useState(false);
@@ -753,24 +767,28 @@ export default function MercadoLivre() {
   }, [pendingRange, pendingPeriod, syncFromAPI]);
 
   // --- Mock data for non-ML marketplaces ---
-  // Mock data for non-ML or aggregated mode
   const mockDaily = useMemo(() => {
+    // Specific non-ML stores selected → use per-store seeded data
+    if (nonMlStores.length > 0) return aggregateStoreDailyData(nonMlStores, 30);
+    // All stores / isAll with no stores configured → fall back to generic mock
     if (isAll) return getAllMarketplaceMockDaily(30);
     if (!useRealData) return getMarketplaceDailyData(selectedMarketplace, 30);
     return [];
-  }, [isAll, useRealData, selectedMarketplace]);
+  }, [nonMlStores, isAll, useRealData, selectedMarketplace]);
 
   const mockHourly = useMemo(() => {
+    if (nonMlStores.length > 0) return aggregateStoreHourlyData(nonMlStores);
     if (isAll) return getAllMarketplaceMockHourly();
     if (!useRealData) return getMarketplaceHourlyData(selectedMarketplace);
     return [];
-  }, [isAll, useRealData, selectedMarketplace]);
+  }, [nonMlStores, isAll, useRealData, selectedMarketplace]);
 
   const mockProducts = useMemo(() => {
+    if (nonMlStores.length > 0) return aggregateStoreProducts(nonMlStores);
     if (isAll) return getAllMarketplaceMockProducts();
     if (!useRealData) return getMarketplaceProducts(selectedMarketplace);
     return [];
-  }, [isAll, useRealData, selectedMarketplace]);
+  }, [nonMlStores, isAll, useRealData, selectedMarketplace]);
 
   // Merge real ML data with mock data when "all"
   const effectiveDaily = useMemo(() => {
@@ -883,12 +901,19 @@ export default function MercadoLivre() {
   }, [isAll, daily]);
 
 
-  if (isML && !loading && !connected) {
+  // Show "not connected" when ML stores are selected but there's no valid API token
+  const onlyMLSelected = mlStores.length > 0 && nonMlStores.length === 0;
+  if (onlyMLSelected && !loading && !connected) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <SellerMarketplaceBar className="mb-2" />
         <Plug className="w-16 h-16 text-muted-foreground/40" />
         <h2 className="text-xl font-semibold text-foreground">Mercado Livre não conectado</h2>
-        <p className="text-muted-foreground text-sm">Conecte sua conta para visualizar os dashboards.</p>
+        <p className="text-muted-foreground text-sm">
+          {mlStores.length === 1
+            ? "Conecte sua conta do Mercado Livre para visualizar os dados desta loja."
+            : `Conecte as ${mlStores.length} contas do Mercado Livre para visualizar os dados.`}
+        </p>
         <Button asChild>
           <Link to="/integracoes">Ir para Integrações</Link>
         </Button>

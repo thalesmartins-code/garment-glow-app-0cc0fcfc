@@ -9,6 +9,7 @@ import {
 import { useSeller } from "@/contexts/SellerContext";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { StoreGroupSelector } from "./StoreGroupSelector";
 
 interface Props {
   className?: string;
@@ -20,17 +21,15 @@ export function SellerMarketplaceBar({ className }: Props) {
     sellers,
     selectedSeller,
     setSelectedSeller,
-    selectedMarketplace,
-    setSelectedMarketplace,
-    availableMarketplaces,
   } = useSeller();
 
   const displaySellers = activeSellers.length > 0 ? activeSellers : sellers;
+  const hasStores = (selectedSeller?.stores ?? []).some((s) => s.is_active);
 
   return (
     <div
       className={cn(
-        "flex items-center gap-1 rounded-xl border border-border/60 bg-card px-2 py-1.5 shadow-sm",
+        "flex items-center gap-1.5 rounded-xl border border-border/60 bg-card px-2 py-1.5 shadow-sm",
         className
       )}
     >
@@ -107,38 +106,12 @@ export function SellerMarketplaceBar({ className }: Props) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Divider */}
-      {selectedSeller && selectedSeller.stores.length > 0 && (
-        <div className="h-5 w-px shrink-0 bg-border" />
-      )}
-
-      {/* Store tabs */}
-      {selectedSeller && selectedSeller.stores.length > 0 && (
-        <div className="flex items-center gap-0.5">
-          <Button
-            variant={selectedMarketplace === "all" ? "secondary" : "ghost"}
-            size="sm"
-            className="h-7 px-2.5 text-xs"
-            onClick={() => setSelectedMarketplace("all")}
-          >
-            Todos
-          </Button>
-          {selectedSeller.stores.filter(s => s.is_active).map((store) => {
-            const mp = availableMarketplaces.find(m => m.id === store.marketplace);
-            return (
-              <Button
-                key={store.id}
-                variant={selectedMarketplace === store.id ? "secondary" : "ghost"}
-                size="sm"
-                className="h-7 gap-1 px-2.5 text-xs"
-                onClick={() => setSelectedMarketplace(store.id)}
-              >
-                <span>{mp?.logo ?? "🏪"}</span>
-                <span className="hidden sm:inline">{store.store_name}</span>
-              </Button>
-            );
-          })}
-        </div>
+      {/* Divider + store group selector */}
+      {hasStores && (
+        <>
+          <div className="h-5 w-px shrink-0 bg-border" />
+          <StoreGroupSelector />
+        </>
       )}
     </div>
   );

@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import { useMLInventory } from "@/contexts/MLInventoryContext";
 import { useMarketplace } from "@/contexts/MarketplaceContext";
 import { getMarketplaceInventory, getMarketplaceName, getAllMarketplaceInventory } from "@/data/marketplaceMockData";
+import { aggregateStoreInventory, type StoreRef } from "@/data/storeMockData";
+import { useSeller } from "@/contexts/SellerContext";
 import { useMLCoverage, COVERAGE_PERIODS, COVERAGE_CLASS_LABELS } from "@/hooks/useMLCoverage";
 import type { CoveragePeriod, CoverageClass, CoverageData } from "@/hooks/useMLCoverage";
 import { CoverageAlerts } from "@/components/mercadolivre/CoverageAlerts";
@@ -61,15 +63,29 @@ function CoverageChip({ data, title }: { data: CoverageData | undefined; title?:
 export default function MLEstoque() {
   const { items: mlItems, summary: mlSummary, loading: mlLoading, hasToken, lastUpdated, refresh } = useMLInventory();
   const { selectedMarketplace, activeMarketplace } = useMarketplace();
-  const isML = selectedMarketplace === "mercado-livre";
-  const isAll = selectedMarketplace === "all";
-  const useRealData = isML || isAll;
+  const { selectedSeller, selectedStoreIds } = useSeller();
+
+  // Resolve effective stores from multi-select
+  const effectiveStores = useMemo<StoreRef[]>(() => {
+    const allActive = (selectedSeller?.stores ?? []).filter((s) => s.is_active);
+    const base = selectedStoreIds.length === 0 ? allActive : allActive.filter((s) => selectedStoreIds.includes(s.id));
+    return base.map((s) => ({ id: s.id, marketplace: s.marketplace }));
+  }, [selectedSeller, selectedStoreIds]);
+
+  const nonMlStores = useMemo(() => effectiveStores.filter((s) => s.marketplace !== "ml"), [effectiveStores]);
+  const mlStoreCount = useMemo(() => effectiveStores.filter((s) => s.marketplace === "ml").length, [effectiveStores]);
+
+  const isML = selectedMarketplace === "mercado-livre" || (selectedStoreIds.length > 0 && mlStoreCount > 0 && nonMlStores.length === 0);
+  const isAll = selectedStoreIds.length === 0 && (selectedMarketplace === "all" || selectedMarketplace === "mercado-livre");
+  const useRealData = mlStoreCount > 0 || isAll;
 
   const mockData = useMemo(() => {
+    // Specific non-ML stores → per-store seeded data
+    if (nonMlStores.length > 0) return aggregateStoreInventory(nonMlStores);
     if (isAll) return getAllMarketplaceInventory();
     if (!isML) return getMarketplaceInventory(selectedMarketplace);
     return null;
-  }, [isAll, isML, selectedMarketplace]);
+  }, [nonMlStores, isAll, isML, selectedMarketplace]);
 
   const items = useMemo(() => {
     if (isAll) {
@@ -162,7 +178,8 @@ export default function MLEstoque() {
       });
   }, [items, search, hideOutOfStock, stockFilter, coverageFilter, sortBy, coverageMap]);
 
-  if (isML && hasToken === false) {
+  const onlyMLSelected = mlStoreCount > 0 && nonMlStores.length === 0;
+  if (onlyMLSelected && hasToken === false) {
     return (
       <div className="space-y-6">
         <Card>
