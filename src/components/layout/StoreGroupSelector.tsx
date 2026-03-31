@@ -87,7 +87,7 @@ export function StoreGroupSelector({ className }: Props) {
                   <BrandIcon className="h-2.5 w-2.5 text-white" />
                 </div>
               ) : (
-                <span>{mp.logo}</span>
+                <span>{mp.name.charAt(0)}</span>
               )}
               <span>{store.store_name}</span>
             </button>
