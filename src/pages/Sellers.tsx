@@ -324,9 +324,15 @@ export default function Sellers() {
               {/* Footer actions */}
               <div className="flex gap-2 pt-1 border-t">
                 {selectedSeller?.id !== seller.id && (
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => setSelectedSeller(seller.id)}>
+                  <Button variant="outline" size="sm" className="flex-1 rounded-lg" onClick={() => setSelectedSeller(seller.id)}>
                     Selecionar
                   </Button>
+                )}
+                {selectedSeller?.id === seller.id && (
+                  <div className="flex-1 flex items-center justify-center text-xs font-medium text-primary gap-1.5">
+                    <Check className="h-3.5 w-3.5" />
+                    Selecionado
+                  </div>
                 )}
 
                 {/* Add store button */}
