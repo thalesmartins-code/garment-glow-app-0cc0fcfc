@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Check, Power, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Check, Power, X, Store } from "lucide-react";
 import { useSeller } from "@/contexts/SellerContext";
 import { ALL_MARKETPLACES } from "@/types/seller";
 import { getMarketplaceBrand } from "@/config/marketplaceConfig";
