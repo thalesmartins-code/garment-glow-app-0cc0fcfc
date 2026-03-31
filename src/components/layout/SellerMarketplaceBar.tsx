@@ -108,7 +108,7 @@ export function SellerMarketplaceBar({ className, showStores = true }: Props) {
       </DropdownMenu>
 
       {/* Divider + store group selector */}
-      {hasStores && (
+      {showStores && hasStores && (
         <>
           <div className="h-5 w-px shrink-0 bg-border" />
           <StoreGroupSelector />
