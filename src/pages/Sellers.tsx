@@ -163,7 +163,7 @@ export default function Sellers() {
 
       {/* Sellers Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {sellers.map((seller) => (
+        {[...sellers].sort((a, b) => b.stores.length - a.stores.length || a.name.localeCompare(b.name)).map((seller) => (
           <Card
             key={seller.id}
             className={`transition-all duration-300 ease-in-out rounded-xl border shadow-sm hover:shadow-md ${!seller.is_active ? "opacity-60" : ""} ${
@@ -289,7 +289,7 @@ export default function Sellers() {
                 {seller.stores.length === 0 && (
                   <p className="text-xs text-muted-foreground italic">Nenhuma loja cadastrada</p>
                 )}
-                {seller.stores.map((store) => {
+                {[...seller.stores].sort((a, b) => a.store_name.localeCompare(b.store_name)).map((store) => {
                   const mp = ALL_MARKETPLACES.find((m) => m.id === store.marketplace);
                   const brand = getMarketplaceBrand(store.marketplace);
                   const BrandIcon = brand?.icon;
