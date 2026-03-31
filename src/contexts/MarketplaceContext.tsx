@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { Handshake, ShoppingBag, Package, Store, ShoppingCart, Footprints } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useSeller } from "@/contexts/SellerContext";
+import { MARKETPLACE_BRANDS, SELLER_TO_MP_ID, MP_TO_SELLER_ID } from "@/config/marketplaceConfig";
 
 export interface MarketplaceDefinition {
   id: string;
@@ -12,69 +12,18 @@ export interface MarketplaceDefinition {
 }
 
 // Maps SellerContext marketplace shortcodes → MarketplaceContext ids
-const SELLER_TO_MP: Record<string, string> = {
-  "ml":     "mercado-livre",
-  "amz":    "amazon",
-  "shopee": "shopee",
-  "magalu": "magalu",
-  "netshoes": "netshoes",
-  "dafiti":   "dafiti",
-};
+const SELLER_TO_MP = SELLER_TO_MP_ID;
 
 // Maps MarketplaceContext ids → SellerContext shortcodes
-const MP_TO_SELLER: Record<string, string> = {
-  "mercado-livre": "ml",
-  "amazon":        "amz",
-  "shopee":        "shopee",
-  "magalu":        "magalu",
-  "netshoes":      "netshoes",
-  "dafiti":        "dafiti",
-};
+const MP_TO_SELLER = MP_TO_SELLER_ID;
 
-const allMarketplaces: MarketplaceDefinition[] = [
-  {
-    id: "mercado-livre",
-    name: "Mercado Livre",
-    icon: Handshake,
-    color: "from-yellow-500 to-amber-500",
-    connected: true,
-  },
-  {
-    id: "amazon",
-    name: "Amazon",
-    icon: Package,
-    color: "from-orange-500 to-amber-600",
-    connected: true,
-  },
-  {
-    id: "shopee",
-    name: "Shopee",
-    icon: ShoppingBag,
-    color: "from-orange-600 to-red-500",
-    connected: true,
-  },
-  {
-    id: "magalu",
-    name: "Magazine Luiza",
-    icon: Store,
-    color: "from-blue-600 to-indigo-500",
-    connected: true,
-  },
-  {
-    id: "netshoes",
-    name: "Netshoes",
-    icon: Footprints,
-    color: "from-purple-600 to-violet-500",
-    connected: true,
-  },
-  {
-    id: "dafiti",
-    name: "Dafiti",
-    icon: ShoppingCart,
-    color: "from-gray-500 to-gray-600",
-    connected: true,
-  },
-];
+const allMarketplaces: MarketplaceDefinition[] = MARKETPLACE_BRANDS.map((b) => ({
+  id: b.id,
+  name: b.name,
+  icon: b.icon,
+  color: b.gradient,
+  connected: true,
+}));
 
 interface MarketplaceState {
   marketplaces: MarketplaceDefinition[];

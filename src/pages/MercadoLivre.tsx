@@ -38,9 +38,6 @@ import {
   Clock3,
   Loader2,
   Handshake,
-  ShoppingBag,
-  Store,
-  Building2,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";

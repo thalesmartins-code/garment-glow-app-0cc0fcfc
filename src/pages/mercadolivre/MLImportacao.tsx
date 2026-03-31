@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Upload, ShoppingBag, Package, Store, Footprints, ShoppingCart } from "lucide-react";
+import { Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getFileType } from "@/utils/csvParser";
 import {
@@ -15,14 +15,12 @@ import { FileUploadCard } from "@/components/import/marketplace/FileUploadCard";
 import { ImportPreviewTable } from "@/components/import/marketplace/ImportPreviewTable";
 import { ImportOrdersPreviewTable } from "@/components/import/marketplace/ImportOrdersPreviewTable";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { MARKETPLACE_BRANDS } from "@/config/marketplaceConfig";
 
-const marketplaces: { id: MarketplaceType; label: string; icon: React.ElementType; color: string }[] = [
-  { id: "shopee", label: "Shopee", icon: ShoppingBag, color: "bg-orange-500/10 text-orange-600 border-orange-500/30" },
-  { id: "amazon", label: "Amazon", icon: Package, color: "bg-yellow-500/10 text-yellow-700 border-yellow-500/30" },
-  { id: "magalu", label: "Magalu", icon: Store, color: "bg-blue-500/10 text-blue-600 border-blue-500/30" },
-  { id: "dafiti", label: "Dafiti", icon: ShoppingCart, color: "bg-gray-100 text-gray-900 border-gray-300 dark:bg-gray-800/50 dark:text-gray-100 dark:border-gray-600" },
-  { id: "netshoes", label: "Netshoes", icon: Footprints, color: "bg-purple-500/10 text-purple-700 border-purple-500/30" },
-];
+const marketplaces: { id: MarketplaceType; label: string; icon: React.ElementType; color: string }[] =
+  MARKETPLACE_BRANDS
+    .filter((b) => ["shopee", "amazon", "magalu", "dafiti", "netshoes"].includes(b.id))
+    .map((b) => ({ id: b.id as MarketplaceType, label: b.name, icon: b.icon, color: b.badge }));
 
 export default function MLImportacao() {
   const [selectedMarketplace, setSelectedMarketplace] = useState<MarketplaceType | null>(null);
