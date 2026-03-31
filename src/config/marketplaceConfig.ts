@@ -47,7 +47,7 @@ export const MARKETPLACE_BRANDS: MarketplaceBrand[] = [
   {
     id: "netshoes",
     name: "Netshoes",
-    icon: SportShoe as unknown as LucideIcon,
+    icon: SportShoe,
     gradient: "from-purple-600 to-violet-500",
     badge: "bg-purple-500/10 text-purple-700 border-purple-500/30",
   },
