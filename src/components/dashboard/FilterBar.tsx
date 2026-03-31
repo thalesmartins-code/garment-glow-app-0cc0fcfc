@@ -1,4 +1,5 @@
 import { Calendar as CalendarIcon, Filter, RefreshCw } from "lucide-react";
+import { getMarketplaceBrand } from "@/config/marketplaceConfig";
 import { cn } from "@/lib/utils";
 import { PeriodFilter, periodLabels } from "@/data/mockData";
 import { format } from "date-fns";
