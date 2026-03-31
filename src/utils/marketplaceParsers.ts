@@ -112,7 +112,7 @@ function parseShopeeCSV(content: string): ParsedImportRow[] {
   return rows;
 }
 
-// ─── Shopee CSV (Pedidos) ──────────────────────────────────────
+// ─── Shopee CSV (Produtos) ──────────────────────────────────────
 
 function parseShopeeOrdersCSV(content: string): ParsedOrderRow[] {
   const lines = content.split(/\r?\n/).filter(l => l.trim());
