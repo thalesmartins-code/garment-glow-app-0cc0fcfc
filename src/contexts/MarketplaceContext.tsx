@@ -60,6 +60,20 @@ const allMarketplaces: MarketplaceDefinition[] = [
     color: "from-blue-600 to-indigo-500",
     connected: true,
   },
+  {
+    id: "netshoes",
+    name: "Netshoes",
+    icon: Footprints,
+    color: "from-purple-600 to-violet-500",
+    connected: true,
+  },
+  {
+    id: "dafiti",
+    name: "Dafiti",
+    icon: Shirt,
+    color: "from-pink-500 to-rose-500",
+    connected: true,
+  },
 ];
 
 interface MarketplaceState {
