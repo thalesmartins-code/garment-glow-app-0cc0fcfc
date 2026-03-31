@@ -172,13 +172,21 @@ export default function Sellers() {
             <CardHeader className="pb-2">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                    seller.is_active ? "bg-primary/10" : "bg-muted"
-                  }`}>
-                    <span className={`text-sm font-bold ${seller.is_active ? "text-primary" : "text-muted-foreground"}`}>
-                      {seller.initials}
-                    </span>
-                  </div>
+                  {seller.logo_url ? (
+                    <img
+                      src={seller.logo_url}
+                      alt={seller.name}
+                      className="w-10 h-10 rounded-lg object-cover shrink-0 border"
+                    />
+                  ) : (
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                      seller.is_active ? "bg-primary/10" : "bg-muted"
+                    }`}>
+                      <span className={`text-sm font-bold ${seller.is_active ? "text-primary" : "text-muted-foreground"}`}>
+                        {seller.initials}
+                      </span>
+                    </div>
+                  )}
                   <div>
                     <CardTitle className="text-base">{seller.name}</CardTitle>
                     <CardDescription className="text-xs">
