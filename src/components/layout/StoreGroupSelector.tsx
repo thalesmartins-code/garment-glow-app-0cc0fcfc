@@ -9,6 +9,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useSeller } from "@/contexts/SellerContext";
 import { ALL_MARKETPLACES } from "@/types/seller";
+import { getMarketplaceBrand } from "@/config/marketplaceConfig";
 import { cn } from "@/lib/utils";
 
 const MP_MAP = Object.fromEntries(ALL_MARKETPLACES.map((m) => [m.id, m]));
