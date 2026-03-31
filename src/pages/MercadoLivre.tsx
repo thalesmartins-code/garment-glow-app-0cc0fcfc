@@ -18,6 +18,7 @@ import { TopSellingProducts, type ProductSalesRow } from "@/components/mercadoli
 import { HourlySalesTable } from "@/components/mercadolivre/HourlySalesTable";
 import { MLStoreSelector } from "@/components/mercadolivre/MLStoreSelector";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
+import { SellerMarketplaceBar } from "@/components/layout/SellerMarketplaceBar";
 import {
   DollarSign,
   ShoppingCart,
@@ -914,6 +915,9 @@ export default function MercadoLivre() {
 
   return (
     <div className="space-y-6">
+      {/* Seller + Marketplace selector */}
+      <SellerMarketplaceBar />
+
       <AnimatePresence>
         {syncProgress && (() => {
           const pct = Math.round((syncProgress.current / syncProgress.total) * 100);

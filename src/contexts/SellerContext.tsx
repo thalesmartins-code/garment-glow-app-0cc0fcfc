@@ -9,12 +9,18 @@ interface AddStoreInput {
   external_id?: string;
 }
 
+type MarketplaceEntry = typeof ALL_MARKETPLACES[number];
+
 interface SellerContextType {
   sellers: Seller[];
   activeSellers: Seller[];
   selectedSeller: Seller | null;
   setSelectedSeller: (sellerId: string) => void;
   loading: boolean;
+  // Marketplace selection (global, per-seller persisted)
+  selectedMarketplace: string;
+  setSelectedMarketplace: (id: string) => void;
+  availableMarketplaces: MarketplaceEntry[];
   // Seller CRUD
   addSeller: (name: string) => Promise<Seller | null>;
   updateSeller: (id: string, data: { name?: string; is_active?: boolean; logo_url?: string | null }) => Promise<void>;
@@ -24,13 +30,16 @@ interface SellerContextType {
   updateStore: (storeId: string, data: { store_name?: string; external_id?: string; is_active?: boolean }) => Promise<void>;
   deleteStore: (storeId: string) => Promise<void>;
   // Legacy helpers
-  getActiveMarketplaces: () => typeof ALL_MARKETPLACES[number][];
-  getMarketplaceById: (id: string) => typeof ALL_MARKETPLACES[number] | undefined;
-  // Legacy mutation kept for Sellers.tsx compat
+  getActiveMarketplaces: () => MarketplaceEntry[];
+  getMarketplaceById: (id: string) => MarketplaceEntry | undefined;
   toggleSellerActive: (id: string) => Promise<void>;
 }
 
 const SELECTED_SELLER_KEY = "selected_seller_id_v3";
+
+function sellerMktKey(sellerId: string) {
+  return `sel_${sellerId}_mkt`;
+}
 
 const SellerContext = createContext<SellerContextType | undefined>(undefined);
 
@@ -41,7 +50,12 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
   const [selectedSellerId, setSelectedSellerId] = useState<string | null>(
     () => localStorage.getItem(SELECTED_SELLER_KEY)
   );
+  const [selectedMarketplace, setSelectedMarketplaceState] = useState<string>(() => {
+    const savedSellerId = localStorage.getItem(SELECTED_SELLER_KEY);
+    return savedSellerId ? (localStorage.getItem(sellerMktKey(savedSellerId)) ?? "all") : "all";
+  });
   const loadedRef = useRef(false);
+  const prevSellerIdRef = useRef<string | null>(null);
 
   const loadSellers = useCallback(async () => {
     if (!user) {
@@ -89,7 +103,6 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [loadSellers]);
 
-  // Re-load when user changes
   useEffect(() => {
     loadedRef.current = false;
     loadSellers();
@@ -110,9 +123,37 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
     sellers[0] ??
     null;
 
+  // When seller changes, validate marketplace is still valid for new seller
+  useEffect(() => {
+    if (!selectedSeller) return;
+    if (prevSellerIdRef.current === selectedSeller.id) return;
+    prevSellerIdRef.current = selectedSeller.id;
+    if (selectedMarketplace === "all") return;
+    const validIds = selectedSeller.stores.map((s) => s.marketplace);
+    if (!validIds.includes(selectedMarketplace)) {
+      setSelectedMarketplaceState("all");
+      const sid = selectedSeller.id;
+      localStorage.setItem(sellerMktKey(sid), "all");
+    }
+  });
+
   const setSelectedSeller = useCallback((sellerId: string) => {
     setSelectedSellerId(sellerId);
+    // Restore this seller's saved marketplace preference
+    const saved = localStorage.getItem(sellerMktKey(sellerId));
+    setSelectedMarketplaceState(saved ?? "all");
   }, []);
+
+  const setSelectedMarketplace = useCallback((id: string) => {
+    setSelectedMarketplaceState(id);
+    const sid = localStorage.getItem(SELECTED_SELLER_KEY);
+    if (sid) localStorage.setItem(sellerMktKey(sid), id);
+  }, []);
+
+  // Marketplaces available for the currently selected seller
+  const availableMarketplaces = (ALL_MARKETPLACES as unknown as MarketplaceEntry[]).filter((mp) =>
+    selectedSeller?.stores.some((s) => s.marketplace === mp.id)
+  );
 
   const addSeller = useCallback(async (name: string): Promise<Seller | null> => {
     if (!user) return null;
@@ -217,11 +258,11 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
 
   const getActiveMarketplaces = useCallback(() => {
     const mpIds = new Set(selectedSeller?.stores.map((s) => s.marketplace) ?? []);
-    return ALL_MARKETPLACES.filter((mp) => mpIds.has(mp.id));
+    return (ALL_MARKETPLACES as unknown as MarketplaceEntry[]).filter((mp) => mpIds.has(mp.id));
   }, [selectedSeller]);
 
   const getMarketplaceById = useCallback((id: string) => {
-    return ALL_MARKETPLACES.find((mp) => mp.id === id);
+    return (ALL_MARKETPLACES as unknown as MarketplaceEntry[]).find((mp) => mp.id === id);
   }, []);
 
   return (
@@ -232,6 +273,9 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
         selectedSeller,
         setSelectedSeller,
         loading,
+        selectedMarketplace,
+        setSelectedMarketplace,
+        availableMarketplaces,
         addSeller,
         updateSeller,
         deleteSeller,

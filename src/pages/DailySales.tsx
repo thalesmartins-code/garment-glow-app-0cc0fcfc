@@ -9,6 +9,7 @@ import { KPICard } from "@/components/dashboard/KPICard";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SellerMarketplaceBar } from "@/components/layout/SellerMarketplaceBar";
 import { useSeller } from "@/contexts/SellerContext";
 import { useSalesData } from "@/contexts/SalesDataContext";
 import { useSellerSalesData, CalculatedDailySale } from "@/hooks/useSellerSalesData";
@@ -17,19 +18,18 @@ import { DailySale } from "@/data/mockData";
 
 const DailySales = () => {
   const navigate = useNavigate();
-  const { selectedSeller, getActiveMarketplaces } = useSeller();
+  const { selectedSeller, getActiveMarketplaces, selectedMarketplace } = useSeller();
   const { isLoading } = useSalesData();
-  const { 
-    getDailySalesData, 
-    updateSaleValue, 
+  const {
+    getDailySalesData,
+    updateSaleValue,
     updateSaleAprovadaReal,
-    getAvailableYears, 
-    getAvailableMonths 
+    getAvailableYears,
+    getAvailableMonths
   } = useSellerSalesData();
   const { syncAndImport, isSyncing } = useSyncAndImport();
 
   const currentDate = new Date();
-  const [selectedMarketplace, setSelectedMarketplace] = useState<string>("all");
   const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth() + 1);
   const [viewMode, setViewMode] = useState<"diario" | "mensal">("diario");
@@ -37,15 +37,11 @@ const DailySales = () => {
 
   // Get marketplaces available for this seller
   const activeMarketplaces = getActiveMarketplaces();
-  
+
   const marketplaceOptions = useMemo(() => {
     const options = [{ value: "all", label: "Todos", logo: "📊" }];
     activeMarketplaces.forEach((mp) => {
-      options.push({
-        value: mp.id,
-        label: mp.name,
-        logo: mp.logo ?? "📦",
-      });
+      options.push({ value: mp.id, label: mp.name, logo: mp.logo ?? "📦" });
     });
     return options;
   }, [activeMarketplaces]);
@@ -53,13 +49,6 @@ const DailySales = () => {
   // Get available years and months
   const availableYears = useMemo(() => getAvailableYears(), [getAvailableYears]);
   const availableMonths = useMemo(() => getAvailableMonths(selectedYear), [getAvailableMonths, selectedYear]);
-
-  // Reset marketplace selection if current selection is not available for seller
-  useMemo(() => {
-    if (selectedMarketplace !== "all" && !activeMarketplaces.some((m) => m.id === selectedMarketplace)) {
-      setSelectedMarketplace("all");
-    }
-  }, [activeMarketplaces, selectedMarketplace]);
 
   // Check if selected period is current month
   const isCurrentMonth = selectedYear === currentDate.getFullYear() && selectedMonth === (currentDate.getMonth() + 1);
@@ -73,7 +62,7 @@ const DailySales = () => {
 
   const handleRefresh = useCallback(async () => {
     const spreadsheetId = localStorage.getItem("google_spreadsheet_id") || "";
-    if (spreadsheetId) {
+    if (spreadsheetId && selectedSeller) {
       await syncAndImport(spreadsheetId, selectedSeller.id);
     }
     setLastUpdate(new Date());
@@ -245,8 +234,6 @@ const DailySales = () => {
     }
   }, [selectedMarketplace, selectedYear, selectedMonth, updateSaleAprovadaReal]);
 
-  const selectedMarketplaceLabel = marketplaceOptions.find(mp => mp.value === selectedMarketplace);
-
   // Convert CalculatedDailySale to DailySale for chart (remove isImported property)
   const chartData: DailySale[] = useMemo(() => {
     return dailySalesData.map(({ isImported, ...rest }) => rest as DailySale);
@@ -263,6 +250,9 @@ const DailySales = () => {
 
   return (
     <div className="space-y-6">
+        {/* Seller + Marketplace selector */}
+        <SellerMarketplaceBar />
+
         {/* Sync Progress Bar */}
         {isSyncing && (
           <div className="w-full">
@@ -281,28 +271,6 @@ const DailySales = () => {
                   <TabsTrigger value="mensal" className="text-sm px-3 py-1.5">Mensal</TabsTrigger>
                 </TabsList>
               </Tabs>
-              <Select value={selectedMarketplace} onValueChange={setSelectedMarketplace}>
-                <SelectTrigger className="w-[160px] h-9 text-sm">
-                  <SelectValue>
-                    {selectedMarketplaceLabel && (
-                      <span className="flex items-center gap-1.5">
-                        <span>{selectedMarketplaceLabel.logo}</span>
-                        <span>{selectedMarketplaceLabel.label}</span>
-                      </span>
-                    )}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {marketplaceOptions.map((mp) => (
-                    <SelectItem key={mp.value} value={mp.value}>
-                      <span className="flex items-center gap-1.5">
-                        <span>{mp.logo}</span>
-                        <span>{mp.label}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
                 <SelectTrigger className="w-[130px] h-9 text-sm">
                   <SelectValue />
@@ -450,7 +418,6 @@ const DailySales = () => {
           dailySalesData={dailySalesData}
           loading={false}
           selectedMarketplace={selectedMarketplace}
-          onMarketplaceChange={setSelectedMarketplace}
           marketplaceOptions={marketplaceOptions}
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}

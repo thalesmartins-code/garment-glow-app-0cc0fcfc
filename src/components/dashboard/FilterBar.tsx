@@ -50,7 +50,8 @@ export function FilterBar({
   return (
     <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between bg-card rounded-xl p-4 shadow-md">
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        {/* Marketplace Filter */}
+        {/* Marketplace Filter — hidden when SellerMarketplaceBar handles selection */}
+        {marketplaceOptions.length > 0 && (
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Select value={selectedMarketplace} onValueChange={onMarketplaceChange}>
             <SelectTrigger className="w-full sm:w-[160px] h-9 text-sm">
@@ -91,6 +92,7 @@ export function FilterBar({
             </SelectContent>
           </Select>
         </div>
+        )}
 
         {/* Period Filter - Single Select */}
         <div className="flex items-center gap-2 w-full sm:w-auto">
