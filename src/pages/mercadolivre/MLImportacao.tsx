@@ -107,7 +107,7 @@ export default function MLImportacao() {
         <FileUploadCard
           marketplaceLabel={
             selectedMarketplace === "shopee"
-              ? `Shopee — ${shopeeFileType === "produto_pago" ? "Produto Pago" : "Pedidos"}`
+              ? `Shopee — ${shopeeFileType === "produto_pago" ? "Vendas" : "Produtos"}`
               : mp?.label || ""
           }
           selectedFile={selectedFile}
