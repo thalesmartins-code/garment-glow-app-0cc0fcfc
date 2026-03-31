@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useMarketplace } from "@/contexts/MarketplaceContext";
 import { useMLStore } from "@/contexts/MLStoreContext";
-import { Badge } from "@/components/ui/badge";
+
 
 export function MarketplaceSwitcher() {
   const { marketplaces, selectedMarketplace, setSelectedMarketplace, connectedMarketplaces } =
