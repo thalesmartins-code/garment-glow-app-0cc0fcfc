@@ -9,71 +9,95 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useMarketplace } from "@/contexts/MarketplaceContext";
+import { useMarketplace, type MarketplaceDefinition } from "@/contexts/MarketplaceContext";
 import { useMLStore } from "@/contexts/MLStoreContext";
+import { useSeller } from "@/contexts/SellerContext";
+import { ALL_MARKETPLACES } from "@/types/seller";
 
+// Map seller store marketplace ids to MarketplaceContext definitions
+const SELLER_TO_MP_ID: Record<string, string> = {
+  ml: "mercado-livre",
+  amz: "amazon",
+  shopee: "shopee",
+  magalu: "magalu",
+};
 
 export function MarketplaceSwitcher() {
   const { marketplaces, selectedMarketplace, setSelectedMarketplace, connectedMarketplaces } =
     useMarketplace();
   const { stores: mlStores, selectedStore, setSelectedStore } = useMLStore();
+  const { selectedSeller } = useSeller();
 
-  const hasMultipleMLStores = mlStores.length > 1;
+  const sellerStores = selectedSeller?.stores.filter((s) => s.is_active) ?? [];
 
-  // Build the effective selected label/icon
+  // Find marketplace definition for a seller store
+  const getMpDef = (storeMarketplace: string): MarketplaceDefinition | undefined => {
+    const mpId = SELLER_TO_MP_ID[storeMarketplace] ?? storeMarketplace;
+    return marketplaces.find((m) => m.id === mpId);
+  };
+
+  const getStoreLogo = (storeMarketplace: string): string => {
+    return ALL_MARKETPLACES.find((m) => m.id === storeMarketplace)?.logo ?? "🏪";
+  };
+
+  // Build selected label/icon from store selection
+  const isStoreSelected = selectedMarketplace !== "all" && sellerStores.some((s) => s.id === selectedMarketplace);
+  const selectedStoreObj = isStoreSelected ? sellerStores.find((s) => s.id === selectedMarketplace) : null;
+  const selectedMpDef = selectedStoreObj ? getMpDef(selectedStoreObj.marketplace) : null;
+
+  // Fallback: check if it's a legacy marketplace-level or ml-store selection
   const isMLSubStore = selectedMarketplace.startsWith("ml-store:");
   const selectedMLStoreId = isMLSubStore ? selectedMarketplace.replace("ml-store:", "") : null;
-  const selectedMLStore = selectedMLStoreId ? mlStores.find(s => s.ml_user_id === selectedMLStoreId) : null;
-
-  const selected = isMLSubStore
-    ? null
-    : selectedMarketplace === "all"
-      ? null
-      : marketplaces.find((m) => m.id === selectedMarketplace);
-
-  const mlMarketplace = marketplaces.find(m => m.id === "mercado-livre");
-
-  // For single ML store with custom name, show it when ML is selected
-  const singleMLName = !hasMultipleMLStores && mlStores.length === 1 && mlStores[0].custom_name
-    ? mlStores[0].custom_name
+  const selectedMLStore = selectedMLStoreId
+    ? mlStores.find((s) => s.ml_user_id === selectedMLStoreId)
     : null;
 
-  const label = selectedMLStore
-    ? `ML - ${selectedMLStore.displayName}`
-    : selected
-      ? (selected.id === "mercado-livre" && singleMLName ? singleMLName : selected.name)
-      : "Todos";
-  const Icon = selectedMLStore ? mlMarketplace?.icon : selected?.icon;
-  const gradientClass = selectedMLStore
-    ? mlMarketplace?.color ?? ""
-    : selected?.color ?? "";
+  const legacySelected =
+    !isStoreSelected && !isMLSubStore && selectedMarketplace !== "all"
+      ? marketplaces.find((m) => m.id === selectedMarketplace)
+      : null;
 
-  const handleSelectMarketplace = (id: string) => {
-    setSelectedMarketplace(id);
-    // When selecting a non-ML marketplace or "all", reset ML store to "all"
-    if (!id.startsWith("ml-store:") && id !== "mercado-livre") {
-      setSelectedStore("all");
-    }
+  const mlMarketplace = marketplaces.find((m) => m.id === "mercado-livre");
+
+  const label = selectedStoreObj
+    ? selectedStoreObj.store_name
+    : selectedMLStore
+      ? `ML - ${selectedMLStore.displayName}`
+      : legacySelected
+        ? legacySelected.name
+        : "Todos";
+
+  const Icon = selectedStoreObj
+    ? selectedMpDef?.icon
+    : selectedMLStore
+      ? mlMarketplace?.icon
+      : legacySelected?.icon;
+
+  const gradientClass = selectedStoreObj
+    ? selectedMpDef?.color ?? ""
+    : selectedMLStore
+      ? mlMarketplace?.color ?? ""
+      : legacySelected?.color ?? "";
+
+  const handleSelectStore = (storeId: string) => {
+    setSelectedMarketplace(storeId);
   };
 
-  const handleSelectMLSubStore = (mlUserId: string) => {
-    setSelectedMarketplace(`ml-store:${mlUserId}`);
-    setSelectedStore(mlUserId);
-  };
-
-  const handleSelectMLAll = () => {
-    setSelectedMarketplace("mercado-livre");
+  const handleSelectAll = () => {
+    setSelectedMarketplace("all");
     setSelectedStore("all");
   };
 
   const allDotsExpanded = (
     <div className="flex items-center gap-1">
-      {connectedMarketplaces.map((mp) => {
-        const MpIcon = mp.icon;
+      {sellerStores.map((store) => {
+        const mpDef = getMpDef(store.marketplace);
+        if (!mpDef) return null;
+        const MpIcon = mpDef.icon;
         return (
           <div
-            key={mp.id}
-            className={`flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br ${mp.color}`}
+            key={store.id}
+            className={`flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br ${mpDef.color}`}
           >
             <MpIcon className="h-[7px] w-[7px] text-white" />
           </div>
@@ -90,9 +114,9 @@ export function MarketplaceSwitcher() {
           className="h-auto gap-2.5 rounded-xl border border-border/50 bg-secondary/40 px-3 py-2 hover:bg-secondary/60"
         >
           <AnimatePresence mode="wait">
-            {(selected || selectedMLStore) ? (
+            {(selectedStoreObj || selectedMLStore || legacySelected) ? (
               <motion.div
-                key={selectedMLStore ? `ml-${selectedMLStore.ml_user_id}` : selected?.id}
+                key={selectedStoreObj?.id ?? selectedMLStore?.ml_user_id ?? legacySelected?.id}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
@@ -115,7 +139,7 @@ export function MarketplaceSwitcher() {
           </AnimatePresence>
           <div className="hidden text-left sm:block overflow-hidden">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium leading-tight">
-              Marketplace
+              Loja
             </p>
             <AnimatePresence mode="wait">
               <motion.p
@@ -136,13 +160,13 @@ export function MarketplaceSwitcher() {
       <DropdownMenuContent align="end" className="w-56 rounded-xl p-1.5">
         <DropdownMenuLabel className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground">
           <Store className="h-3.5 w-3.5" />
-          Marketplace
+          Lojas
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
         {/* "All" option */}
         <DropdownMenuItem
-          onClick={() => handleSelectMarketplace("all")}
+          onClick={handleSelectAll}
           className={`cursor-pointer gap-2.5 rounded-lg px-2 py-2 ${
             selectedMarketplace === "all" ? "bg-accent/10" : ""
           }`}
@@ -161,7 +185,7 @@ export function MarketplaceSwitcher() {
               selectedMarketplace === "all" ? "font-semibold" : "font-medium"
             }`}
           >
-            Todos
+            Todas
           </span>
           {selectedMarketplace === "all" && (
             <Check className="h-4 w-4 shrink-0 text-accent" />
@@ -170,90 +194,41 @@ export function MarketplaceSwitcher() {
 
         <DropdownMenuSeparator />
 
-        {connectedMarketplaces.map((mp) => {
-          const isML = mp.id === "mercado-livre";
-          const MpIcon = mp.icon;
-
-          // If ML has multiple stores, render sub-items instead
-          if (isML && hasMultipleMLStores) {
-            return (
-              <div key={mp.id}>
-                {/* ML header - selects "all ML stores" */}
-                <DropdownMenuItem
-                  onClick={handleSelectMLAll}
-                  className={`cursor-pointer gap-2.5 rounded-lg px-2 py-2 ${
-                    selectedMarketplace === "mercado-livre" ? "bg-accent/10" : ""
-                  }`}
-                >
-                  <div
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${mp.color} text-white`}
-                  >
-                    <MpIcon className="h-4 w-4" />
-                  </div>
-                  <span
-                    className={`flex-1 text-sm ${selectedMarketplace === "mercado-livre" ? "font-semibold" : "font-medium"}`}
-                  >
-                    {mp.name}
-                  </span>
-                  {selectedMarketplace === "mercado-livre" && (
-                    <Check className="h-4 w-4 shrink-0 text-accent" />
-                  )}
-                </DropdownMenuItem>
-
-                {/* Sub-stores */}
-                {mlStores.map((store) => {
-                  const storeKey = `ml-store:${store.ml_user_id}`;
-                  const isActive = selectedMarketplace === storeKey;
-                  return (
-                    <DropdownMenuItem
-                      key={storeKey}
-                      onClick={() => handleSelectMLSubStore(store.ml_user_id)}
-                      className={`cursor-pointer gap-2.5 rounded-lg px-2 py-2 pl-5 ${
-                        isActive ? "bg-accent/10" : ""
-                      }`}
-                    >
-                      <div
-                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-gradient-to-br ${mp.color} text-white`}
-                      >
-                        <MpIcon className="h-3 w-3" />
-                      </div>
-                      <span
-                        className={`flex-1 text-sm truncate ${isActive ? "font-semibold" : "font-medium"}`}
-                      >
-                        {store.displayName}
-                      </span>
-                      {isActive && <Check className="h-4 w-4 shrink-0 text-accent" />}
-                    </DropdownMenuItem>
-                  );
-                })}
-              </div>
-            );
-          }
-
-          const isActive = selectedMarketplace === mp.id;
+        {/* Individual stores */}
+        {sellerStores.map((store) => {
+          const mpDef = getMpDef(store.marketplace);
+          const MpIcon = mpDef?.icon ?? Store;
+          const color = mpDef?.color ?? "from-gray-500 to-gray-600";
+          const isActive = selectedMarketplace === store.id;
 
           return (
             <DropdownMenuItem
-              key={mp.id}
-              onClick={() => handleSelectMarketplace(mp.id)}
+              key={store.id}
+              onClick={() => handleSelectStore(store.id)}
               className={`cursor-pointer gap-2.5 rounded-lg px-2 py-2 ${
                 isActive ? "bg-accent/10" : ""
               }`}
             >
               <div
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${mp.color} text-white`}
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${color} text-white`}
               >
                 <MpIcon className="h-4 w-4" />
               </div>
               <span
-                className={`flex-1 text-sm ${isActive ? "font-semibold" : "font-medium"}`}
+                className={`flex-1 text-sm truncate ${isActive ? "font-semibold" : "font-medium"}`}
               >
-                {mp.id === "mercado-livre" && singleMLName ? singleMLName : mp.name}
+                {store.store_name}
               </span>
               {isActive && <Check className="h-4 w-4 shrink-0 text-accent" />}
             </DropdownMenuItem>
           );
         })}
+
+        {sellerStores.length === 0 && (
+          <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+            Nenhuma loja cadastrada
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

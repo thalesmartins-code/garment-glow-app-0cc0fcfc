@@ -108,12 +108,12 @@ export function SellerMarketplaceBar({ className }: Props) {
       </DropdownMenu>
 
       {/* Divider */}
-      {availableMarketplaces.length > 0 && (
+      {selectedSeller && selectedSeller.stores.length > 0 && (
         <div className="h-5 w-px shrink-0 bg-border" />
       )}
 
-      {/* Marketplace tabs */}
-      {availableMarketplaces.length > 0 && (
+      {/* Store tabs */}
+      {selectedSeller && selectedSeller.stores.length > 0 && (
         <div className="flex items-center gap-0.5">
           <Button
             variant={selectedMarketplace === "all" ? "secondary" : "ghost"}
@@ -123,18 +123,21 @@ export function SellerMarketplaceBar({ className }: Props) {
           >
             Todos
           </Button>
-          {availableMarketplaces.map((mp) => (
-            <Button
-              key={mp.id}
-              variant={selectedMarketplace === mp.id ? "secondary" : "ghost"}
-              size="sm"
-              className="h-7 gap-1 px-2.5 text-xs"
-              onClick={() => setSelectedMarketplace(mp.id)}
-            >
-              <span>{mp.logo}</span>
-              <span className="hidden sm:inline">{mp.name}</span>
-            </Button>
-          ))}
+          {selectedSeller.stores.filter(s => s.is_active).map((store) => {
+            const mp = availableMarketplaces.find(m => m.id === store.marketplace);
+            return (
+              <Button
+                key={store.id}
+                variant={selectedMarketplace === store.id ? "secondary" : "ghost"}
+                size="sm"
+                className="h-7 gap-1 px-2.5 text-xs"
+                onClick={() => setSelectedMarketplace(store.id)}
+              >
+                <span>{mp?.logo ?? "🏪"}</span>
+                <span className="hidden sm:inline">{store.store_name}</span>
+              </Button>
+            );
+          })}
         </div>
       )}
     </div>
