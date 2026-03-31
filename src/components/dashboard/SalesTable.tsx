@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { getMarketplaceBrand } from "@/config/marketplaceConfig";
 import { ChevronUp, ChevronDown, ChevronsUpDown, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MarketplaceSales } from "@/data/mockData";
