@@ -67,7 +67,11 @@ export function FilterBar({
                     const mp = marketplaceOptions.find(m => m.value === selectedMarketplace);
                     return mp ? (
                       <span className="flex items-center gap-1.5">
-                        <span>{mp.logo}</span>
+                        {(() => {
+                          const brand = getMarketplaceBrand(mp.value);
+                          if (brand) { const B = brand.icon; return <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded bg-gradient-to-br ${brand.gradient}`}><B className="h-2.5 w-2.5 text-white" /></div>; }
+                          return null;
+                        })()}
                         <span>{mp.label}</span>
                       </span>
                     ) : selectedMarketplace;
@@ -78,14 +82,22 @@ export function FilterBar({
             <SelectContent>
               <SelectItem value="all">
                 <span className="flex items-center gap-1.5">
-                  <span>📊</span>
+                  {(() => {
+                    const brand = getMarketplaceBrand("total");
+                    if (brand) { const B = brand.icon; return <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded bg-gradient-to-br ${brand.gradient}`}><B className="h-2.5 w-2.5 text-white" /></div>; }
+                    return null;
+                  })()}
                   <span>Todos</span>
                 </span>
               </SelectItem>
               {marketplaceOptions.map((mp) => (
                 <SelectItem key={mp.value} value={mp.value}>
                   <span className="flex items-center gap-1.5">
-                    <span>{mp.logo}</span>
+                    {(() => {
+                      const brand = getMarketplaceBrand(mp.value);
+                      if (brand) { const B = brand.icon; return <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded bg-gradient-to-br ${brand.gradient}`}><B className="h-2.5 w-2.5 text-white" /></div>; }
+                      return null;
+                    })()}
                     <span>{mp.label}</span>
                   </span>
                 </SelectItem>
