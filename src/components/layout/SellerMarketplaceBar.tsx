@@ -76,10 +76,8 @@ export function SellerMarketplaceBar({ className, showStores = true }: Props) {
               key={seller.id}
               onClick={() => setSelectedSeller(seller.id)}
               className={cn(
-                "cursor-pointer gap-2.5 rounded-lg px-2.5 py-2.5 transition-colors duration-150",
-                selectedSeller?.id === seller.id
-                  ? "bg-muted font-medium"
-                  : "hover:bg-muted focus:bg-muted"
+                "cursor-pointer gap-2.5 rounded-lg px-2.5 py-2.5 transition-colors duration-150 hover:bg-muted focus:bg-muted",
+                selectedSeller?.id === seller.id && "bg-muted font-medium"
               )}
             >
               {seller.logo_url ? (
