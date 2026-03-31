@@ -17,6 +17,8 @@ const SELLER_TO_MP: Record<string, string> = {
   "amz":    "amazon",
   "shopee": "shopee",
   "magalu": "magalu",
+  "netshoes": "netshoes",
+  "dafiti":   "dafiti",
 };
 
 // Maps MarketplaceContext ids → SellerContext shortcodes
