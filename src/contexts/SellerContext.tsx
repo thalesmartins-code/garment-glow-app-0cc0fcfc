@@ -17,7 +17,7 @@ interface SellerContextType {
   loading: boolean;
   // Seller CRUD
   addSeller: (name: string) => Promise<Seller | null>;
-  updateSeller: (id: string, data: { name?: string; is_active?: boolean }) => Promise<void>;
+  updateSeller: (id: string, data: { name?: string; is_active?: boolean; logo_url?: string | null }) => Promise<void>;
   deleteSeller: (id: string) => Promise<boolean>;
   // Store CRUD
   addStore: (sellerId: string, input: AddStoreInput) => Promise<SellerStore | null>;
