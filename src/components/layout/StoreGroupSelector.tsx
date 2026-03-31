@@ -45,7 +45,7 @@ export function StoreGroupSelector({ className }: Props) {
   const chipBase =
     "h-7 px-2.5 text-xs rounded-lg border font-medium transition-colors cursor-pointer select-none inline-flex items-center gap-1.5 whitespace-nowrap";
   const chipActive = "bg-primary/10 text-primary border-primary/30";
-  const chipInactive = "border-border/50 text-muted-foreground hover:bg-accent/60";
+  const chipInactive = "border-border/50 text-muted-foreground hover:bg-muted/50";
 
   const handleStoreClick = (storeId: string) => {
     if (allSelected) {
