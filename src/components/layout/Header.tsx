@@ -129,25 +129,25 @@ export function Header({ title, subtitle, showSellerSwitcher = true, showMarketp
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 rounded-xl">
-            <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-48 rounded-xl p-1.5">
+            <DropdownMenuLabel className="px-2 py-1.5 text-xs text-muted-foreground font-normal">Minha Conta</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate(profilePath)}>
-              <User className="mr-2 h-4 w-4" />
+            <DropdownMenuItem onClick={() => navigate(profilePath)} className="rounded-lg px-2 py-2 text-sm hover:bg-accent/50 focus:bg-accent/50">
+              <User className="mr-2 h-4 w-4 text-muted-foreground" />
               Perfil
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate(settingsPath)}>
-              <SlidersHorizontal className="mr-2 h-4 w-4" />
+            <DropdownMenuItem onClick={() => navigate(settingsPath)} className="rounded-lg px-2 py-2 text-sm hover:bg-accent/50 focus:bg-accent/50">
+              <SlidersHorizontal className="mr-2 h-4 w-4 text-muted-foreground" />
               Configurações
             </DropdownMenuItem>
             {isApi && (
-              <DropdownMenuItem onClick={() => navigate("/api/sincronizacoes")}>
-                <DatabaseZap className="mr-2 h-4 w-4" />
+              <DropdownMenuItem onClick={() => navigate("/api/sincronizacoes")} className="rounded-lg px-2 py-2 text-sm hover:bg-accent/50 focus:bg-accent/50">
+                <DatabaseZap className="mr-2 h-4 w-4 text-muted-foreground" />
                 Sincronizações
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive" onClick={signOut}>
+            <DropdownMenuItem className="rounded-lg px-2 py-2 text-sm text-destructive hover:bg-destructive/8 focus:bg-destructive/8 focus:text-destructive" onClick={signOut}>
               <LogOut className="mr-2 h-4 w-4" />
               Sair
             </DropdownMenuItem>
