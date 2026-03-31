@@ -50,7 +50,7 @@ export default function Import() {
 
   const sellerData = getImportedDataForSeller(selectedSeller);
   const hasDataForSeller = hasImportedDataForSeller(selectedSeller);
-  const sellerName = sellerName;
+  const sellerName = selectedSellerObj?.name;
 
   const handleFileSelect = (content: string | ArrayBuffer, fileType: "csv" | "excel") => {
     let result: ImportResult;
