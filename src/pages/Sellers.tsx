@@ -45,10 +45,12 @@ export default function Sellers() {
   // --- Edit seller dialog ---
   const [editSellerId, setEditSellerId] = useState<string | null>(null);
   const [editSellerName, setEditSellerName] = useState("");
+  const [editSellerLogo, setEditSellerLogo] = useState("");
 
-  const openEditSeller = (id: string, name: string) => {
+  const openEditSeller = (id: string, name: string, logo_url: string | null) => {
     setEditSellerId(id);
     setEditSellerName(name);
+    setEditSellerLogo(logo_url ?? "");
   };
 
   const handleUpdateSeller = async () => {
