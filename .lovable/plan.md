@@ -1,27 +1,36 @@
 
 
-## Plano: Lojas lado a lado no header de Vendas
+## Plano: Otimizar seletor de lojas para marketplaces com loja única
 
-### Comportamento desejado
+### Problema atual
 
-- As lojas do seller aparecem como **tabs/chips horizontais** lado a lado no header (ao invés de um dropdown).
-- Quando um marketplace tem **apenas 1 loja**, ela aparece diretamente como um chip clicável.
-- Quando um marketplace tem **mais de 1 loja**, aparece um chip com dropdown para selecionar entre as lojas daquele marketplace.
-- Manter a opção "Todas" como primeiro item.
+Quando um marketplace tem apenas 1 loja, o dropdown mostra um **header do marketplace** (ícone + nome) e logo abaixo a **loja indentada** — redundante, pois não há escolha dentro daquele grupo.
+
+### Solução
+
+No `MarketplaceSwitcher.tsx`, alterar a renderização dos `storeGroups`:
+
+1. **Marketplace com 1 loja**: renderizar como item direto (sem header de grupo, sem indentação). Mostrar o ícone do marketplace + nome da loja como um `DropdownMenuItem` simples, no mesmo nível do "Todas as lojas".
+
+2. **Marketplace com 2+ lojas**: manter o comportamento atual — header do marketplace como label + lojas indentadas abaixo com checkboxes.
 
 ### Arquivo alterado
 
-**`src/components/layout/StoreGroupSelector.tsx`** — reescrever o componente:
+**`src/components/layout/MarketplaceSwitcher.tsx`** — linhas 195-236:
 
-1. **Layout horizontal**: trocar o Popover com lista vertical por uma `div flex` com chips lado a lado.
-2. **Chip "Todas"**: primeiro item, destacado quando `selectedStoreIds` está vazio.
-3. **Marketplaces com 1 loja**: renderizar diretamente um chip com o nome da loja + emoji do marketplace. Clique seleciona/deseleciona.
-4. **Marketplaces com 2+ lojas**: renderizar um `DropdownMenu` cujo trigger é um chip com o nome do marketplace + chevron. O dropdown lista as lojas individuais com checkboxes para multi-seleção.
-5. Manter a mesma lógica de seleção existente (`selectedStoreIds`, `toggleStoreId`, `setSelectedStoreIds`).
+- Dentro do `.map` de `storeGroups`, verificar `stores.length === 1`:
+  - **Se 1**: renderizar um `DropdownMenuItem` com o ícone do marketplace (h-7 w-7 com gradient) + nome da loja + checkbox. Sem header de grupo, sem indentação (`pl-2` ao invés de `pl-9`).
+  - **Se > 1**: manter o layout atual com header do marketplace e lojas indentadas.
 
-### Detalhes visuais
+### Detalhes técnicos
 
-- Chips com estilo similar ao restante do header: `h-7 px-2.5 text-xs rounded-lg border border-border/50`.
-- Chip ativo: `bg-primary/10 text-primary border-primary/30`.
-- Separador vertical (`w-px h-5 bg-border`) entre o seller e os chips de lojas (já existente).
+```text
+stores.length === 1:
+  [🟡 icon] Loja ML São Paulo     [✓]
+
+stores.length > 1:
+  [🟡] MERCADO LIVRE
+       Loja ML São Paulo          [✓]
+       Loja ML Rio de Janeiro     [ ]
+```
 
