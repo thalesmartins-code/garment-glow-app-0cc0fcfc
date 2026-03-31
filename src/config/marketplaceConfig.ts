@@ -1,4 +1,4 @@
-import { Handshake, Package, ShoppingBag, Store, Footprints, ShoppingCart, CircleDot, Home, BarChart3 } from "lucide-react";
+import { Handshake, Package, ShoppingBag, Store, Zap, ShoppingCart, CircleDot, Home, BarChart3 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export interface MarketplaceBrand {
@@ -47,7 +47,7 @@ export const MARKETPLACE_BRANDS: MarketplaceBrand[] = [
   {
     id: "netshoes",
     name: "Netshoes",
-    icon: Footprints,
+    icon: Zap,
     gradient: "from-purple-600 to-violet-500",
     badge: "bg-purple-500/10 text-purple-700 border-purple-500/30",
   },
