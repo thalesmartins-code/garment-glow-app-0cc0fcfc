@@ -179,7 +179,7 @@ export default function Sellers() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        variant="ghost" size="icon" className="h-7 w-7"
+                        variant="ghost" size="icon" className={`h-7 w-7 ${seller.is_active ? "hover:bg-orange-100 dark:hover:bg-orange-950" : "hover:bg-green-100 dark:hover:bg-green-950"}`}
                         onClick={() => toggleSellerActive(seller.id)}
                       >
                         <Power className={`h-3.5 w-3.5 ${seller.is_active ? "text-green-500" : "text-muted-foreground"}`} />
@@ -191,8 +191,8 @@ export default function Sellers() {
                   {/* Edit seller name */}
                   <Dialog open={editSellerId === seller.id} onOpenChange={(o) => { if (!o) setEditSellerId(null); }}>
                     <DialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditSeller(seller.id, seller.name)}>
-                        <Pencil className="h-3.5 w-3.5" />
+                      <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-accent" onClick={() => openEditSeller(seller.id, seller.name)}>
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
@@ -213,7 +213,7 @@ export default function Sellers() {
                   {/* Delete seller */}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" disabled={sellers.length <= 1}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" disabled={sellers.length <= 1}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </AlertDialogTrigger>
@@ -224,7 +224,7 @@ export default function Sellers() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={async () => {
+                        <AlertDialogAction className="bg-destructive hover:bg-destructive/90 text-destructive-foreground" onClick={async () => {
                           const ok = await deleteSeller(seller.id);
                           if (ok) toast({ title: `${seller.name} removido` });
                           else toast({ title: "Não é possível remover o único seller", variant: "destructive" });
@@ -252,7 +252,7 @@ export default function Sellers() {
                       </span>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-destructive">
+                          <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
                             <X className="h-3 w-3" />
                           </Button>
                         </AlertDialogTrigger>
@@ -263,7 +263,7 @@ export default function Sellers() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={async () => {
+                            <AlertDialogAction className="bg-destructive hover:bg-destructive/90 text-destructive-foreground" onClick={async () => {
                               await deleteStore(store.id);
                               toast({ title: `${store.store_name} removida` });
                             }}>Remover</AlertDialogAction>

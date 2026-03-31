@@ -326,6 +326,71 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_stores: {
+        Row: {
+          created_at: string
+          external_id: string | null
+          id: string
+          is_active: boolean
+          marketplace: string
+          seller_id: string
+          store_name: string
+        }
+        Insert: {
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          is_active?: boolean
+          marketplace: string
+          seller_id: string
+          store_name: string
+        }
+        Update: {
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          is_active?: boolean
+          marketplace?: string
+          seller_id?: string
+          store_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_stores_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "sellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sellers: {
+        Row: {
+          created_at: string
+          id: string
+          initials: string | null
+          is_active: boolean
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          initials?: string | null
+          is_active?: boolean
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          initials?: string | null
+          is_active?: boolean
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       shopee_orders: {
         Row: {
           agreed_price: number
