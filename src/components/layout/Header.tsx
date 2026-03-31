@@ -54,12 +54,20 @@ export function Header({ title, subtitle, showSellerSwitcher = true, showMarketp
                 variant="ghost"
                 className="h-10 gap-2.5 rounded-xl border-0 bg-secondary/50 px-3 hover:bg-secondary"
               >
-                <div
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold text-accent-foreground"
-                  style={{ background: "var(--gradient-primary)" }}
-                >
-                  {selectedSeller?.initials ?? "?"}
-                </div>
+                {selectedSeller?.logo_url ? (
+                  <img
+                    src={selectedSeller.logo_url}
+                    alt={selectedSeller.name}
+                    className="h-7 w-7 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold text-accent-foreground"
+                    style={{ background: "var(--gradient-primary)" }}
+                  >
+                    {selectedSeller?.initials ?? "?"}
+                  </div>
+                )}
                 <span className="hidden text-sm font-medium text-foreground sm:inline">{selectedSeller?.name ?? "Seller"}</span>
                 <ChevronDown className="ml-0.5 h-3.5 w-3.5 text-muted-foreground mx-0" />
               </Button>

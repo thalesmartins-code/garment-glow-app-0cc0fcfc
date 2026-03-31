@@ -68,7 +68,7 @@ export function MarketplaceSwitcher() {
 
   const allDotsExpanded = (
     <div className="flex items-center gap-1">
-      {marketplaces.map((mp) => {
+      {connectedMarketplaces.map((mp) => {
         const MpIcon = mp.icon;
         return (
           <div
