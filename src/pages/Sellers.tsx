@@ -370,11 +370,24 @@ export default function Sellers() {
                         }}>
                           <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                           <SelectContent>
-                            {MARKETPLACES_NO_TOTAL.map((mp) => (
-                              <SelectItem key={mp.id} value={mp.id}>
-                                <span className="flex items-center gap-2">{mp.logo} {mp.name}</span>
-                              </SelectItem>
-                            ))}
+                             {MARKETPLACES_NO_TOTAL.map((mp) => {
+                               const brand = getMarketplaceBrand(mp.id);
+                               const BrandIcon = brand?.icon;
+                               return (
+                                 <SelectItem key={mp.id} value={mp.id}>
+                                   <span className="flex items-center gap-2">
+                                     {BrandIcon ? (
+                                       <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded bg-gradient-to-br ${brand.gradient}`}>
+                                         <BrandIcon className="h-2.5 w-2.5 text-white" />
+                                       </div>
+                                     ) : (
+                                       <span>{mp.logo}</span>
+                                     )}
+                                     {mp.name}
+                                   </span>
+                                 </SelectItem>
+                               );
+                             })}
                           </SelectContent>
                         </Select>
                       </div>

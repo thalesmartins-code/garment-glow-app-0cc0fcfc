@@ -99,13 +99,22 @@ export function StoreGroupSelector({ className }: Props) {
         const selectedInGroup = mpStoreIds.filter((id) => selectedStoreIds.includes(id));
         const hasSelection = !allSelected && selectedInGroup.length > 0;
 
+        const groupBrand = getMarketplaceBrand(mpId);
+        const GroupIcon = groupBrand?.icon;
+
         return (
           <DropdownMenu key={mpId}>
             <DropdownMenuTrigger asChild>
               <button
                 className={cn(chipBase, hasSelection ? chipActive : chipInactive)}
               >
-                <span>{mp.logo}</span>
+                {GroupIcon ? (
+                  <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded bg-gradient-to-br ${groupBrand.gradient}`}>
+                    <GroupIcon className="h-2.5 w-2.5 text-white" />
+                  </div>
+                ) : (
+                  <span>{mp.logo}</span>
+                )}
                 <span>{mp.name}</span>
                 {hasSelection && (
                   <span className="text-[10px] opacity-70">
