@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { getMarketplaceBrand } from "@/config/marketplaceConfig";
 import { useMLStore } from "@/contexts/MLStoreContext";
 import { useMarketplace } from "@/contexts/MarketplaceContext";
 import { useSeller } from "@/contexts/SellerContext";
