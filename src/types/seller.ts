@@ -12,6 +12,7 @@ export interface Seller {
   id: string;
   name: string;
   initials: string;
+  logo_url: string | null;
   is_active: boolean;
   created_at: string;
   stores: SellerStore[];
