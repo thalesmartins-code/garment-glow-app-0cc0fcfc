@@ -27,8 +27,8 @@ export const MARKETPLACE_BRANDS: MarketplaceBrand[] = [
     id: "amazon",
     name: "Amazon",
     icon: Package,
-    gradient: "from-[#2162a1] to-[#1a4f85]",
-    badge: "bg-[#2162a1]/10 text-[#2162a1] border-[#2162a1]/30",
+    gradient: "from-[#131A22] to-[#232F3E]",
+    badge: "bg-[#131A22]/10 text-[#232F3E] border-[#131A22]/30",
   },
   {
     id: "shopee",
