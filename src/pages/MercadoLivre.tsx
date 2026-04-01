@@ -1432,7 +1432,7 @@ export default function MercadoLivre() {
             <HourlySalesTable hourly={effectiveHourly} />
             <TopSellingProducts products={effectiveProducts} loading={effectiveLoading} showOrigin={isAll} />
           </div>
-          <MarketplaceAccordion groups={marketplaceGroups} />
+          
         </>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
