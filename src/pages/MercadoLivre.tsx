@@ -942,18 +942,20 @@ export default function MercadoLivre() {
         if (!brand) return null;
 
         const storeKPIs = stores.map((store) => {
-          // For ML stores use real daily data, for others use mock
           const storeDaily =
             store.marketplace === "ml"
-              ? daily.filter(() => true) // real data already aggregated — split not possible without ml_user_id, use mock as fallback
+              ? daily.filter(() => true)
               : getStoreDailyData(store.id, store.marketplace, 30);
           const revenue = storeDaily.reduce((s, d) => s + d.total, 0);
           const orders = storeDaily.reduce((s, d) => s + d.qty, 0);
+          // Last 7 days sparkline
+          const last7 = storeDaily.slice(-7).map((d) => d.total);
           return {
             name: store.store_name,
             revenue,
             orders,
             avgTicket: orders > 0 ? revenue / orders : 0,
+            sparkline: last7,
           };
         });
 
@@ -967,7 +969,7 @@ export default function MercadoLivre() {
           stores: storeKPIs,
         };
       })
-      .filter((g): g is MarketplaceGroup => g !== null && g.revenue > 0);
+      .filter((g): g is NonNullable<typeof g> => g !== null && g.revenue > 0) as MarketplaceGroup[];
   }, [isAll, selectedSeller, daily]);
 
 

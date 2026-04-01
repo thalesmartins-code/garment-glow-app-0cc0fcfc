@@ -5,6 +5,30 @@ import { ChevronRight, ShoppingCart, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
+/* ── tiny sparkline (pure SVG, no deps) ── */
+function Sparkline({ data, className }: { data: number[]; className?: string }) {
+  const w = 56, h = 20;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const points = data
+    .map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / range) * h}`)
+    .join(" ");
+  const trending = data[data.length - 1] >= data[0];
+  return (
+    <svg width={w} height={h} className={className} viewBox={`0 0 ${w} ${h}`}>
+      <polyline
+        points={points}
+        fill="none"
+        stroke={trending ? "hsl(var(--primary))" : "hsl(var(--destructive))"}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 const currencyFmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -13,6 +37,7 @@ interface StoreKPI {
   revenue: number;
   orders: number;
   avgTicket: number;
+  sparkline?: number[];
 }
 
 export interface MarketplaceGroup {
@@ -80,7 +105,12 @@ export function MarketplaceAccordion({ groups }: Props) {
                 {g.stores.map((store) => (
                   <Card key={store.name} className="border-border/50">
                     <CardContent className="p-3 space-y-1">
-                      <p className="text-xs font-medium text-foreground truncate">{store.name}</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-medium text-foreground truncate flex-1">{store.name}</p>
+                        {store.sparkline && store.sparkline.length > 1 && (
+                          <Sparkline data={store.sparkline} className="shrink-0" />
+                        )}
+                      </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="font-semibold text-foreground tabular-nums">
                           {currencyFmt(store.revenue)}
