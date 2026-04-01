@@ -21,6 +21,7 @@ import { TopSellingProducts, type ProductSalesRow } from "@/components/mercadoli
 import { HourlySalesTable } from "@/components/mercadolivre/HourlySalesTable";
 import { MLStoreSelector } from "@/components/mercadolivre/MLStoreSelector";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
+import { MarketplaceAccordion, type MarketplaceGroup } from "@/components/mercadolivre/MarketplaceAccordion";
 import { SellerMarketplaceBar } from "@/components/layout/SellerMarketplaceBar";
 import {
   DollarSign,
@@ -888,6 +889,27 @@ export default function MercadoLivre() {
 
   const [showMpBreakdown, setShowMpBreakdown] = useState(false);
 
+  const MARKETPLACE_STROKE_COLORS: Record<string, string> = {
+    "mercado-livre": "hsl(45, 93%, 47%)",
+    amazon: "hsl(25, 95%, 53%)",
+    shopee: "hsl(15, 85%, 50%)",
+    magalu: "hsl(225, 70%, 55%)",
+  };
+
+  // Overlaid hourly chart data: { label, hour, "Mercado Livre": val, "Amazon": val, ... }
+  const overlaidHourlyData = useMemo(() => {
+    if (!isAll || !perMarketplaceHourly) return null;
+    const buckets = Array.from({ length: 24 }, (_, hour) => {
+      const row: Record<string, any> = { label: `${String(hour).padStart(2, "0")}h`, hour };
+      for (const mp of perMarketplaceHourly) {
+        const hourData = mp.data.filter((d) => d.hour === hour);
+        row[mp.name] = hourData.reduce((s, d) => s + d.total, 0);
+      }
+      return row;
+    });
+    return buckets;
+  }, [isAll, perMarketplaceHourly]);
+
   const perMarketplaceRevenue = useMemo(() => {
     if (!isAll) return [];
     const mpIds = ["mercado-livre", "amazon", "shopee", "magalu"] as const;
@@ -900,6 +922,33 @@ export default function MercadoLivre() {
       const revenue = mpDaily.reduce((s, d) => s + d.total, 0);
       return { ...mp, revenue };
     });
+  }, [isAll, daily]);
+
+  // Accordion breakdown groups
+  const marketplaceGroups = useMemo<MarketplaceGroup[]>(() => {
+    if (!isAll) return [];
+    const mpIds = ["mercado-livre", "amazon", "shopee", "magalu"] as const;
+    return mpIds.map((id) => {
+      const brand = getMarketplaceBrand(id)!;
+      const mpDaily = id === "mercado-livre" ? daily : getMarketplaceDailyData(id, 30);
+      const revenue = mpDaily.reduce((s, d) => s + d.total, 0);
+      const orders = mpDaily.reduce((s, d) => s + d.qty, 0);
+      return {
+        id,
+        name: brand.name,
+        icon: brand.icon,
+        gradient: brand.gradient,
+        revenue,
+        stores: [
+          {
+            name: brand.name,
+            revenue,
+            orders,
+            avgTicket: orders > 0 ? revenue / orders : 0,
+          },
+        ],
+      };
+    }).filter((g) => g.revenue > 0);
   }, [isAll, daily]);
 
 
@@ -1233,44 +1282,42 @@ export default function MercadoLivre() {
       </div>
 
       {/* === Hourly Charts === */}
-      {isAll && perMarketplaceHourly ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {perMarketplaceHourly.map((mp) => (
-            <Card key={mp.id}>
-              <CardHeader className="pb-2 px-4 pt-4">
-                <CardTitle className="text-sm">
-                  <span className="inline-flex items-center gap-1.5">
-                    {mp.icon}
-                    Venda / Hora — {mp.name}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <ResponsiveContainer width="100%" height={220}>
-                  <ComposedChart data={mp.chartData}>
-                    <defs>
-                      <linearGradient id={`total-${mp.id}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis yAxisId="revenue" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
-                    <YAxis yAxisId="orders" orientation="right" allowDecimals={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" />
-                    <RechartsTooltip
-                      formatter={(value: number, name: string) => name === "Pedidos" ? [value, name] : [currencyFmt(Number(value)), name]}
-                      contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", backgroundColor: "hsl(var(--card))", color: "hsl(var(--card-foreground))" }}
-                    />
-                    <Bar yAxisId="orders" dataKey="Pedidos" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} maxBarSize={20} />
-                    <Area yAxisId="revenue" type="monotone" dataKey="Venda Total" stroke="hsl(var(--accent))" fill={`url(#total-${mp.id})`} strokeWidth={2} />
-                    <Line yAxisId="revenue" type="monotone" dataKey="Venda Aprovada" stroke="hsl(var(--success))" strokeWidth={1.5} dot={false} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      {isAll && overlaidHourlyData && perMarketplaceHourly ? (
+        <Card>
+          <CardHeader className="pb-2 px-4 pt-4">
+            <CardTitle className="text-base">
+              <span className="inline-flex items-center gap-1.5">
+                <Clock3 className="w-4 h-4" />
+                Venda / Hora — Todos os Marketplaces
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <ResponsiveContainer width="100%" height={320}>
+              <ComposedChart data={overlaidHourlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" />
+                <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
+                <RechartsTooltip
+                  formatter={(value: number, name: string) => [currencyFmt(Number(value)), name]}
+                  contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", backgroundColor: "hsl(var(--card))", color: "hsl(var(--card-foreground))" }}
+                />
+                <Legend />
+                {perMarketplaceHourly.map((mp) => (
+                  <Line
+                    key={mp.id}
+                    type="monotone"
+                    dataKey={mp.name}
+                    stroke={MARKETPLACE_STROKE_COLORS[mp.id] || "hsl(var(--primary))"}
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                  />
+                ))}
+              </ComposedChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       ) : (dailyChartData.length > 0 || showHourlyChart) ? (
         <Card>
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1403,15 +1450,14 @@ export default function MercadoLivre() {
         </Card>
       ) : null}
 
-      {/* === Hourly Tables === */}
-      {isAll && perMarketplaceHourly ? (
+      {/* === Hourly Tables + Accordion === */}
+      {isAll ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-            {perMarketplaceHourly.map((mp) => (
-              <HourlySalesTable key={mp.id} hourly={mp.data} title={`Venda / Hora — ${mp.name}`} titleIcon={mp.icon} compact />
-            ))}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+            <HourlySalesTable hourly={effectiveHourly} />
+            <TopSellingProducts products={effectiveProducts} loading={effectiveLoading} showOrigin={isAll} />
           </div>
-          <TopSellingProducts products={effectiveProducts} loading={effectiveLoading} showOrigin={isAll} />
+          <MarketplaceAccordion groups={marketplaceGroups} />
         </>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
