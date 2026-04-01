@@ -960,7 +960,7 @@ export default function MercadoLivre() {
           }
         } else {
           // Use mock store data
-          const storeDaily = getStoreDailyData({ id: store.id, marketplace: mpShort }, 30);
+          const storeDaily = getStoreDailyData(store.id, mpShort, 30);
           revenue = storeDaily.reduce((s, d) => s + d.total, 0);
           orders = storeDaily.reduce((s, d) => s + d.qty, 0);
         }
