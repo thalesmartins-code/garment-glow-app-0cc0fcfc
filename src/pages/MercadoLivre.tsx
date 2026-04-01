@@ -969,7 +969,7 @@ export default function MercadoLivre() {
           stores: storeKPIs,
         };
       })
-      .filter((g): g is MarketplaceGroup => g !== null && g.revenue > 0) as MarketplaceGroup[];
+      .filter((g): g is NonNullable<typeof g> => g !== null && g.revenue > 0) as MarketplaceGroup[];
   }, [isAll, selectedSeller, daily]);
 
 
