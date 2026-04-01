@@ -5,6 +5,30 @@ import { ChevronRight, ShoppingCart, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
+/* ── tiny sparkline (pure SVG, no deps) ── */
+function Sparkline({ data, className }: { data: number[]; className?: string }) {
+  const w = 56, h = 20;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const points = data
+    .map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / range) * h}`)
+    .join(" ");
+  const trending = data[data.length - 1] >= data[0];
+  return (
+    <svg width={w} height={h} className={className} viewBox={`0 0 ${w} ${h}`}>
+      <polyline
+        points={points}
+        fill="none"
+        stroke={trending ? "hsl(var(--primary))" : "hsl(var(--destructive))"}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 const currencyFmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
