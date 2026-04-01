@@ -45,6 +45,10 @@ export default function VendasPorHora() {
             <Radar className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Radar</span>
           </TabsTrigger>
+          <TabsTrigger value="bubble" className="gap-1.5 text-xs sm:text-sm">
+            <Circle className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Bubble</span>
+          </TabsTrigger>
           <TabsTrigger value="combined" className="gap-1.5 text-xs sm:text-sm">
             <LayoutDashboard className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Combinado</span>
