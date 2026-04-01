@@ -22,7 +22,7 @@ import { TopSellingProducts, type ProductSalesRow } from "@/components/mercadoli
 import { HourlySalesTable } from "@/components/mercadolivre/HourlySalesTable";
 import { MLStoreSelector } from "@/components/mercadolivre/MLStoreSelector";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
-import { MarketplaceAccordion, type MarketplaceGroup } from "@/components/mercadolivre/MarketplaceAccordion";
+
 import { SellerMarketplaceBar } from "@/components/layout/SellerMarketplaceBar";
 import {
   DollarSign,
@@ -925,52 +925,6 @@ export default function MercadoLivre() {
     });
   }, [isAll, daily]);
 
-  // Accordion breakdown groups
-  const marketplaceGroups = useMemo<MarketplaceGroup[]>(() => {
-    if (!isAll || !selectedSeller) return [];
-    // Group stores by marketplace
-    const storesByMp = new Map<string, typeof selectedSeller.stores>();
-    for (const store of selectedSeller.stores.filter((s) => s.is_active)) {
-      const mpId = SELLER_TO_MP_ID[store.marketplace] ?? store.marketplace;
-      if (!storesByMp.has(mpId)) storesByMp.set(mpId, []);
-      storesByMp.get(mpId)!.push(store);
-    }
-
-    return Array.from(storesByMp.entries())
-      .map(([mpId, stores]) => {
-        const brand = getMarketplaceBrand(mpId);
-        if (!brand) return null;
-
-        const storeKPIs = stores.map((store) => {
-          const storeDaily =
-            store.marketplace === "ml"
-              ? daily.filter(() => true)
-              : getStoreDailyData(store.id, store.marketplace, 30);
-          const revenue = storeDaily.reduce((s, d) => s + d.total, 0);
-          const orders = storeDaily.reduce((s, d) => s + d.qty, 0);
-          // Last 7 days sparkline
-          const last7 = storeDaily.slice(-7).map((d) => d.total);
-          return {
-            name: store.store_name,
-            revenue,
-            orders,
-            avgTicket: orders > 0 ? revenue / orders : 0,
-            sparkline: last7,
-          };
-        });
-
-        const totalRevenue = storeKPIs.reduce((s, k) => s + k.revenue, 0);
-        return {
-          id: mpId,
-          name: brand.name,
-          icon: brand.icon,
-          gradient: brand.gradient,
-          revenue: totalRevenue,
-          stores: storeKPIs,
-        };
-      })
-      .filter((g): g is NonNullable<typeof g> => g !== null && g.revenue > 0) as MarketplaceGroup[];
-  }, [isAll, selectedSeller, daily]);
 
 
   // Show "not connected" when ML stores are selected but there's no valid API token
@@ -1478,7 +1432,7 @@ export default function MercadoLivre() {
             <HourlySalesTable hourly={effectiveHourly} />
             <TopSellingProducts products={effectiveProducts} loading={effectiveLoading} showOrigin={isAll} />
           </div>
-          <MarketplaceAccordion groups={marketplaceGroups} />
+          
         </>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
