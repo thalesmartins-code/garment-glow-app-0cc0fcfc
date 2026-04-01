@@ -1313,6 +1313,11 @@ export default function MercadoLivre() {
         />
       </div>
 
+      {/* === Revenue by Marketplace (Todos) === */}
+      {isAll && revenueByMarketplace.length > 0 && (
+        <RevenueByMarketplace groups={revenueByMarketplace} />
+      )}
+
       {/* === Hourly Charts === */}
       {isAll && overlaidHourlyData && perMarketplaceHourly ? (
         <Card>
