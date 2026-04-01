@@ -198,18 +198,6 @@ export function RevenueByMarketplace({ groups }: Props) {
                         );
                       })}
 
-                    {/* Single-store inline info */}
-                    {g.stores.length === 1 && (
-                      <motion.div
-                        className="flex items-center gap-3 pl-8 text-[11px] text-muted-foreground"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.3, delay: idx * 0.08 + 0.3 }}
-                      >
-                        <span>{g.totalOrders} pedidos</span>
-                        <span>TM {currencyFmt(g.totalOrders > 0 ? g.totalRevenue / g.totalOrders : 0)}</span>
-                      </motion.div>
-                    )}
                   </motion.div>
                 );
               })}
