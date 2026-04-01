@@ -1450,15 +1450,14 @@ export default function MercadoLivre() {
         </Card>
       ) : null}
 
-      {/* === Hourly Tables === */}
-      {isAll && perMarketplaceHourly ? (
+      {/* === Hourly Tables + Accordion === */}
+      {isAll ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-            {perMarketplaceHourly.map((mp) => (
-              <HourlySalesTable key={mp.id} hourly={mp.data} title={`Venda / Hora — ${mp.name}`} titleIcon={mp.icon} compact />
-            ))}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+            <HourlySalesTable hourly={effectiveHourly} />
+            <TopSellingProducts products={effectiveProducts} loading={effectiveLoading} showOrigin={isAll} />
           </div>
-          <TopSellingProducts products={effectiveProducts} loading={effectiveLoading} showOrigin={isAll} />
+          <MarketplaceAccordion groups={marketplaceGroups} />
         </>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
