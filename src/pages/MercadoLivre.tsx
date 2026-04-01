@@ -1282,32 +1282,42 @@ export default function MercadoLivre() {
       </div>
 
       {/* === Hourly Charts === */}
-      {isAll && perMarketplaceHourly ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {perMarketplaceHourly.map((mp) => (
-            <Card key={mp.id}>
-              <CardHeader className="pb-2 px-4 pt-4">
-                <CardTitle className="text-sm">
-                  <span className="inline-flex items-center gap-1.5">
-                    {mp.icon}
-                    Venda / Hora — {mp.name}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <ResponsiveContainer width="100%" height={220}>
-                  <ComposedChart data={mp.chartData}>
-                    <defs>
-                      <linearGradient id={`total-${mp.id}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis yAxisId="revenue" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
-                    <YAxis yAxisId="orders" orientation="right" allowDecimals={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" />
-                    <RechartsTooltip
+      {isAll && overlaidHourlyData && perMarketplaceHourly ? (
+        <Card>
+          <CardHeader className="pb-2 px-4 pt-4">
+            <CardTitle className="text-base">
+              <span className="inline-flex items-center gap-1.5">
+                <Clock3 className="w-4 h-4" />
+                Venda / Hora — Todos os Marketplaces
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <ResponsiveContainer width="100%" height={320}>
+              <ComposedChart data={overlaidHourlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" />
+                <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
+                <RechartsTooltip
+                  formatter={(value: number, name: string) => [currencyFmt(Number(value)), name]}
+                  contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", backgroundColor: "hsl(var(--card))", color: "hsl(var(--card-foreground))" }}
+                />
+                <Legend />
+                {perMarketplaceHourly.map((mp) => (
+                  <Line
+                    key={mp.id}
+                    type="monotone"
+                    dataKey={mp.name}
+                    stroke={MARKETPLACE_STROKE_COLORS[mp.id] || "hsl(var(--primary))"}
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                  />
+                ))}
+              </ComposedChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
                       formatter={(value: number, name: string) => name === "Pedidos" ? [value, name] : [currencyFmt(Number(value)), name]}
                       contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", backgroundColor: "hsl(var(--card))", color: "hsl(var(--card-foreground))" }}
                     />
