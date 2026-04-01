@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ScatterChart,
@@ -10,6 +11,13 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getMarketplaceHourlyData } from "@/data/marketplaceMockData";
 import { format, subDays } from "date-fns";
 
@@ -93,15 +101,44 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export function HourlyBubbleChart() {
+  const [selected, setSelected] = useState("all");
   const data = buildBubbleData();
+
+  const visibleMarketplaces =
+    selected === "all"
+      ? CHART_MARKETPLACES
+      : CHART_MARKETPLACES.filter((mp) => mp.key === selected);
 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Bubble Chart — Hora × Dia da Semana</CardTitle>
-        <p className="text-xs text-muted-foreground">
-          Tamanho da bolha = receita média (últimos 28 dias). Cor = marketplace.
-        </p>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <CardTitle className="text-base">Bubble Chart — Hora × Dia da Semana</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Tamanho da bolha = receita média (últimos 28 dias). Cor = marketplace.
+            </p>
+          </div>
+          <Select value={selected} onValueChange={setSelected}>
+            <SelectTrigger className="w-[180px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os marketplaces</SelectItem>
+              {CHART_MARKETPLACES.map((mp) => (
+                <SelectItem key={mp.key} value={mp.key}>
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="inline-block h-2.5 w-2.5 rounded-full"
+                      style={{ backgroundColor: mp.color }}
+                    />
+                    {mp.name}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={520}>
@@ -139,7 +176,7 @@ export function HourlyBubbleChart() {
                 <span className="text-xs">{value}</span>
               )}
             />
-            {CHART_MARKETPLACES.map((mp) => (
+            {visibleMarketplaces.map((mp) => (
               <Scatter
                 key={mp.key}
                 name={mp.name}
