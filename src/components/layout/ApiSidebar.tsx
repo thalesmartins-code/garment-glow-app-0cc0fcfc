@@ -1,4 +1,4 @@
-import { ArrowLeft, ClipboardList, Clock, Megaphone, Package, Plug, ShoppingBag, TrendingUp, Upload, Users } from "lucide-react";
+import { ArrowLeft, ClipboardList, Clock, FileText, Megaphone, Package, Plug, ShoppingBag, TrendingUp, Upload, Users } from "lucide-react";
 import { EnvironmentSidebar } from "./EnvironmentSidebar";
 
 const apiItems = [
@@ -9,6 +9,7 @@ const apiItems = [
   { icon: ClipboardList, label: "Pedidos", path: "/api/pedidos" },
   { icon: Megaphone, label: "Publicidade", path: "/api/anuncios" },
   { icon: Upload, label: "Importação", path: "/api/importacao" },
+  { icon: FileText, label: "Relatórios", path: "/api/relatorios" },
   
   { icon: Users, label: "Sellers", path: "/api/sellers" },
   { icon: Plug, label: "Integrações", path: "/api/integracoes" },
