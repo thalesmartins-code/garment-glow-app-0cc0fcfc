@@ -42,8 +42,6 @@ import {
   Clock3,
   Loader2,
   Handshake,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import {
   ComposedChart,
