@@ -13,6 +13,7 @@ interface StoreKPI {
   revenue: number;
   orders: number;
   avgTicket: number;
+  sparkline?: number[];
 }
 
 export interface MarketplaceGroup {
