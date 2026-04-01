@@ -17,9 +17,13 @@ interface Props {
 }
 
 const CHART_MARKETPLACES = [
-  { key: "amazon", color: "#131A22" },
-  { key: "shopee", color: "#d4532a" },
-  { key: "magalu", color: "#3b6dba" },
+  { key: "amazon", color: "#131A22", name: "Amazon" },
+  { key: "shopee", color: "#d4532a", name: "Shopee" },
+  { key: "magalu", color: "#3b6dba", name: "Magalu" },
+  { key: "netshoes", color: "#7a4db5", name: "Netshoes" },
+  { key: "dafiti", color: "#2a9d8f", name: "Dafiti" },
+  { key: "americanas", color: "#c44040", name: "Americanas" },
+  { key: "casasbahia", color: "#3a7cc4", name: "Casas Bahia" },
 ];
 
 const currencyFmt = (v: number) =>
