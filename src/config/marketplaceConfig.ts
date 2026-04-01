@@ -69,8 +69,8 @@ export const MARKETPLACE_BRANDS: MarketplaceBrand[] = [
     id: "casasbahia",
     name: "Casas Bahia",
     icon: Home,
-    gradient: "from-blue-500 to-blue-600",
-    badge: "bg-blue-500/10 text-blue-600 border-blue-500/30",
+    gradient: "from-[#3a7cc4] to-[#2e6aab]",
+    badge: "bg-[#3a7cc4]/10 text-[#3a7cc4] border-[#3a7cc4]/30",
   },
   {
     id: "total",
