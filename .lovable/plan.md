@@ -1,54 +1,47 @@
 
 
-## Dashboard de Faturamento por Marketplace e por Loja (visão "Todos")
+## Refatorar RevenueByMarketplace: Barra resumida + Expandir para detalhes
 
-### O que será criado
+### O que muda
 
-Uma nova seção no dashboard "Todos" que mostra o faturamento discriminado por marketplace e por loja, usando barras horizontais empilhadas. Fica abaixo dos KPIs principais e acima do gráfico de Venda/Hora.
+**Estado minimizado (padrão):** Uma única barra horizontal segmentada mostrando a proporção de faturamento de cada marketplace por cor, com o total ao lado. Clicável.
 
-### Layout
+**Estado expandido (ao clicar):** Mostra o detalhamento atual com barras por marketplace e por loja, com barras alinhadas à margem esquerda (remover `min-w-[100px]` dos labels, usar layout fixo com grid ou widths fixos para que as barras comecem todas no mesmo ponto).
 
 ```text
-┌───────────────────────────────────────────────────────────┐
-│  Faturamento por Marketplace                              │
-│                                                           │
-│  Mercado Livre ████████████████████████████  R$ 45.200  52%│
-│    ├ ML SP     ██████████████████           R$ 28.100     │
-│    └ ML RJ     ████████████                 R$ 17.100     │
-│                                                           │
-│  Shopee        ████████████████             R$ 22.800  26%│
-│    └ Shopee SP ████████████████             R$ 22.800     │
-│                                                           │
-│  Amazon        ██████████                   R$ 12.400  14%│
-│    └ Amazon BR ██████████                   R$ 12.400     │
-│                                                           │
-│  Magalu        ██████                       R$  6.800   8%│
-│    └ Magalu SP ██████                       R$  6.800     │
-└───────────────────────────────────────────────────────────┘
+MINIMIZADO:
+┌─────────────────────────────────────────────────────┐
+│ ▸ Faturamento por Marketplace    R$ 87.200          │
+│   ██████████████████████████░░░░░░░░░░░░░░░░░░░░░░  │
+│   (segmentos coloridos proporcionais)               │
+└─────────────────────────────────────────────────────┘
+
+EXPANDIDO (clicou):
+┌─────────────────────────────────────────────────────┐
+│ ▾ Faturamento por Marketplace    R$ 87.200          │
+│   ██████████████████████████░░░░░░░░░░░░░░░░░░░░░░  │
+│                                                     │
+│ 🟡 ML      ████████████████████████████  R$ 45.200  │
+│   ML SP    ██████████████████           R$ 28.100   │
+│   ML RJ    ████████████                 R$ 17.100   │
+│                                                     │
+│ 🟠 Shopee  ████████████████             R$ 22.800   │
+│   ...                                               │
+└─────────────────────────────────────────────────────┘
 ```
 
-- Cada marketplace aparece com barra horizontal proporcional à receita total
-- Abaixo de cada marketplace, as lojas individuais com barras menores (indent visual)
-- Cores das barras seguem o brand de cada marketplace (`marketplaceConfig.ts`)
-- Pedidos e ticket médio exibidos em texto secundário ao lado do valor
-
-### Dados
-
-- Utiliza `selectedSeller.stores` para obter as lojas reais agrupadas por marketplace
-- Para lojas ML: usa `daily` (dados reais do Supabase)
-- Para lojas não-ML: usa `getStoreDailyData()` do `storeMockData.ts`
-- Agrupa por marketplace usando `SELLER_TO_MP_ID`
-
-### Arquivos alterados
+### Arquivo alterado
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/components/mercadolivre/RevenueByMarketplace.tsx` | **Novo** — componente com barras horizontais por marketplace/loja |
-| `src/pages/MercadoLivre.tsx` | Adicionar `useMemo` para calcular dados por marketplace/loja; renderizar `RevenueByMarketplace` na seção `isAll` |
+| `src/components/mercadolivre/RevenueByMarketplace.tsx` | Adicionar estado `expanded`, barra segmentada resumida, Collapsible para detalhes, alinhar barras à esquerda |
 
 ### Detalhes técnicos
 
-- O componente `RevenueByMarketplace` recebe um array de grupos `{ mpId, mpName, icon, totalRevenue, totalOrders, stores: { name, revenue, orders }[] }`
-- Barras horizontais implementadas com `div` + width percentual (sem dependência de lib de chart)
-- Substitui o breakdown atual (`perMarketplaceRevenue` com grid de mini-cards e chevron toggle) por esta seção mais completa e sempre visível
+- Usar `useState(false)` para controlar expanded/collapsed
+- Barra segmentada: um `div` flex com segmentos coloridos proporcionais ao `pct` de cada marketplace, com tooltip ou legenda inline
+- Usar `AnimatePresence` + `motion.div` para animar a abertura/fechamento
+- Alinhar barras: trocar `min-w-[100px]` dos labels por `w-[100px]` fixo (ou usar CSS grid com colunas fixas) para que todas as barras iniciem na mesma posição horizontal
+- Ícone chevron (▸/▾) no header indica estado
+- A barra segmentada fica sempre visível (tanto minimizado quanto expandido)
 
