@@ -7,6 +7,7 @@ const apiItems = [
   { icon: ShoppingBag, label: "Anúncios", path: "/api/produtos" },
   { icon: ClipboardList, label: "Pedidos", path: "/api/pedidos" },
   { icon: Megaphone, label: "Publicidade", path: "/api/anuncios" },
+  { icon: Clock, label: "Venda/Hora", path: "/api/vendas-hora" },
   { icon: Upload, label: "Importação", path: "/api/importacao" },
   
   { icon: Users, label: "Sellers", path: "/api/sellers" },

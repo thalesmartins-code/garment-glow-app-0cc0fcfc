@@ -112,6 +112,10 @@ const App = () => (
                           element={<RoleRoute><MLSincronizacoes /></RoleRoute>}
                         />
                         <Route
+                          path="/api/vendas-hora"
+                          element={<RoleRoute><VendasPorHora /></RoleRoute>}
+                        />
+                        <Route
                           path="/api/importacao"
                           element={<RoleRoute><MLImportacao /></RoleRoute>}
                         />
