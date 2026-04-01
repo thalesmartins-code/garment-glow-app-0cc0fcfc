@@ -215,6 +215,7 @@ function generateInventoryItems(seed: number, marketplace: string, count: number
 
 // Config per marketplace
 const MP_CONFIG: Record<string, { seed: number; orders: [number, number]; ticket: [number, number]; inventoryCount: number }> = {
+  "mercado-livre": { seed: 7, orders: [25, 70], ticket: [60, 200], inventoryCount: 30 },
   amazon:     { seed: 42,  orders: [15, 45], ticket: [80, 250],  inventoryCount: 25 },
   shopee:     { seed: 137, orders: [30, 80], ticket: [40, 120],  inventoryCount: 20 },
   magalu:     { seed: 256, orders: [10, 30], ticket: [100, 350], inventoryCount: 15 },
