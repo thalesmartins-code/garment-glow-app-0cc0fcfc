@@ -17,9 +17,13 @@ interface Props {
 }
 
 const CHART_MARKETPLACES = [
-  { key: "amazon", color: "#131A22" },
-  { key: "shopee", color: "#d4532a" },
-  { key: "magalu", color: "#3b6dba" },
+  { key: "amazon", color: "#131A22", name: "Amazon" },
+  { key: "shopee", color: "#d4532a", name: "Shopee" },
+  { key: "magalu", color: "#3b6dba", name: "Magalu" },
+  { key: "netshoes", color: "#7a4db5", name: "Netshoes" },
+  { key: "dafiti", color: "#2a9d8f", name: "Dafiti" },
+  { key: "americanas", color: "#c44040", name: "Americanas" },
+  { key: "casasbahia", color: "#3a7cc4", name: "Casas Bahia" },
 ];
 
 const currencyFmt = (v: number) =>
@@ -56,10 +60,10 @@ export function HourlyStackedBars({ date }: Props) {
               }
             />
             <Tooltip
-              formatter={(value: number, name: string) => [
-                currencyFmt(value),
-                MARKETPLACE_BRANDS.find((b) => b.id === name || b.name === name)?.name ?? name,
-              ]}
+              formatter={(value: number, name: string) => {
+                const mp = CHART_MARKETPLACES.find((m) => m.key === name);
+                return [currencyFmt(value), mp?.name ?? name];
+              }}
               contentStyle={{
                 backgroundColor: "hsl(var(--card))",
                 border: "1px solid hsl(var(--border))",
@@ -69,7 +73,7 @@ export function HourlyStackedBars({ date }: Props) {
             />
             <Legend
               formatter={(value: string) =>
-                MARKETPLACE_BRANDS.find((b) => b.id === value)?.name ?? value
+                CHART_MARKETPLACES.find((m) => m.key === value)?.name ?? value
               }
             />
             {CHART_MARKETPLACES.map((mp) => (
