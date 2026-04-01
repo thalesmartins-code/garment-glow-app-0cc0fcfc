@@ -20,8 +20,8 @@ export const MARKETPLACE_BRANDS: MarketplaceBrand[] = [
     id: "mercado-livre",
     name: "Mercado Livre",
     icon: Handshake,
-    gradient: "from-yellow-500 to-amber-500",
-    badge: "bg-yellow-500/10 text-yellow-700 border-yellow-500/30",
+    gradient: "from-[#e6b422] to-[#c9981a]",
+    badge: "bg-[#e6b422]/10 text-[#b8911a] border-[#e6b422]/30",
   },
   {
     id: "amazon",
