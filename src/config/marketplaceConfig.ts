@@ -34,8 +34,8 @@ export const MARKETPLACE_BRANDS: MarketplaceBrand[] = [
     id: "shopee",
     name: "Shopee",
     icon: ShoppingBag,
-    gradient: "from-orange-600 to-red-500",
-    badge: "bg-orange-500/10 text-orange-600 border-orange-500/30",
+    gradient: "from-[#d4532a] to-[#b8412a]",
+    badge: "bg-[#d4532a]/10 text-[#d4532a] border-[#d4532a]/30",
   },
   {
     id: "magalu",
