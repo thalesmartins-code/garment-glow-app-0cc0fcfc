@@ -4,7 +4,8 @@ import { HourlyStackedBars } from "@/components/mercadolivre/HourlyStackedBars";
 import { HourlyRadar } from "@/components/mercadolivre/HourlyRadar";
 import { HourlySalesTable } from "@/components/mercadolivre/HourlySalesTable";
 import { getAllMarketplaceMockHourly } from "@/data/marketplaceMockData";
-import { Clock, Grid3X3, BarChart3, Radar, LayoutDashboard } from "lucide-react";
+import { Clock, Grid3X3, BarChart3, Radar, LayoutDashboard, Circle } from "lucide-react";
+import { HourlyBubbleChart } from "@/components/mercadolivre/HourlyBubbleChart";
 import { motion } from "framer-motion";
 
 export default function VendasPorHora() {
@@ -31,7 +32,7 @@ export default function VendasPorHora() {
       </motion.div>
 
       <Tabs defaultValue="heatmap" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 max-w-xl">
+        <TabsList className="grid w-full grid-cols-5 max-w-2xl">
           <TabsTrigger value="heatmap" className="gap-1.5 text-xs sm:text-sm">
             <Grid3X3 className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Heatmap</span>
@@ -43,6 +44,10 @@ export default function VendasPorHora() {
           <TabsTrigger value="radar" className="gap-1.5 text-xs sm:text-sm">
             <Radar className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Radar</span>
+          </TabsTrigger>
+          <TabsTrigger value="bubble" className="gap-1.5 text-xs sm:text-sm">
+            <Circle className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Bubble</span>
           </TabsTrigger>
           <TabsTrigger value="combined" className="gap-1.5 text-xs sm:text-sm">
             <LayoutDashboard className="h-3.5 w-3.5" />
@@ -65,6 +70,12 @@ export default function VendasPorHora() {
         <TabsContent value="radar">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
             <HourlyRadar />
+          </motion.div>
+        </TabsContent>
+
+        <TabsContent value="bubble">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+            <HourlyBubbleChart />
           </motion.div>
         </TabsContent>
 
