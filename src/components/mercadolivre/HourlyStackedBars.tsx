@@ -73,7 +73,7 @@ export function HourlyStackedBars({ date }: Props) {
             />
             <Legend
               formatter={(value: string) =>
-                MARKETPLACE_BRANDS.find((b) => b.id === value)?.name ?? value
+                CHART_MARKETPLACES.find((m) => m.key === value)?.name ?? value
               }
             />
             {CHART_MARKETPLACES.map((mp) => (
