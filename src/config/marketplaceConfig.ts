@@ -48,8 +48,8 @@ export const MARKETPLACE_BRANDS: MarketplaceBrand[] = [
     id: "netshoes",
     name: "Netshoes",
     icon: SportShoe,
-    gradient: "from-purple-600 to-violet-500",
-    badge: "bg-purple-500/10 text-purple-700 border-purple-500/30",
+    gradient: "from-[#7a4db5] to-[#6a3fa0]",
+    badge: "bg-[#7a4db5]/10 text-[#7a4db5] border-[#7a4db5]/30",
   },
   {
     id: "dafiti",
