@@ -4,7 +4,8 @@ import { HourlyStackedBars } from "@/components/mercadolivre/HourlyStackedBars";
 import { HourlyRadar } from "@/components/mercadolivre/HourlyRadar";
 import { HourlySalesTable } from "@/components/mercadolivre/HourlySalesTable";
 import { getAllMarketplaceMockHourly } from "@/data/marketplaceMockData";
-import { Clock, Grid3X3, BarChart3, Radar, LayoutDashboard } from "lucide-react";
+import { Clock, Grid3X3, BarChart3, Radar, LayoutDashboard, Circle } from "lucide-react";
+import { HourlyBubbleChart } from "@/components/mercadolivre/HourlyBubbleChart";
 import { motion } from "framer-motion";
 
 export default function VendasPorHora() {
