@@ -58,7 +58,7 @@ export function RevenueByMarketplace({ groups }: Props) {
         </CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-4 space-y-4">
-        {groups.map((g) => {
+        {groups.map((g, idx) => {
           const pct = grandTotal > 0 ? ((g.totalRevenue / grandTotal) * 100) : 0;
           const barW = Math.max((g.totalRevenue / maxRevenue) * 100, 2);
           const color = barColor(g.gradient);
