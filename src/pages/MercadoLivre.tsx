@@ -1051,65 +1051,6 @@ export default function MercadoLivre() {
               className="text-center [&_div]:justify-center [&_span]:justify-center [&_p]:text-center [&>div]:py-1.5 bg-gradient-to-br from-[hsl(217,70%,45%)]/10 via-[hsl(217,70%,45%)]/5 to-transparent shadow-[0_0_12px_hsl(217,70%,45%,0.12)] border-[hsl(217,70%,45%)]/15 [&_p]:text-2xl [&_p]:font-bold"
             />
           </div>
-          {isAll && (
-            <>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-5 w-5 p-0 mt-1"
-                onClick={() => setShowMpBreakdown(!showMpBreakdown)}
-              >
-                {showMpBreakdown ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              </Button>
-              <AnimatePresence>
-                {showMpBreakdown && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
-                    className="grid grid-cols-4 gap-2.5 mt-2 overflow-hidden min-w-[600px] -mx-[calc((600px-288px)/2)]"
-                  >
-                    {perMarketplaceRevenue.map((mp, index) => {
-                      const totalRevenue = perMarketplaceRevenue.reduce((sum, m) => sum + m.revenue, 0);
-                      const pct = totalRevenue > 0 ? ((mp.revenue / totalRevenue) * 100).toFixed(1) : "0.0";
-                      return (
-                        <Tooltip key={mp.id}>
-                          <TooltipTrigger asChild>
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.8 }}
-                              transition={{ duration: 0.25, delay: index * 0.05, ease: "easeOut" }}
-                            >
-                              <Card className="cursor-default">
-                                <CardContent className="p-3 flex gap-3 items-center">
-                                  <div className="flex-1 min-w-0">
-                                    <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
-                                      <mp.icon className="h-3.5 w-3.5 shrink-0" />
-                                      <span className="truncate">{mp.name}</span>
-                                    </span>
-                                    <p className={`font-bold leading-tight ${mp.revenue >= 1000000 ? "text-xs" : mp.revenue >= 100000 ? "text-sm" : "text-base"}`}>{currencyFmt(mp.revenue)}</p>
-                                    <span className="text-[11px] text-muted-foreground">{pct}%</span>
-                                  </div>
-                                  <div className={`rounded-xl w-8 h-8 flex items-center justify-center shrink-0 bg-gradient-to-br ${mp.color} text-white`}>
-                                    <mp.icon className="h-4 w-4" />
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            </motion.div>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p className="text-xs">{pct}% da receita total</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      );
-                    })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </>
-          )}
         </div>
         <div className="flex-1 min-w-0 flex items-center justify-end gap-2 flex-wrap">
           {isML && <MLStoreSelector />}
