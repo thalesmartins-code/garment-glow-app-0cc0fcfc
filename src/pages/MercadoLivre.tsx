@@ -1014,13 +1014,22 @@ export default function MercadoLivre() {
       {/* Seller + Marketplace selector */}
       <SellerMarketplaceBar />
 
-      <Tabs defaultValue="vendas" className="space-y-4">
+      <Tabs defaultValue="vendas" className="space-y-4" onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="vendas">Vendas</TabsTrigger>
           <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="vendas" className="space-y-5 mt-0">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+          >
+            {activeTab === "vendas" && (
+        <TabsContent value="vendas" className="space-y-5 mt-0" forceMount>
 
       <AnimatePresence>
         {syncProgress && (() => {
