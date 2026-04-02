@@ -1,17 +1,17 @@
 import {
   ArrowLeft,
   ClipboardList,
+  Clock,
+  FileBarChart,
   Megaphone,
   MessageCircleQuestion,
   Package,
   PackageX,
   Plug,
   Receipt,
-  RefreshCw,
   ShoppingBag,
   Star,
   TrendingUp,
-  Upload,
   Users,
 } from "lucide-react";
 import { EnvironmentSidebar, type SidebarNavSection } from "./EnvironmentSidebar";
@@ -20,7 +20,8 @@ const apiSections: SidebarNavSection[] = [
   {
     // Unlabelled — top-level overview
     items: [
-      { icon: TrendingUp, label: "Vendas", path: "/api" },
+      { icon: TrendingUp, label: "Vendas",       path: "/api"            },
+      { icon: Clock,      label: "Venda / Hora", path: "/api/vendas-hora" },
     ],
   },
   {
@@ -34,25 +35,24 @@ const apiSections: SidebarNavSection[] = [
   {
     label: "Crescimento",
     items: [
-      { icon: Megaphone, label: "Publicidade", path: "/api/anuncios"   },
-      { icon: Receipt,   label: "Financeiro",  path: "/api/financeiro" },
+      { icon: Megaphone,    label: "Publicidade", path: "/api/anuncios"   },
+      { icon: Receipt,      label: "Financeiro",  path: "/api/financeiro" },
+      { icon: FileBarChart, label: "Relatórios",  path: "/api/relatorios" },
     ],
   },
   {
     label: "Relacionamento",
     items: [
-      { icon: Star,                   label: "Reputação",   path: "/api/reputacao",  comingSoon: true },
-      { icon: PackageX,               label: "Devoluções",  path: "/api/devolucoes", comingSoon: true },
-      { icon: MessageCircleQuestion,  label: "Perguntas",   path: "/api/perguntas",  comingSoon: true },
+      { icon: Star,                  label: "Reputação",  path: "/api/reputacao",  comingSoon: true },
+      { icon: PackageX,              label: "Devoluções", path: "/api/devolucoes", comingSoon: true },
+      { icon: MessageCircleQuestion, label: "Perguntas",  path: "/api/perguntas",  comingSoon: true },
     ],
   },
   {
     label: "Sistema",
     items: [
-      { icon: Upload,    label: "Importação",     path: "/api/importacao"     },
-      { icon: RefreshCw, label: "Sincronizações", path: "/api/sincronizacoes" },
-      { icon: Users,     label: "Sellers",        path: "/api/sellers"        },
-      { icon: Plug,      label: "Integrações",    path: "/api/integracoes"    },
+      { icon: Users, label: "Sellers",     path: "/api/sellers"     },
+      { icon: Plug,  label: "Integrações", path: "/api/integracoes" },
     ],
   },
 ];

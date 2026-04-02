@@ -16,6 +16,7 @@ import { ImportPreviewTable } from "@/components/import/marketplace/ImportPrevie
 import { ImportOrdersPreviewTable } from "@/components/import/marketplace/ImportOrdersPreviewTable";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { MARKETPLACE_BRANDS } from "@/config/marketplaceConfig";
+import { SellerMarketplaceBar } from "@/components/layout/SellerMarketplaceBar";
 
 const marketplaces: { id: MarketplaceType; label: string; icon: React.ElementType; color: string }[] =
   MARKETPLACE_BRANDS
@@ -78,7 +79,7 @@ export default function MLImportacao() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 py-4">
+      <div className="flex items-start justify-between gap-4 pt-1 pb-4">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-foreground flex items-center gap-2">
             <Upload className="h-5 w-5 text-primary" />
@@ -89,6 +90,8 @@ export default function MLImportacao() {
           </p>
         </div>
       </div>
+
+      <SellerMarketplaceBar showStores={false} />
 
       <MarketplaceSelector
         marketplaces={marketplaces}

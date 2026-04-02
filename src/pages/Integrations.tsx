@@ -240,7 +240,8 @@ export default function Integrations() {
           expires_at: expiresAt,
           ml_user_id: String(tokenData.user_id),
           token_type: "bearer",
-        },
+          seller_id: selectedSeller?.id || null,
+        } as any,
         { onConflict: "user_id,ml_user_id" },
       );
     } catch (e) {
@@ -560,7 +561,7 @@ export default function Integrations() {
 
       const today = new Date().toISOString().substring(0, 10);
       const { data, error } = await supabase.functions.invoke("mercado-libre-integration", {
-        body: { access_token, date_from: today, date_to: today },
+        body: { access_token, date_from: today, date_to: today, seller_id: selectedSeller?.id || null },
       });
 
       if (error || !data?.success) {
@@ -874,7 +875,7 @@ export default function Integrations() {
                     <p className="text-xs font-medium text-muted-foreground">Lojas conectadas ({mlStores.length})</p>
                     {mlStores.map((store) => (
                       <div key={store.ml_user_id} className="flex items-center gap-2 p-2 rounded-lg bg-secondary/50">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-yellow-500 to-amber-500">
+                        <div className={`flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br ${getMarketplaceBrand("ml")?.gradient ?? "from-[#e6b422] to-[#c9981a]"}`}>
                           <Store className="h-3 w-3 text-white" />
                         </div>
                         {editingStoreId === store.ml_user_id ? (
