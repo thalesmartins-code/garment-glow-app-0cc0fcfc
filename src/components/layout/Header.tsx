@@ -14,7 +14,7 @@ import { useSeller } from "@/contexts/SellerContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { MarketplaceSwitcher } from "./MarketplaceSwitcher";
 import { HistoricalSyncModal } from "@/components/mercadolivre/HistoricalSyncModal";
-import { useMLStore } from "@/contexts/MLStoreContext";
+import { useMLStoreSafe } from "@/contexts/MLStoreContext";
 
 interface HeaderProps {
   title: string;
@@ -29,7 +29,7 @@ export function Header({ title, subtitle, showSellerSwitcher = true, showMarketp
   const navigate = useNavigate();
   const location = useLocation();
   const isApi = location.pathname.startsWith("/api");
-  const mlStore = isApi ? useMLStore() : null;
+  const mlStore = useMLStoreSafe();
   const profilePath = isApi ? "/api/perfil" : "/perfil";
   const settingsPath = isApi ? "/api/integracoes" : "/sheets/configuracoes";
   const displayName = profile?.full_name || "Usuário";
