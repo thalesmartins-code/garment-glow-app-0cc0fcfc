@@ -1415,6 +1415,12 @@ export default function MercadoLivre() {
           <TopSellingProducts products={effectiveProducts} loading={effectiveLoading} showOrigin={isAll} />
         </div>
       )}
+        </TabsContent>
+
+        <TabsContent value="relatorios" className="mt-0">
+          <MLRelatorios />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
