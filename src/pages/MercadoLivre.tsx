@@ -626,6 +626,10 @@ export default function MercadoLivre() {
 
         const fromDateStr = format(rangeStart, "yyyy-MM-dd");
         const toDateStr = format(rangeEnd, "yyyy-MM-dd");
+        const { fetchFrom, fetchTo, currentFrom, currentTo } = getComparisonRanges(
+          effectiveFrom ? { from: effectiveFrom, to: effectiveTo ?? effectiveFrom } : null,
+          effectiveFrom ? 0 : (opts?.periodDays ?? period),
+        );
 
         // Sync each token in small chunks to avoid API truncation on larger periods
         const totalDays = Math.round((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
@@ -796,7 +800,7 @@ export default function MercadoLivre() {
     void loadFromCache(fetchFrom, fetchTo);
     void loadHourlyCache();
     void loadProductCache(currentFrom, currentTo);
-  }, [user, loadFromCache, loadHourlyCache, loadProductCache, activeFilterKey]);
+  }, [user, loadFromCache, loadHourlyCache, loadProductCache, activeFilterKey, fetchFrom, fetchTo, currentFrom, currentTo]);
 
   const handleConfirm = useCallback(() => {
     if (pendingRange?.from) {
