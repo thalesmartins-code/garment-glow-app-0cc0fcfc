@@ -1,4 +1,4 @@
-import { Bell, Check, ChevronDown, DatabaseZap, LogOut, SlidersHorizontal, Store, Upload, User } from "lucide-react";
+import { Bell, Check, ChevronDown, DatabaseZap, History, LogOut, SlidersHorizontal, Store, Upload, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSeller } from "@/contexts/SellerContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { MarketplaceSwitcher } from "./MarketplaceSwitcher";
+import { HistoricalSyncModal } from "@/components/mercadolivre/HistoricalSyncModal";
+import { useMLStore } from "@/contexts/MLStoreContext";
 
 interface HeaderProps {
   title: string;
