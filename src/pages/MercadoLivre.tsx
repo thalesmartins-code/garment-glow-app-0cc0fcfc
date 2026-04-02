@@ -23,6 +23,7 @@ import { HourlySalesTable } from "@/components/mercadolivre/HourlySalesTable";
 import { RevenueByMarketplace, type MarketplaceRevenueGroup } from "@/components/mercadolivre/RevenueByMarketplace";
 import { MLStoreSelector } from "@/components/mercadolivre/MLStoreSelector";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
+import { GoalsCard } from "@/components/mercadolivre/GoalsCard";
 
 import { SellerMarketplaceBar } from "@/components/layout/SellerMarketplaceBar";
 import {
@@ -1334,7 +1335,8 @@ export default function MercadoLivre() {
         <RevenueByMarketplace groups={revenueByMarketplace} />
       )}
 
-      {/* === Hourly Charts === */}
+      {/* === Hourly Charts + Goals === */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
       {isAll && overlaidHourlyData && perMarketplaceHourly ? (
         <Card>
           <div className="px-4 pt-4 pb-1">
@@ -1482,7 +1484,15 @@ export default function MercadoLivre() {
             )}
           </CardContent>
         </Card>
-      ) : null}
+      ) : <div /> /* empty grid cell when no chart */}
+
+      <GoalsCard
+        currentRevenue={effectiveMetrics?.total_revenue ?? 0}
+        currentOrders={effectiveMetrics?.units_sold ?? 0}
+        currentTicket={effectiveMetrics?.avg_ticket ?? 0}
+        currentConversion={effectiveMetrics?.conversion_rate ?? 0}
+      />
+      </div>
 
       {/* === Hourly Tables + Accordion === */}
       {isAll ? (
