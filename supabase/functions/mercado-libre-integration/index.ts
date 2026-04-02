@@ -488,6 +488,7 @@ serve(async (req) => {
                 permalink: user.permalink,
                 active_listings: activeListings,
                 synced_at: syncedAt,
+                ...(seller_id ? { seller_id } : {}),
               },
               { onConflict: "user_id,ml_user_id" },
             )
