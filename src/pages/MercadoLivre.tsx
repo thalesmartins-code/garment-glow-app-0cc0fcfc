@@ -1394,16 +1394,16 @@ export default function MercadoLivre() {
           
         </>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
           {effectiveSyncing && effectiveHourly.length === 0 ? (
             <Card className="flex flex-col h-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Venda / Hora</CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 flex items-center justify-center py-12">
+              <div className="px-4 pt-4 pb-2">
+                <span className="text-sm font-medium text-foreground">Venda / Hora</span>
+              </div>
+              <CardContent className="flex-1 flex items-center justify-center py-8">
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                  <p className="text-xs">Carregando dados horários...</p>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <p className="text-xs">Carregando...</p>
                 </div>
               </CardContent>
             </Card>
