@@ -1007,7 +1007,7 @@ export default function MercadoLivre() {
   const chartTitle = showHourlyChart ? `Venda / Hora — ${periodLabel}` : `Vendas Diárias — ${periodLabel}`;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Seller + Marketplace selector */}
       <SellerMarketplaceBar />
 
