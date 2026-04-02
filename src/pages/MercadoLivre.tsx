@@ -1593,8 +1593,8 @@ export default function MercadoLivre() {
             })()}
           </CardContent>
         </Card>
+        </motion.div>
 
-        {/* Produtos mais vendidos */}
         <TopSellingProducts products={effectiveProducts} loading={effectiveLoading} showOrigin={isAll} />
       </div>
         </TabsContent>
