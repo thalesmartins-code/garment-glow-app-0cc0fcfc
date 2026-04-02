@@ -201,6 +201,7 @@ export default function MercadoLivre() {
   const [period, setPeriod] = useState(0);
   const [customRange, setCustomRange] = useState<DateRange>(null);
   const [chartMode, setChartMode] = useState<ChartMode>("hourly");
+  const [activeTab, setActiveTab] = useState("vendas");
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [pendingRange, setPendingRange] = useState<DateRange>(null);
   const [pendingPeriod, setPendingPeriod] = useState<number | null>(null);
@@ -1425,10 +1426,15 @@ export default function MercadoLivre() {
         </div>
       )}
         </TabsContent>
+            )}
 
-        <TabsContent value="relatorios" className="mt-0">
+            {activeTab === "relatorios" && (
+        <TabsContent value="relatorios" className="mt-0" forceMount>
           <MLRelatorios />
         </TabsContent>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </Tabs>
     </div>
   );
