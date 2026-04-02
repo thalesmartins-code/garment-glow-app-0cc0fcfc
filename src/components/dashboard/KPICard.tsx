@@ -86,7 +86,10 @@ export function KPICard({
     <Card className={cn(styles.card, refreshing && "animate-pulse opacity-60 transition-opacity duration-300", className)}>
       <CardContent className={cn(size === "compact" ? "p-3" : "p-4", "flex gap-4")}>
         <div className="flex-1 min-w-0">
-          <span className={cn("font-medium text-muted-foreground inline-flex items-center gap-1", size === "compact" ? "text-xs" : "text-sm")}>
+          <span className={cn(
+            "font-medium text-muted-foreground inline-flex items-center gap-1",
+            variant === "minimal" ? "text-[11px] uppercase tracking-wider" : size === "compact" ? "text-xs" : "text-sm"
+          )}>
             {title}
             {tooltip && (
               <TooltipProvider>
@@ -101,7 +104,10 @@ export function KPICard({
               </TooltipProvider>
             )}
           </span>
-          <p className={cn("font-bold leading-tight", size === "compact" ? "text-lg" : "text-[1.65rem]")}>{displayValue}</p>
+          <p className={cn(
+            "leading-tight",
+            variant === "minimal" ? "text-xl font-semibold" : size === "compact" ? "text-lg font-bold" : "text-[1.65rem] font-bold"
+          )}>{displayValue}</p>
           {subtitleNode ? subtitleNode : subtitle ? (
             <span className="text-xs text-muted-foreground">{subtitle}</span>
           ) : null}

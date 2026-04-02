@@ -1032,25 +1032,9 @@ export default function MercadoLivre() {
           );
         })()}
       </AnimatePresence>
-      <div className="flex items-start gap-4">
-        <div className="flex-1 min-w-0">
-          <MLPageHeader title="Vendas" lastUpdated={useRealData && lastSyncedAt ? new Date(lastSyncedAt) : null} />
-        </div>
-        <div className="hidden md:flex flex-shrink-0 flex-col items-center">
-          <div className="w-72">
-            <KPICard
-              title="Receita Total"
-              value={effectiveMetrics ? currencyFmt(effectiveMetrics.total_revenue) : "—"}
-              variant="default"
-              size="compact"
-              loading={effectiveLoading}
-              refreshing={effectiveSyncing && !syncProgress}
-              subtitle={periodLabel}
-              className="text-center [&_div]:justify-center [&_span]:justify-center [&_p]:text-center [&>div]:py-1.5 bg-gradient-to-br from-[hsl(217,70%,45%)]/10 via-[hsl(217,70%,45%)]/5 to-transparent shadow-[0_0_12px_hsl(217,70%,45%,0.12)] border-[hsl(217,70%,45%)]/15 [&_p]:text-2xl [&_p]:font-bold"
-            />
-          </div>
-        </div>
-        <div className="flex-1 min-w-0 flex items-center justify-end gap-2 flex-wrap">
+      <div className="flex items-center justify-between gap-4">
+        <MLPageHeader title="Vendas" lastUpdated={useRealData && lastSyncedAt ? new Date(lastSyncedAt) : null} />
+        <div className="flex items-center gap-2 flex-wrap">
           {isML && <MLStoreSelector />}
           <Popover
             open={popoverOpen}
@@ -1141,35 +1125,6 @@ export default function MercadoLivre() {
             />
           )}
         </div>
-      </div>
-
-      {isML && !effectiveLoading && connected && !hasData && (
-        <Card className="border-dashed">
-          <CardContent className="flex items-center gap-3 py-6">
-            <Info className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-foreground">Nenhum dado no cache</p>
-              <p className="text-xs text-muted-foreground">
-                Clique em <strong>Sincronizar</strong> para carregar os dados pela primeira vez, ou use{" "}
-                <strong>Histórico</strong> para importar meses anteriores.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Receita Total visível apenas em mobile (em desktop fica no header) */}
-      <div className="md:hidden">
-        <KPICard
-          title="Receita Total"
-          value={effectiveMetrics ? currencyFmt(effectiveMetrics.total_revenue) : "—"}
-          icon={<DollarSign className="w-5 h-5" />}
-          variant="default"
-          className="bg-gradient-to-br from-[hsl(217,70%,45%)]/10 via-[hsl(217,70%,45%)]/5 to-transparent shadow-[0_0_12px_hsl(217,70%,45%,0.12)] border-[hsl(217,70%,45%)]/15 [&_p]:text-2xl [&_p]:font-bold"
-          loading={effectiveLoading}
-          refreshing={effectiveSyncing && !syncProgress}
-          subtitle={periodLabel}
-        />
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-2">
