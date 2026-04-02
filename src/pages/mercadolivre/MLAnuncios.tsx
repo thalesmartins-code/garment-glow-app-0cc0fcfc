@@ -1,13 +1,471 @@
-import { Megaphone } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  ComposedChart, Area, Bar, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
+  FunnelChart, Funnel, LabelList,
+} from "recharts";
+import { format, subDays, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import {
+  Megaphone, TrendingUp, TrendingDown, MousePointerClick, Eye,
+  ShoppingCart, DollarSign, Zap, RefreshCw, Info, BarChart3, ListFilter, Plug,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
+import { SellerMarketplaceBar } from "@/components/layout/SellerMarketplaceBar";
+import { KPICard } from "@/components/dashboard/KPICard";
+import { useMLAds, type AdsCampaign, type AdsProductStat } from "@/hooks/useMLAds";
 
-export default function MLAnuncios() {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const currFmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const numFmt = (v: number) => v.toLocaleString("pt-BR");
+const pctFmt = (v: number) => `${v.toFixed(2)}%`;
+
+const QUICK_RANGES = [
+  { label: "Hoje", days: 1 },
+  { label: "7 dias", days: 7 },
+  { label: "15 dias", days: 15 },
+  { label: "30 dias", days: 30 },
+] as const;
+
+function roasBadge(roas: number) {
+  if (roas >= 4) return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 font-mono">{roas.toFixed(2)}x</Badge>;
+  if (roas >= 2) return <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 font-mono">{roas.toFixed(2)}x</Badge>;
+  return <Badge className="bg-red-500/15 text-red-600 border-red-500/30 font-mono">{roas.toFixed(2)}x</Badge>;
+}
+
+function statusBadge(status: AdsCampaign["status"]) {
+  if (status === "active") return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30">Ativa</Badge>;
+  if (status === "paused") return <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30">Pausada</Badge>;
+  return <Badge className="bg-gray-500/15 text-gray-500 border-gray-500/30">Encerrada</Badge>;
+}
+
+
+// ─── Mock data not-connected state ───────────────────────────────────────────
+
+function NotConnected() {
   return (
     <div className="space-y-6">
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-        <Megaphone className="w-16 h-16 mb-4 opacity-30" />
-        <p className="text-lg font-medium">Em breve</p>
-        <p className="text-sm">Gestão de publicidade e campanhas do Mercado Livre</p>
+      <SellerMarketplaceBar className="mb-2" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <Plug className="w-16 h-16 text-muted-foreground/40" />
+        <h2 className="text-xl font-semibold">Mercado Livre não conectado</h2>
+        <p className="text-muted-foreground text-sm">Conecte sua conta para acessar os dados de publicidade.</p>
+        <Button asChild><Link to="/integracoes">Ir para Integrações</Link></Button>
       </div>
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export default function MLAnuncios() {
+  const [selectedDays, setSelectedDays] = useState(30);
+  const [productTab, setProductTab] = useState<"spend" | "roas">("spend");
+
+  const { daily, campaigns, products, summary, loading, connected, isRealData, sync, syncing } =
+    useMLAds({ daysBack: selectedDays });
+
+  // ── Chart data ──
+  const chartData = useMemo(() => {
+    const slice = [...daily].slice(-selectedDays);
+    return slice.map((d) => ({
+      label: format(parseISO(d.date), "dd/MM", { locale: ptBR }),
+      date: d.date,
+      "Gasto": d.spend,
+      "Receita Atribuída": d.attributed_revenue,
+      "ROAS": d.roas,
+      "Cliques": d.clicks,
+    }));
+  }, [daily, selectedDays]);
+
+  // ── Funnel data ──
+  const funnelData = useMemo(() => [
+    { name: "Impressões", value: summary.total_impressions, fill: "#6366f1" },
+    { name: "Cliques", value: summary.total_clicks, fill: "#8b5cf6" },
+    { name: "Pedidos", value: summary.total_attributed_orders, fill: "#a855f7" },
+  ], [summary]);
+
+  // ── Sorted product lists ──
+  const topBySpend = useMemo(
+    () => [...products].sort((a, b) => b.spend - a.spend).slice(0, 8),
+    [products]
+  );
+  const topByRoas = useMemo(
+    () => [...products].filter((p) => p.spend > 0).sort((a, b) => b.roas - a.roas).slice(0, 8),
+    [products]
+  );
+
+  // ── Previous period delta (simulate) ──
+  const prevSummary = useMemo(() => {
+    // Use the preceding window as "previous period" for comparison
+    const prevSlice = [...daily].slice(-selectedDays * 2, -selectedDays);
+    if (prevSlice.length === 0) return null;
+    return {
+      spend: prevSlice.reduce((s, d) => s + d.spend, 0),
+      roas: prevSlice.length > 0 ? prevSlice.reduce((s, d) => s + d.roas, 0) / prevSlice.length : 0,
+      cpc: prevSlice.length > 0 ? prevSlice.reduce((s, d) => s + d.cpc, 0) / prevSlice.length : 0,
+      clicks: prevSlice.reduce((s, d) => s + d.clicks, 0),
+      orders: prevSlice.reduce((s, d) => s + d.attributed_orders, 0),
+    };
+  }, [daily, selectedDays]);
+
+  const delta = (curr: number, prev: number | undefined) =>
+    prev && prev > 0 ? ((curr - prev) / prev) * 100 : 0;
+
+  if (!loading && !connected) return <NotConnected />;
+
+  // ─── Loading skeleton ───────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-72" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+        </div>
+        <Skeleton className="h-72 rounded-xl" />
+        <Skeleton className="h-64 rounded-xl" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <SellerMarketplaceBar />
+
+      <MLPageHeader title="Publicidade" lastUpdated={null}>
+        <div className="flex items-center gap-2">
+          {!isRealData && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600 cursor-help">
+                  <Info className="h-3 w-3" />
+                  Dados simulados
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-xs">
+                A integração com o Mercado Ads está em desenvolvimento. Os dados exibidos são simulados para demonstração.
+              </TooltipContent>
+            </Tooltip>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={sync}
+            disabled={syncing || !connected}
+            className="h-8 gap-1.5"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Sincronizando..." : "Sincronizar"}
+          </Button>
+        </div>
+      </MLPageHeader>
+
+      {/* Period selector */}
+      <div className="flex items-center gap-1.5">
+        {QUICK_RANGES.map((r) => (
+          <Button
+            key={r.days}
+            size="sm"
+            variant={selectedDays === r.days ? "default" : "outline"}
+            className="h-7 px-3 text-xs"
+            onClick={() => setSelectedDays(r.days)}
+          >
+            {r.label}
+          </Button>
+        ))}
+      </div>
+
+      {/* ── KPI Cards ── */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <KPICard
+          title="Gasto Total"
+          value={currFmt(summary.total_spend)}
+          icon={<DollarSign className="h-4 w-4" />}
+          delta={delta(summary.total_spend, prevSummary?.spend)}
+          deltaLabel="vs período anterior"
+          className="col-span-1"
+          variant="danger"
+        />
+        <KPICard
+          title="Receita Atribuída"
+          value={currFmt(summary.total_attributed_revenue)}
+          icon={<TrendingUp className="h-4 w-4" />}
+          delta={delta(summary.total_attributed_revenue, prevSummary ? prevSummary.spend * summary.avg_roas : 0)}
+          deltaLabel="vs período anterior"
+          className="col-span-1"
+          variant="success"
+        />
+        <KPICard
+          title="ROAS"
+          value={`${summary.avg_roas.toFixed(2)}x`}
+          icon={<Zap className="h-4 w-4" />}
+          delta={delta(summary.avg_roas, prevSummary?.roas)}
+          deltaLabel="vs período anterior"
+          className="col-span-1"
+          variant={summary.avg_roas >= 3 ? "success" : summary.avg_roas >= 1.5 ? "warning" : "danger"}
+        />
+        <KPICard
+          title="CPC Médio"
+          value={currFmt(summary.avg_cpc)}
+          icon={<MousePointerClick className="h-4 w-4" />}
+          delta={-delta(summary.avg_cpc, prevSummary?.cpc)}
+          deltaLabel="vs período anterior"
+          className="col-span-1"
+          variant="info"
+        />
+        <KPICard
+          title="Pedidos via ADS"
+          value={numFmt(summary.total_attributed_orders)}
+          icon={<ShoppingCart className="h-4 w-4" />}
+          delta={delta(summary.total_attributed_orders, prevSummary?.orders)}
+          deltaLabel="vs período anterior"
+          className="col-span-2 md:col-span-1"
+          variant="purple"
+        />
+      </div>
+
+      {/* ── Performance Chart + Funnel ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Main chart — 2/3 width */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              Gasto vs Receita Atribuída
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={260}>
+              <ComposedChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  tickLine={false}
+                  axisLine={false}
+                  interval={selectedDays <= 7 ? 0 : selectedDays <= 15 ? 1 : Math.floor(chartData.length / 6)}
+                />
+                <YAxis
+                  yAxisId="brl"
+                  tickFormatter={(v) => `R$${(v / 1000).toFixed(1)}k`}
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={52}
+                />
+                <YAxis
+                  yAxisId="roas"
+                  orientation="right"
+                  tickFormatter={(v) => `${v}x`}
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={36}
+                />
+                <RechartsTooltip
+                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                  formatter={(value: number, name: string) => {
+                    if (name === "ROAS") return [`${(value as number).toFixed(2)}x`, name];
+                    return [currFmt(value as number), name];
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar yAxisId="brl" dataKey="Gasto" fill="hsl(var(--destructive))" fillOpacity={0.7} radius={[3, 3, 0, 0]} maxBarSize={24} />
+                <Area yAxisId="brl" type="monotone" dataKey="Receita Atribuída" fill="hsl(var(--primary))" fillOpacity={0.12} stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                <Line yAxisId="roas" type="monotone" dataKey="ROAS" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="4 2" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Funnel — 1/3 width */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Eye className="h-4 w-4 text-primary" />
+              Funil de Conversão
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <ResponsiveContainer width="100%" height={160}>
+              <FunnelChart>
+                <Funnel dataKey="value" data={funnelData} isAnimationActive>
+                  <LabelList position="center" fill="#fff" fontSize={11} fontWeight={600}
+                    formatter={(v: number) => numFmt(v)} />
+                </Funnel>
+                <RechartsTooltip
+                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                  formatter={(value: number, _: string, props: any) => [numFmt(value), props?.payload?.name]}
+                />
+              </FunnelChart>
+            </ResponsiveContainer>
+
+            <div className="space-y-2 pt-1">
+              {[
+                { label: "Impressões → Cliques", value: summary.avg_ctr, suffix: "% (CTR)" },
+                {
+                  label: "Cliques → Pedidos",
+                  value: summary.total_clicks > 0
+                    ? Math.round((summary.total_attributed_orders / summary.total_clicks) * 10000) / 100
+                    : 0,
+                  suffix: "% (CVR)",
+                },
+              ].map((row) => (
+                <div key={row.label} className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">{row.label}</span>
+                  <span className="font-semibold tabular-nums">{pctFmt(row.value)} <span className="text-muted-foreground font-normal">{row.suffix.split(" ")[1]}</span></span>
+                </div>
+              ))}
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">CPC Médio</span>
+                <span className="font-semibold tabular-nums">{currFmt(summary.avg_cpc)}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Total Impressões</span>
+                <span className="font-semibold tabular-nums">{numFmt(summary.total_impressions)}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── Campaigns Table ── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Megaphone className="h-4 w-4 text-primary" />
+            Campanhas
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/60 bg-muted/30">
+                  {["Campanha", "Status", "Orçamento/dia", "Gasto", "Impressões", "Cliques", "CTR", "Pedidos", "ROAS"].map((h) => (
+                    <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap first:pl-6 last:pr-6">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {campaigns.map((c, i) => (
+                  <tr
+                    key={c.id}
+                    className={`border-b border-border/40 transition-colors hover:bg-muted/20 ${i % 2 === 0 ? "" : "bg-muted/10"}`}
+                  >
+                    <td className="px-4 py-3 pl-6 font-medium max-w-[200px] truncate">{c.name}</td>
+                    <td className="px-4 py-3">{statusBadge(c.status)}</td>
+                    <td className="px-4 py-3 tabular-nums">{currFmt(c.daily_budget)}</td>
+                    <td className="px-4 py-3 tabular-nums font-medium">{currFmt(c.spend)}</td>
+                    <td className="px-4 py-3 tabular-nums">{numFmt(c.impressions)}</td>
+                    <td className="px-4 py-3 tabular-nums">{numFmt(c.clicks)}</td>
+                    <td className="px-4 py-3 tabular-nums">{pctFmt(c.ctr)}</td>
+                    <td className="px-4 py-3 tabular-nums">{numFmt(c.attributed_orders)}</td>
+                    <td className="px-4 py-3 pr-6">{roasBadge(c.roas)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Campaign totals row */}
+          <div className="border-t border-border/60 bg-muted/20 px-6 py-2.5 flex items-center gap-8 text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">{campaigns.length} campanhas</span>
+            <span>Gasto total: <strong className="text-foreground tabular-nums">{currFmt(campaigns.reduce((s, c) => s + c.spend, 0))}</strong></span>
+            <span>Impressões: <strong className="text-foreground tabular-nums">{numFmt(campaigns.reduce((s, c) => s + c.impressions, 0))}</strong></span>
+            <span>Pedidos: <strong className="text-foreground tabular-nums">{numFmt(campaigns.reduce((s, c) => s + c.attributed_orders, 0))}</strong></span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Top Products ── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <ListFilter className="h-4 w-4 text-primary" />
+              Top Produtos Patrocinados
+            </CardTitle>
+            <Tabs value={productTab} onValueChange={(v) => setProductTab(v as "spend" | "roas")}>
+              <TabsList className="h-7">
+                <TabsTrigger value="spend" className="text-xs px-2.5 h-6">Maior Gasto</TabsTrigger>
+                <TabsTrigger value="roas" className="text-xs px-2.5 h-6">Maior ROAS</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/60 bg-muted/30">
+                  {["#", "Produto", "Gasto", "Cliques", "CTR", "Pedidos", "Receita ADS", "ROAS"].map((h) => (
+                    <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap first:pl-6 last:pr-6">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(productTab === "spend" ? topBySpend : topByRoas).map((p, i) => (
+                  <tr
+                    key={p.item_id}
+                    className={`border-b border-border/40 transition-colors hover:bg-muted/20 ${i % 2 === 0 ? "" : "bg-muted/10"}`}
+                  >
+                    <td className="px-4 py-3 pl-6 text-muted-foreground font-mono text-xs">{i + 1}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5 min-w-[200px]">
+                        {p.thumbnail && (
+                          <img src={p.thumbnail} alt={p.title} className="h-9 w-9 rounded-md object-cover shrink-0 border border-border/50" />
+                        )}
+                        <div>
+                          <p className="font-medium leading-tight line-clamp-1 max-w-[200px]">{p.title}</p>
+                          <p className="text-[11px] text-muted-foreground font-mono">{p.item_id}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 tabular-nums font-medium">{currFmt(p.spend)}</td>
+                    <td className="px-4 py-3 tabular-nums">{numFmt(p.clicks)}</td>
+                    <td className="px-4 py-3 tabular-nums">{pctFmt(p.ctr)}</td>
+                    <td className="px-4 py-3 tabular-nums">{numFmt(p.attributed_orders)}</td>
+                    <td className="px-4 py-3 tabular-nums">{currFmt(p.attributed_revenue)}</td>
+                    <td className="px-4 py-3 pr-6">{roasBadge(p.roas)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── ROAS Efficiency notice ── */}
+      {(() => {
+        const lowRoas = campaigns.filter((c) => c.status === "active" && c.roas < 1);
+        if (lowRoas.length === 0) return null;
+        return (
+          <Card className="border-amber-500/40 bg-amber-500/5">
+            <CardContent className="flex items-start gap-3 py-3 px-4">
+              <TrendingDown className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+              <div className="text-sm">
+                <span className="font-semibold text-amber-700">{lowRoas.length} campanha{lowRoas.length > 1 ? "s" : ""} com ROAS abaixo de 1x: </span>
+                <span className="text-amber-600">{lowRoas.map((c) => c.name).join(", ")}. </span>
+                <span className="text-muted-foreground">Você está gastando mais do que retornando. Considere pausar ou ajustar os lances.</span>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
     </div>
   );
 }
