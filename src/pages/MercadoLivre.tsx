@@ -1253,39 +1253,39 @@ export default function MercadoLivre() {
         </Card>
       ) : (dailyChartData.length > 0 || showHourlyChart) ? (
         <Card>
-          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle className="text-base">{chartTitle}</CardTitle>
+          <div className="flex items-center justify-between px-4 pt-4 pb-1">
+            <span className="text-sm font-medium text-foreground">{chartTitle}</span>
             <div className="flex items-center gap-2">
               {isHourlyAvailable && (
                 <Button
                   size="sm"
                   variant={chartMode === "hourly" ? "default" : "outline"}
+                  className="h-7 text-xs"
                   onClick={() => setChartMode("hourly")}
                 >
-                  <Clock3 className="mr-1 h-4 w-4" /> Venda / Hora
+                  <Clock3 className="mr-1 h-3.5 w-3.5" /> Hora
                 </Button>
               )}
               {!isHourlyAvailable && (
                 <Button
                   size="sm"
                   variant={chartMode === "daily" ? "default" : "outline"}
+                  className="h-7 text-xs"
                   onClick={() => setChartMode("daily")}
                 >
                   Diário
                 </Button>
               )}
             </div>
-          </CardHeader>
-          <CardContent>
+          </div>
+          <CardContent className="px-4 pb-4">
             {showHourlyChart && !hasHourlyData && !syncing ? (
-              <div className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-8 text-center">
-                <p className="text-sm font-medium text-foreground">Sem dados horários para este período</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Sincronize novamente para carregar a visão de venda / hora de Hoje ou dos últimos 7 dias.
-                </p>
+              <div className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center">
+                <p className="text-sm font-medium text-foreground">Sem dados horários</p>
+                <p className="mt-1 text-xs text-muted-foreground">Sincronize para carregar.</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={320}>
+              <ResponsiveContainer width="100%" height={280}>
                 <ComposedChart data={chartData}>
                   <defs>
                     <linearGradient id="mlTotal" x1="0" y1="0" x2="0" y2="1">
@@ -1297,15 +1297,15 @@ export default function MercadoLivre() {
                       <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
                   <XAxis
                     dataKey="label"
-                    tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                    tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                     stroke="hsl(var(--muted-foreground))"
                   />
                   <YAxis
                     yAxisId="revenue"
-                    tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                    tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                     stroke="hsl(var(--muted-foreground))"
                     tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`}
                   />
@@ -1314,7 +1314,7 @@ export default function MercadoLivre() {
                       yAxisId="orders"
                       orientation="right"
                       allowDecimals={false}
-                      tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                      tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                       stroke="hsl(var(--muted-foreground))"
                     />
                   )}
@@ -1327,6 +1327,7 @@ export default function MercadoLivre() {
                       border: "1px solid hsl(var(--border))",
                       backgroundColor: "hsl(var(--card))",
                       color: "hsl(var(--card-foreground))",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                     }}
                   />
                   <Legend />
@@ -1337,7 +1338,7 @@ export default function MercadoLivre() {
                         dataKey="Pedidos"
                         fill="hsl(var(--primary))"
                         radius={[6, 6, 0, 0]}
-                        maxBarSize={28}
+                        maxBarSize={24}
                       />
                       <Area
                         yAxisId="revenue"
@@ -1345,14 +1346,14 @@ export default function MercadoLivre() {
                         dataKey="Venda Total"
                         stroke="hsl(var(--accent))"
                         fill="url(#mlTotal)"
-                        strokeWidth={2.5}
+                        strokeWidth={2}
                       />
                       <Line
                         yAxisId="revenue"
                         type="monotone"
                         dataKey="Venda Aprovada"
                         stroke="hsl(var(--success))"
-                        strokeWidth={2}
+                        strokeWidth={1.5}
                         dot={false}
                       />
                     </>
@@ -1364,7 +1365,7 @@ export default function MercadoLivre() {
                         dataKey="Venda Total"
                         stroke="hsl(var(--accent))"
                         fill="url(#mlTotal)"
-                        strokeWidth={2.5}
+                        strokeWidth={2}
                       />
                       <Area
                         yAxisId="revenue"
@@ -1372,7 +1373,7 @@ export default function MercadoLivre() {
                         dataKey="Venda Aprovada"
                         stroke="hsl(var(--success))"
                         fill="url(#mlApproved)"
-                        strokeWidth={2}
+                        strokeWidth={1.5}
                       />
                     </>
                   )}
