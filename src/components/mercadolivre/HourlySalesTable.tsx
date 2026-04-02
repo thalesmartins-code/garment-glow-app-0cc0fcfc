@@ -81,12 +81,12 @@ export function HourlySalesTable({ hourly, title, titleIcon, compact }: Props) {
 
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader className={compact ? "pb-1 px-2 pt-2" : "pb-3"}>
+      <div className={compact ? "px-2 pt-2 pb-1" : "px-4 pt-4 pb-2"}>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className={compact ? "text-xs" : "text-base"}>
+            <span className={compact ? "text-xs font-medium text-foreground" : "text-sm font-medium text-foreground"}>
               {title || "Venda / Hora"}
-            </CardTitle>
+            </span>
             {peakHour.revenue > 0 && (
               <p className="text-xs text-muted-foreground mt-1">
                 🔥 Pico{" "}
@@ -103,7 +103,7 @@ export function HourlySalesTable({ hourly, title, titleIcon, compact }: Props) {
             <p className="text-sm font-semibold">{currencyFmt(totalRevenue)}</p>
           </div>
         </div>
-      </CardHeader>
+      </div>
 
       <CardContent className={`flex-1 overflow-auto pt-0 ${compact ? "px-2" : ""}`}>
         <table className={`w-full ${compact ? "text-xs" : "text-sm"}`}>
