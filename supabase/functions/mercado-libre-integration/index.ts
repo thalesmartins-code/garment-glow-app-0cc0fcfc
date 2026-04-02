@@ -414,6 +414,7 @@ serve(async (req) => {
           qty_orders: data.qty,
           units_sold: data.units_sold,
           synced_at: syncedAt,
+          ...(seller_id ? { seller_id } : {}),
         }));
 
         // Paraleliza upserts de daily + hourly + user simultaneamente
