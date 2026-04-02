@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-type CardVariant = "default" | "success" | "warning" | "danger" | "info" | "neutral" | "purple" | "orange";
+type CardVariant = "default" | "success" | "warning" | "danger" | "info" | "neutral" | "purple" | "orange" | "minimal";
 
 interface KPICardProps {
   title: string;
