@@ -1346,7 +1346,7 @@ export default function MercadoLivre() {
             <ResponsiveContainer width="100%" height={220}>
               <ComposedChart data={overlaidHourlyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" interval={2} />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
                 <RechartsTooltip
                   formatter={(value: number, name: string) => [currencyFmt(Number(value)), name]}
@@ -1396,6 +1396,7 @@ export default function MercadoLivre() {
                     dataKey="label"
                     tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                     stroke="hsl(var(--muted-foreground))"
+                    interval={2}
                   />
                   <YAxis
                     yAxisId="revenue"
