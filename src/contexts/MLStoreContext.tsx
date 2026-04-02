@@ -142,6 +142,7 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
             custom_name: cache.custom_name,
             access_token: t.access_token!,
             displayName: cache.custom_name || cache.nickname || `Loja ${t.ml_user_id}`,
+            seller_id: (t as any).seller_id || null,
           };
         });
 
