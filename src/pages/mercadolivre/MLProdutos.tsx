@@ -11,12 +11,30 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ShoppingBag, RefreshCw, Search, ExternalLink, Plug, DollarSign, Tag, TrendingUp, Package,
-  ChevronDown, ChevronRight, Clock,
+  ChevronDown, ChevronRight, Clock, Receipt, LayoutGrid,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { ProductVariation } from "@/contexts/MLInventoryContext";
+import { LISTING_TYPE_RATES } from "@/data/financialMockData";
+
+// ─── Financial helpers ────────────────────────────────────────────────────────
+
+function getCommissionRate(listingTypeId: string | null): number {
+  if (!listingTypeId) return LISTING_TYPE_RATES.classic.rate;
+  if (listingTypeId.includes("gold_pro") || listingTypeId.includes("premium")) return LISTING_TYPE_RATES.premium.rate;
+  if (listingTypeId.includes("free")) return LISTING_TYPE_RATES.free.rate;
+  return LISTING_TYPE_RATES.classic.rate;
+}
+
+function getListingLabel(listingTypeId: string | null): string {
+  if (!listingTypeId) return "Clássico";
+  if (listingTypeId.includes("gold_pro") || listingTypeId.includes("premium")) return "Premium";
+  if (listingTypeId.includes("free")) return "Grátis";
+  return "Clássico";
+}
 
 const currencyFmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -24,6 +42,7 @@ const currencyFmt = (v: number) =>
 type StockFilter = "all" | "in_stock" | "low" | "out";
 type CoverageFilter = "all" | CoverageClass;
 type SortBy = "price_desc" | "price_asc" | "sold" | "title" | "coverage_asc";
+type ColumnView = "estoque" | "financeiro";
 
 const healthBadge = (health: number | null) => {
   if (health === null) return <span className="text-xs text-muted-foreground">—</span>;
@@ -70,6 +89,7 @@ export default function MLProdutos() {
   const [sortBy, setSortBy] = useState<SortBy>("sold");
   const [coveragePeriod, setCoveragePeriod] = useState<CoveragePeriod>("monthly");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [columnView, setColumnView] = useState<ColumnView>("estoque");
 
   const inventoryForCoverage = useMemo(
     () => items.map((i) => ({ id: i.id, available_quantity: i.available_quantity })),
@@ -234,6 +254,27 @@ export default function MLProdutos() {
                   <SelectItem value="title">A–Z</SelectItem>
                 </SelectContent>
               </Select>
+
+              {/* Column view toggle */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
+                    <button
+                      onClick={() => setColumnView("estoque")}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${columnView === "estoque" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5" /> Estoque
+                    </button>
+                    <button
+                      onClick={() => setColumnView("financeiro")}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${columnView === "financeiro" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      <Receipt className="w-3.5 h-3.5" /> Financeiro
+                    </button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>Alternar visão de colunas</TooltipContent>
+              </Tooltip>
             </div>
           </div>
         </CardHeader>
@@ -258,14 +299,28 @@ export default function MLProdutos() {
                     <TableHead className="w-12"></TableHead>
                     <TableHead>Anúncio</TableHead>
                     <TableHead className="text-right w-24">Preço</TableHead>
-                    <TableHead className="text-center w-20">Estoque</TableHead>
-                    <TableHead className="text-center w-20">Vendidos</TableHead>
-                    <TableHead className="text-right w-28">Vendidos R$</TableHead>
-                    <TableHead className="text-center w-20">% Part.</TableHead>
-                    <TableHead className="text-center w-20">Visitas</TableHead>
-                    <TableHead className="text-center w-20">Conv.</TableHead>
-                    <TableHead className="text-center w-28">Cobertura</TableHead>
-                    <TableHead className="text-center w-20">Saúde</TableHead>
+                    {columnView === "estoque" ? (
+                      <>
+                        <TableHead className="text-center w-20">Estoque</TableHead>
+                        <TableHead className="text-center w-20">Vendidos</TableHead>
+                        <TableHead className="text-right w-28">Vendidos R$</TableHead>
+                        <TableHead className="text-center w-20">% Part.</TableHead>
+                        <TableHead className="text-center w-20">Visitas</TableHead>
+                        <TableHead className="text-center w-20">Conv.</TableHead>
+                        <TableHead className="text-center w-28">Cobertura</TableHead>
+                        <TableHead className="text-center w-20">Saúde</TableHead>
+                      </>
+                    ) : (
+                      <>
+                        <TableHead className="text-left w-24">Tipo ML</TableHead>
+                        <TableHead className="text-right w-28">Comissão %</TableHead>
+                        <TableHead className="text-right w-32">Comissão/unid.</TableHead>
+                        <TableHead className="text-right w-32">Líq./unid. est.</TableHead>
+                        <TableHead className="text-right w-28">Margem est.</TableHead>
+                        <TableHead className="text-right w-28">Vendidos R$</TableHead>
+                        <TableHead className="text-right w-32">Líq. total est.</TableHead>
+                      </>
+                    )}
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -329,20 +384,44 @@ export default function MLProdutos() {
                           </TableCell>
 
                           <TableCell className="text-right text-sm font-medium">{currencyFmt(item.price)}</TableCell>
-                          <TableCell className="text-center">
-                            <span className={`text-sm font-semibold ${item.available_quantity === 0 ? "text-destructive" : "text-foreground"}`}>
-                              {item.available_quantity}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-center text-sm text-muted-foreground">{item.sold_quantity}</TableCell>
-                          <TableCell className="text-right text-sm font-medium">{currencyFmt(soldRevenue)}</TableCell>
-                          <TableCell className="text-center text-sm text-muted-foreground">{participation.toFixed(1)}%</TableCell>
-                          <TableCell className="text-center text-sm text-muted-foreground">{item.visits.toLocaleString("pt-BR")}</TableCell>
-                          <TableCell className="text-center text-sm text-muted-foreground">{conversion.toFixed(1)}%</TableCell>
-                          <TableCell className="text-center">
-                            <CoverageChip data={coverage} title={coverageTooltip} />
-                          </TableCell>
-                          <TableCell className="text-center">{healthBadge(item.health)}</TableCell>
+                          {columnView === "estoque" ? (
+                            <>
+                              <TableCell className="text-center">
+                                <span className={`text-sm font-semibold ${item.available_quantity === 0 ? "text-destructive" : "text-foreground"}`}>
+                                  {item.available_quantity}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-center text-sm text-muted-foreground">{item.sold_quantity}</TableCell>
+                              <TableCell className="text-right text-sm font-medium">{currencyFmt(soldRevenue)}</TableCell>
+                              <TableCell className="text-center text-sm text-muted-foreground">{participation.toFixed(1)}%</TableCell>
+                              <TableCell className="text-center text-sm text-muted-foreground">{item.visits.toLocaleString("pt-BR")}</TableCell>
+                              <TableCell className="text-center text-sm text-muted-foreground">{conversion.toFixed(1)}%</TableCell>
+                              <TableCell className="text-center">
+                                <CoverageChip data={coverage} title={coverageTooltip} />
+                              </TableCell>
+                              <TableCell className="text-center">{healthBadge(item.health)}</TableCell>
+                            </>
+                          ) : (() => {
+                            const commRate = getCommissionRate(item.listing_type_id);
+                            const commPerUnit = Math.round(item.price * commRate * 100) / 100;
+                            const netPerUnit = Math.round((item.price - commPerUnit) * 100) / 100;
+                            const marginPct = item.price > 0 ? Math.round((netPerUnit / item.price) * 1000) / 10 : 0;
+                            const totalNet = Math.round(netPerUnit * item.sold_quantity * 100) / 100;
+                            const marginColor = marginPct >= 70 ? "text-emerald-600" : marginPct >= 50 ? "text-amber-600" : "text-red-600";
+                            return (
+                              <>
+                                <TableCell className="text-left text-xs text-muted-foreground">{getListingLabel(item.listing_type_id)}</TableCell>
+                                <TableCell className="text-right text-sm">{(commRate * 100).toFixed(1)}%</TableCell>
+                                <TableCell className="text-right text-sm text-destructive font-mono">−{currencyFmt(commPerUnit)}</TableCell>
+                                <TableCell className="text-right text-sm font-medium font-mono">{currencyFmt(netPerUnit)}</TableCell>
+                                <TableCell className="text-right">
+                                  <span className={`text-sm font-bold ${marginColor}`}>{marginPct.toFixed(1)}%</span>
+                                </TableCell>
+                                <TableCell className="text-right text-sm font-medium">{currencyFmt(soldRevenue)}</TableCell>
+                                <TableCell className="text-right text-sm font-semibold font-mono">{currencyFmt(totalNet)}</TableCell>
+                              </>
+                            );
+                          })()}
                           <TableCell onClick={(e) => e.stopPropagation()}>
                             <a href={`https://produto.mercadolivre.com.br/${item.id.replace(/^(MLB)(\d+)$/, "$1-$2")}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
                               <ExternalLink className="w-4 h-4" />
