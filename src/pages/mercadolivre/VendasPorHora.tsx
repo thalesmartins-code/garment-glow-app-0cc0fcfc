@@ -1,16 +1,11 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { HourlyHeatmap } from "@/components/mercadolivre/HourlyHeatmap";
 import { HourlyStackedBars } from "@/components/mercadolivre/HourlyStackedBars";
 import { HourlyRadar } from "@/components/mercadolivre/HourlyRadar";
-import { HourlySalesTable } from "@/components/mercadolivre/HourlySalesTable";
-import { getAllMarketplaceMockHourly } from "@/data/marketplaceMockData";
-import { Clock, Grid3X3, BarChart3, Radar, LayoutDashboard, Circle } from "lucide-react";
+import { Clock, BarChart3, Radar, Circle } from "lucide-react";
 import { HourlyBubbleChart } from "@/components/mercadolivre/HourlyBubbleChart";
 import { motion } from "framer-motion";
 
 export default function VendasPorHora() {
-  const hourlyData = getAllMarketplaceMockHourly();
-
   return (
     <div className="space-y-6 p-4 md:p-6">
       <motion.div
@@ -31,12 +26,8 @@ export default function VendasPorHora() {
         </div>
       </motion.div>
 
-      <Tabs defaultValue="heatmap" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5 max-w-2xl">
-          <TabsTrigger value="heatmap" className="gap-1.5 text-xs sm:text-sm">
-            <Grid3X3 className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Heatmap</span>
-          </TabsTrigger>
+      <Tabs defaultValue="bars" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3 max-w-md">
           <TabsTrigger value="bars" className="gap-1.5 text-xs sm:text-sm">
             <BarChart3 className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Barras</span>
@@ -49,17 +40,7 @@ export default function VendasPorHora() {
             <Circle className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Bubble</span>
           </TabsTrigger>
-          <TabsTrigger value="combined" className="gap-1.5 text-xs sm:text-sm">
-            <LayoutDashboard className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Combinado</span>
-          </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="heatmap">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-            <HourlyHeatmap />
-          </motion.div>
-        </TabsContent>
 
         <TabsContent value="bars">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
@@ -76,18 +57,6 @@ export default function VendasPorHora() {
         <TabsContent value="bubble">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
             <HourlyBubbleChart />
-          </motion.div>
-        </TabsContent>
-
-        <TabsContent value="combined">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-4"
-          >
-            <HourlyHeatmap />
-            <HourlySalesTable hourly={hourlyData} title="Detalhamento por Hora" />
           </motion.div>
         </TabsContent>
       </Tabs>
