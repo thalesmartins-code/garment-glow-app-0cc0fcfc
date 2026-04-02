@@ -1502,7 +1502,7 @@ export default function MercadoLivre() {
                   <ResponsiveContainer width="100%" height={160}>
                     <FunnelChart>
                       <Funnel dataKey="value" data={funnelData} isAnimationActive>
-                        <LabelList position="center" fill="#fff" fontSize={11} fontWeight={600}
+                        <LabelList position="center" fill="hsl(var(--card-foreground))" fontSize={11} fontWeight={600}
                           formatter={(v: number) => numFmt(v)} />
                       </Funnel>
                       <RechartsTooltip
@@ -1540,7 +1540,7 @@ export default function MercadoLivre() {
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }}>
         <Card className="h-full">
           <div className="px-4 pt-4 pb-2">
-            <span className="text-sm font-medium text-foreground">Termômetro de Reputação</span>
+            <span className="text-sm font-medium text-foreground">Reputação</span>
           </div>
           <CardContent className="px-4 pb-4">
             {(() => {
