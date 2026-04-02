@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { AreaChart, ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
+import {
+  AreaChart, ChevronLeft, ChevronRight, ChevronDown,
+  type LucideIcon,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { canAccess } from "@/config/roleAccess";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Collapsible, CollapsibleContent, CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 export interface SidebarNavItem {
   icon: LucideIcon;
@@ -12,6 +18,8 @@ export interface SidebarNavItem {
   path: string;
   /** Marks item as a placeholder — renders disabled with "Em breve" badge */
   comingSoon?: boolean;
+  /** Sub-items rendered as a collapsible group under this item */
+  children?: SidebarNavItem[];
 }
 
 export interface SidebarNavSection {
@@ -115,6 +123,133 @@ export function EnvironmentSidebar({ sections, items, footerItem }: EnvironmentS
     return linkContent;
   };
 
+  const renderSubLink = (item: SidebarNavItem) => {
+    const isActive = location.pathname === item.path;
+    const Icon = item.icon;
+
+    const inner = (
+      <Link
+        key={item.path}
+        to={item.path}
+        className={cn(
+          "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] transition-all duration-200 overflow-hidden",
+          collapsed && "justify-center w-9 px-0",
+          isActive
+            ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow"
+            : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        )}
+      >
+        <Icon className="h-4 w-4 flex-shrink-0" />
+        <span
+          className={cn(
+            "font-medium whitespace-nowrap transition-all duration-300 ease-in-out",
+            collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+          )}
+        >
+          {item.label}
+        </span>
+      </Link>
+    );
+
+    if (collapsed) {
+      return (
+        <Tooltip key={item.path} delayDuration={0}>
+          <TooltipTrigger asChild>{inner}</TooltipTrigger>
+          <TooltipContent side="right" className="font-medium">
+            {item.label}
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    return inner;
+  };
+
+  const renderItem = (item: SidebarNavItem) => {
+    if (!item.children || item.children.length === 0) {
+      return renderLink(item);
+    }
+
+    // Item with children — collapsible group
+    const Icon = item.icon;
+    const isParentActive =
+      location.pathname === item.path ||
+      item.children.some((c) => location.pathname === c.path);
+
+    if (collapsed) {
+      // Collapsed: parent icon links to parent path; tooltip shows children list
+      return (
+        <Tooltip key={item.path} delayDuration={0}>
+          <TooltipTrigger asChild>
+            <Link
+              to={item.path}
+              className={cn(
+                "flex items-center justify-center w-12 py-2.5 rounded-xl transition-all duration-200",
+                isParentActive
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}
+            >
+              <Icon className="h-5 w-5 flex-shrink-0" />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="p-0">
+            <div className="flex flex-col py-1 min-w-[160px]">
+              <Link
+                to={item.path}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors",
+                  location.pathname === item.path && "font-medium text-primary"
+                )}
+              >
+                <Icon className="w-4 h-4" />
+                {item.label}
+              </Link>
+              <div className="h-px bg-border mx-2 my-1" />
+              {item.children.map((child) => (
+                <Link
+                  key={child.path}
+                  to={child.path}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors",
+                    location.pathname === child.path && "font-medium text-primary"
+                  )}
+                >
+                  <child.icon className="w-4 h-4" />
+                  {child.label}
+                </Link>
+              ))}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    return (
+      <Collapsible key={item.path} defaultOpen={isParentActive}>
+        <CollapsibleTrigger
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 w-full text-left",
+            isParentActive
+              ? "text-sidebar-foreground font-medium"
+              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          )}
+        >
+          <Icon className="h-5 w-5 flex-shrink-0" />
+          <span className="text-sm font-medium flex-1 whitespace-nowrap">{item.label}</span>
+          <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="ml-3 pl-3 border-l border-sidebar-border space-y-0.5 mt-0.5 mb-1">
+            {/* Parent page link as first sub-item */}
+            {renderSubLink({ ...item, label: item.label, children: undefined })}
+            {item.children.map(renderSubLink)}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  };
+
   return (
     <aside
       className={cn(
@@ -166,7 +301,7 @@ export function EnvironmentSidebar({ sections, items, footerItem }: EnvironmentS
 
               {/* Items */}
               <div className={cn("flex flex-col gap-0.5", collapsed && "items-center gap-1.5")}>
-                {visibleItems.map(renderLink)}
+                {visibleItems.map(renderItem)}
               </div>
             </div>
           );

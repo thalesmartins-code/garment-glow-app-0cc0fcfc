@@ -20,8 +20,15 @@ const apiSections: SidebarNavSection[] = [
   {
     // Unlabelled — top-level overview
     items: [
-      { icon: TrendingUp, label: "Vendas",       path: "/api"            },
-      { icon: Clock,      label: "Venda / Hora", path: "/api/vendas-hora" },
+      {
+        icon: TrendingUp,
+        label: "Vendas",
+        path: "/api",
+        children: [
+          { icon: Clock,       label: "Venda / Hora", path: "/api/vendas-hora" },
+          { icon: FileBarChart, label: "Relatórios",  path: "/api/relatorios"  },
+        ],
+      },
     ],
   },
   {
@@ -35,9 +42,8 @@ const apiSections: SidebarNavSection[] = [
   {
     label: "Crescimento",
     items: [
-      { icon: Megaphone,    label: "Publicidade", path: "/api/anuncios"   },
-      { icon: Receipt,      label: "Financeiro",  path: "/api/financeiro" },
-      { icon: FileBarChart, label: "Relatórios",  path: "/api/relatorios" },
+      { icon: Megaphone, label: "Publicidade", path: "/api/anuncios"   },
+      { icon: Receipt,   label: "Financeiro",  path: "/api/financeiro" },
     ],
   },
   {
