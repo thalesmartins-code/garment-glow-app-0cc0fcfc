@@ -1138,13 +1138,6 @@ export default function MercadoLivre() {
               </div>
             </PopoverContent>
           </Popover>
-          {isML && (
-            <HistoricalSyncModal
-              accessToken={cachedAccessToken}
-              onSyncComplete={reloadCache}
-              sellerId={selectedStore !== "all" ? stores.find(s => s.ml_user_id === selectedStore)?.seller_id : null}
-            />
-          )}
         </div>
       </div>
 
