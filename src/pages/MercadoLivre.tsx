@@ -1013,13 +1013,14 @@ export default function MercadoLivre() {
   return (
     <div className="space-y-5">
       {/* Seller + Marketplace selector */}
-      <SellerMarketplaceBar />
-
       <Tabs defaultValue="vendas" className="space-y-4" onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="vendas">Vendas</TabsTrigger>
-          <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between gap-4">
+          <SellerMarketplaceBar />
+          <TabsList className="h-8">
+            <TabsTrigger value="vendas" className="text-xs px-3 h-7">Vendas</TabsTrigger>
+            <TabsTrigger value="relatorios" className="text-xs px-3 h-7">Relatórios</TabsTrigger>
+          </TabsList>
+        </div>
 
         <AnimatePresence mode="wait">
           <motion.div
