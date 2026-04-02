@@ -29,6 +29,7 @@ export function Header({ title, subtitle, showSellerSwitcher = true, showMarketp
   const navigate = useNavigate();
   const location = useLocation();
   const isApi = location.pathname.startsWith("/api");
+  const mlStore = isApi ? useMLStore() : null;
   const profilePath = isApi ? "/api/perfil" : "/perfil";
   const settingsPath = isApi ? "/api/integracoes" : "/sheets/configuracoes";
   const displayName = profile?.full_name || "Usuário";
