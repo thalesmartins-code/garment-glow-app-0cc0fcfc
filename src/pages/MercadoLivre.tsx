@@ -1355,7 +1355,7 @@ export default function MercadoLivre() {
                   formatter={(value: number, name: string) => [currencyFmt(Number(value)), name]}
                   contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", backgroundColor: "hsl(var(--card))", color: "hsl(var(--card-foreground))", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
                 />
-                <Legend />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
                 {perMarketplaceHourly.map((mp) => (
                   <Line
                     key={mp.id}
@@ -1428,7 +1428,7 @@ export default function MercadoLivre() {
                       boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                     }}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ fontSize: 10 }} />
                   {showHourlyChart ? (
                     <>
                       <Bar
