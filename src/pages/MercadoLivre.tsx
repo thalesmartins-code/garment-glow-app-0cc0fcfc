@@ -167,6 +167,59 @@ function getFilterDates(customRange: DateRange, period: number): { fromDate: str
   return { fromDate: cutoffDateStr(period), toDate: todayUTC() };
 }
 
+function getComparisonRanges(customRange: DateRange, period: number) {
+  if (customRange?.from) {
+    const from = format(startOfDay(customRange.from), "yyyy-MM-dd");
+    const to = format(startOfDay(customRange.to ?? customRange.from), "yyyy-MM-dd");
+    const diffMs = startOfDay(customRange.to ?? customRange.from).getTime() - startOfDay(customRange.from).getTime();
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
+    const pTo = new Date(startOfDay(customRange.from));
+    pTo.setDate(pTo.getDate() - 1);
+    const pFrom = new Date(pTo);
+    pFrom.setDate(pFrom.getDate() - diffDays + 1);
+    return {
+      currentFrom: from,
+      currentTo: to,
+      prevFrom: format(pFrom, "yyyy-MM-dd"),
+      prevTo: format(pTo, "yyyy-MM-dd"),
+      fetchFrom: format(pFrom, "yyyy-MM-dd"),
+      fetchTo: to,
+    };
+  }
+
+  const today = todayUTC();
+  if (period === 0) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = format(yesterday, "yyyy-MM-dd");
+    return {
+      currentFrom: today,
+      currentTo: today,
+      prevFrom: yesterdayStr,
+      prevTo: yesterdayStr,
+      fetchFrom: yesterdayStr,
+      fetchTo: today,
+    };
+  }
+
+  const currentFrom = cutoffDateStr(period);
+  const prevCutoffTo = new Date();
+  prevCutoffTo.setDate(prevCutoffTo.getDate() - period - 1);
+  const prevCutoffFrom = new Date();
+  prevCutoffFrom.setDate(prevCutoffFrom.getDate() - period * 2 - 1);
+  const prevFrom = format(prevCutoffFrom, "yyyy-MM-dd");
+  const prevTo = format(prevCutoffTo, "yyyy-MM-dd");
+
+  return {
+    currentFrom,
+    currentTo: today,
+    prevFrom,
+    prevTo,
+    fetchFrom: prevFrom,
+    fetchTo: today,
+  };
+}
+
 export default function MercadoLivre() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -241,46 +294,10 @@ export default function MercadoLivre() {
   }, [activeFilterKey, isHourlyAvailable]);
 
   // Compute current and previous period date ranges
-  const { currentFrom, currentTo, prevFrom, prevTo } = useMemo(() => {
-    if (customRange?.from) {
-      const from = format(startOfDay(customRange.from), "yyyy-MM-dd");
-      const to = format(startOfDay(customRange.to ?? customRange.from), "yyyy-MM-dd");
-      const diffMs = startOfDay(customRange.to ?? customRange.from).getTime() - startOfDay(customRange.from).getTime();
-      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
-      const pTo = new Date(startOfDay(customRange.from));
-      pTo.setDate(pTo.getDate() - 1);
-      const pFrom = new Date(pTo);
-      pFrom.setDate(pFrom.getDate() - diffDays + 1);
-      return {
-        currentFrom: from,
-        currentTo: to,
-        prevFrom: format(pFrom, "yyyy-MM-dd"),
-        prevTo: format(pTo, "yyyy-MM-dd"),
-      };
-    }
-    const today = todayUTC();
-    if (period === 0) {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      return {
-        currentFrom: today,
-        currentTo: today,
-        prevFrom: format(yesterday, "yyyy-MM-dd"),
-        prevTo: format(yesterday, "yyyy-MM-dd"),
-      };
-    }
-    const cutoff = cutoffDateStr(period);
-    const prevCutoffTo = new Date();
-    prevCutoffTo.setDate(prevCutoffTo.getDate() - period - 1);
-    const prevCutoffFrom = new Date();
-    prevCutoffFrom.setDate(prevCutoffFrom.getDate() - period * 2 - 1);
-    return {
-      currentFrom: cutoff,
-      currentTo: today,
-      prevFrom: format(prevCutoffFrom, "yyyy-MM-dd"),
-      prevTo: format(prevCutoffTo, "yyyy-MM-dd"),
-    };
-  }, [customRange, period]);
+  const { currentFrom, currentTo, prevFrom, prevTo, fetchFrom, fetchTo } = useMemo(
+    () => getComparisonRanges(customRange, period),
+    [customRange, period],
+  );
 
   const daily = allDaily.filter((d) => d.date >= currentFrom && d.date <= currentTo);
 
@@ -609,6 +626,10 @@ export default function MercadoLivre() {
 
         const fromDateStr = format(rangeStart, "yyyy-MM-dd");
         const toDateStr = format(rangeEnd, "yyyy-MM-dd");
+        const { fetchFrom, fetchTo, currentFrom, currentTo } = getComparisonRanges(
+          effectiveFrom ? { from: effectiveFrom, to: effectiveTo ?? effectiveFrom } : null,
+          effectiveFrom ? 0 : (opts?.periodDays ?? period),
+        );
 
         // Sync each token in small chunks to avoid API truncation on larger periods
         const totalDays = Math.round((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
@@ -661,9 +682,9 @@ export default function MercadoLivre() {
         }
 
         await Promise.all([
-          loadFromCache(fromDateStr, toDateStr),
+          loadFromCache(fetchFrom, fetchTo),
           loadHourlyCache(hourlyDateOverride),
-          loadProductCache(fromDateStr, toDateStr),
+          loadProductCache(currentFrom, currentTo),
         ]);
         if (lastUserInfo) setMlUser(lastUserInfo);
 
@@ -702,8 +723,8 @@ export default function MercadoLivre() {
 
   const reloadCache = useCallback(async () => {
     cacheLoadedRef.current = false;
-    const { fromDate, toDate } = getFilterDates(customRange, period);
-    await Promise.all([loadFromCache(), loadHourlyCache(), loadProductCache(fromDate, toDate)]);
+      const { fetchFrom, fetchTo, currentFrom, currentTo } = getComparisonRanges(customRange, period);
+      await Promise.all([loadFromCache(fetchFrom, fetchTo), loadHourlyCache(), loadProductCache(currentFrom, currentTo)]);
   }, [loadFromCache, loadHourlyCache, loadProductCache, customRange, period]);
 
   const autoSyncTriggeredRef = useRef(false);
@@ -764,10 +785,10 @@ export default function MercadoLivre() {
   // Reload caches when store selection changes
   useEffect(() => {
     if (!user || !cacheLoadedRef.current) return;
-    const { fromDate, toDate } = getFilterDates(customRange, period);
-    void loadFromCache();
+    const { fetchFrom, fetchTo, currentFrom, currentTo } = getComparisonRanges(customRange, period);
+    void loadFromCache(fetchFrom, fetchTo);
     void loadHourlyCache();
-    void loadProductCache(fromDate, toDate);
+    void loadProductCache(currentFrom, currentTo);
   }, [selectedStore]);
 
   // Recarrega diário, horário E produtos sempre que o filtro mudar
@@ -776,11 +797,10 @@ export default function MercadoLivre() {
       setAllHourly([]);
       return;
     }
-    const { fromDate, toDate } = getFilterDates(customRange, period);
-    void loadFromCache(fromDate, toDate);
+    void loadFromCache(fetchFrom, fetchTo);
     void loadHourlyCache();
-    void loadProductCache(fromDate, toDate);
-  }, [user, loadFromCache, loadHourlyCache, loadProductCache, activeFilterKey]);
+    void loadProductCache(currentFrom, currentTo);
+  }, [user, loadFromCache, loadHourlyCache, loadProductCache, activeFilterKey, fetchFrom, fetchTo, currentFrom, currentTo]);
 
   const handleConfirm = useCallback(() => {
     if (pendingRange?.from) {
