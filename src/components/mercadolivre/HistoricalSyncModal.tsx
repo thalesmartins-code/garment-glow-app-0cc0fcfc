@@ -147,6 +147,7 @@ export function HistoricalSyncModal({ accessToken, mlUserId, onSyncComplete }: P
             user_id: user.id,
             date_from: chunk.date_from,
             date_to: chunk.date_to,
+            seller_id: sellerId || null,
           },
         });
 

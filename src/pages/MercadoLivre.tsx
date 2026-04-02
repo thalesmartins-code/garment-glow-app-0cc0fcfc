@@ -598,6 +598,7 @@ export default function MercadoLivre() {
                   user_id: user.id,
                   date_from: chunkFrom,
                   date_to: chunkTo,
+                  seller_id: stores.find(s => s.ml_user_id === tokenInfo.ml_user_id)?.seller_id || null,
                 },
               },
             );

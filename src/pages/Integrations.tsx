@@ -561,7 +561,7 @@ export default function Integrations() {
 
       const today = new Date().toISOString().substring(0, 10);
       const { data, error } = await supabase.functions.invoke("mercado-libre-integration", {
-        body: { access_token, date_from: today, date_to: today },
+        body: { access_token, date_from: today, date_to: today, seller_id: selectedSeller?.id || null },
       });
 
       if (error || !data?.success) {
