@@ -1344,10 +1344,10 @@ export default function MercadoLivre() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
       {isAll && overlaidHourlyData && perMarketplaceHourly ? (
         <Card>
-          <div className="px-4 pt-4 pb-1">
+          <div className="px-4 pt-4 pb-3">
             <span className="text-sm font-medium text-foreground">Receita por Hora — Todos os Marketplaces</span>
           </div>
-          <CardContent className="px-4 pb-4">
+          <CardContent className="px-4 pb-2 pt-0">
             <ResponsiveContainer width="100%" height={220}>
               <ComposedChart data={overlaidHourlyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
@@ -1374,10 +1374,10 @@ export default function MercadoLivre() {
         </Card>
       ) : (dailyChartData.length > 0 || showHourlyChart) ? (
         <Card>
-          <div className="px-4 pt-4 pb-1">
+          <div className="px-4 pt-4 pb-3">
             <span className="text-sm font-medium text-foreground">{chartTitle}</span>
           </div>
-          <CardContent className="px-4 pb-4">
+          <CardContent className="px-4 pb-2 pt-0">
             {showHourlyChart && !hasHourlyData && !syncing ? (
               <div className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-6 text-center">
                 <p className="text-sm font-medium text-foreground">Sem dados horários</p>
