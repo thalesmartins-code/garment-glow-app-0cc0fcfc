@@ -1,7 +1,6 @@
 import {
   ArrowLeft,
   ClipboardList,
-  Clock,
   FileBarChart,
   Megaphone,
   MessageCircleQuestion,
@@ -25,7 +24,6 @@ const apiSections: SidebarNavSection[] = [
         label: "Vendas",
         path: "/api",
         children: [
-          { icon: Clock,       label: "Venda / Hora", path: "/api/vendas-hora" },
           { icon: FileBarChart, label: "Relatórios",  path: "/api/relatorios"  },
         ],
       },
