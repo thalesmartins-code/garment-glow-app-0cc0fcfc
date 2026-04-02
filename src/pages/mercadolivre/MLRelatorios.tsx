@@ -716,6 +716,13 @@ export default function MLRelatorios() {
             <HourlyBubbleChart />
           </motion.div>
         </TabsContent>
+
+        {/* === VENDA/HORA === */}
+        <TabsContent value="vendahora">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+            <HourlySalesTable hourly={getAllMarketplaceMockHourly()} />
+          </motion.div>
+        </TabsContent>
       </Tabs>
     </div>
   );
