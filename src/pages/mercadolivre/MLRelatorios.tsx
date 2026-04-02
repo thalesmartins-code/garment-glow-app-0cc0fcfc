@@ -135,6 +135,8 @@ function useReportData() {
     const stateWeights: Record<string, number> = {
       SP: 0.32, RJ: 0.12, MG: 0.10, RS: 0.07, PR: 0.07, BA: 0.05, SC: 0.05,
       GO: 0.04, PE: 0.04, CE: 0.03, DF: 0.03, PA: 0.02, ES: 0.02, MT: 0.02, MA: 0.02,
+      AM: 0.01, MS: 0.015, PI: 0.01, RN: 0.01, PB: 0.01, AL: 0.008, SE: 0.006,
+      TO: 0.008, RO: 0.007, AC: 0.003, AP: 0.003, RR: 0.003,
     };
     const geoData = BRAZILIAN_STATES.map((st) => {
       const weight = stateWeights[st.uf] || 0.01;
