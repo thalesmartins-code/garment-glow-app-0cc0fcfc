@@ -1373,30 +1373,8 @@ export default function MercadoLivre() {
         </Card>
       ) : (dailyChartData.length > 0 || showHourlyChart) ? (
         <Card>
-          <div className="flex items-center justify-between px-4 pt-4 pb-1">
+          <div className="px-4 pt-4 pb-1">
             <span className="text-sm font-medium text-foreground">{chartTitle}</span>
-            <div className="flex items-center gap-2">
-              {isHourlyAvailable && (
-                <Button
-                  size="sm"
-                  variant={chartMode === "hourly" ? "default" : "outline"}
-                  className="h-7 text-xs"
-                  onClick={() => setChartMode("hourly")}
-                >
-                  <Clock3 className="mr-1 h-3.5 w-3.5" /> Hora
-                </Button>
-              )}
-              {!isHourlyAvailable && (
-                <Button
-                  size="sm"
-                  variant={chartMode === "daily" ? "default" : "outline"}
-                  className="h-7 text-xs"
-                  onClick={() => setChartMode("daily")}
-                >
-                  Diário
-                </Button>
-              )}
-            </div>
           </div>
           <CardContent className="px-4 pb-4">
             {showHourlyChart && !hasHourlyData && !syncing ? (
