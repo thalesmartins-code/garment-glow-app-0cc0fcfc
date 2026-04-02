@@ -1,11 +1,13 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BarChart3, FileText, TrendingDown, DollarSign, ArrowUpDown, Trophy, MapPin, CalendarRange, Circle } from "lucide-react";
+import { BarChart3, FileText, TrendingDown, DollarSign, ArrowUpDown, Trophy, MapPin, CalendarRange, Circle, Clock3 } from "lucide-react";
 import { BrazilHeatMap } from "@/components/mercadolivre/BrazilHeatMap";
 import { HourlyStackedBars } from "@/components/mercadolivre/HourlyStackedBars";
 import { HourlyRadar } from "@/components/mercadolivre/HourlyRadar";
 import { HourlyBubbleChart } from "@/components/mercadolivre/HourlyBubbleChart";
+import { HourlySalesTable } from "@/components/mercadolivre/HourlySalesTable";
+import { getMarketplaceHourlyData, getAllMarketplaceMockHourly } from "@/data/marketplaceMockData";
 import { motion } from "framer-motion";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -228,6 +230,10 @@ export default function MLRelatorios() {
           <TabsTrigger value="bubble" className="gap-1.5 text-xs sm:text-sm">
             <Circle className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Bubble/Hora</span>
+          </TabsTrigger>
+          <TabsTrigger value="vendahora" className="gap-1.5 text-xs sm:text-sm">
+            <Clock3 className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Venda/Hora</span>
           </TabsTrigger>
         </TabsList>
 
@@ -708,6 +714,13 @@ export default function MLRelatorios() {
         <TabsContent value="bubble">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
             <HourlyBubbleChart />
+          </motion.div>
+        </TabsContent>
+
+        {/* === VENDA/HORA === */}
+        <TabsContent value="vendahora">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+            <HourlySalesTable hourly={getAllMarketplaceMockHourly()} />
           </motion.div>
         </TabsContent>
       </Tabs>
