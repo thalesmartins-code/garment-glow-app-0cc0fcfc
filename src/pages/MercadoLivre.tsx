@@ -1600,22 +1600,22 @@ export default function MercadoLivre() {
               const metricsRows = [
                 {
                   label: "Reclamações",
-                  value: claimsRate !== null ? `${(claimsRate * 100).toFixed(1)}%` : "—",
+                  value: claimsRate !== null ? `${(claimsRate * 100).toFixed(2)}%` : "—",
                   good: claimsRate !== null ? claimsRate < 0.02 : true,
                 },
                 {
                   label: "Atraso no envio",
-                  value: delayedRate !== null ? `${(delayedRate * 100).toFixed(1)}%` : "—",
+                  value: delayedRate !== null ? `${(delayedRate * 100).toFixed(2)}%` : "—",
                   good: delayedRate !== null ? delayedRate < 0.05 : true,
                 },
                 {
                   label: "Cancelamentos",
-                  value: `${(cancelRate * 100).toFixed(1)}%`,
+                  value: `${(cancelRate * 100).toFixed(2)}%`,
                   good: cancelRate < 0.03,
                 },
                 {
                   label: "Avaliação positiva",
-                  value: positiveRating !== null ? `${(positiveRating * 100).toFixed(0)}%` : "—",
+                  value: positiveRating !== null ? `${(positiveRating * 100).toFixed(2)}%` : "—",
                   good: positiveRating !== null ? positiveRating >= 0.8 : true,
                 },
               ];
