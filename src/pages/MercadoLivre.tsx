@@ -42,6 +42,7 @@ import {
   Clock3,
   Loader2,
   Handshake,
+  ChevronDown,
 } from "lucide-react";
 import {
   ComposedChart,
@@ -1070,9 +1071,14 @@ export default function MercadoLivre() {
             }}
           >
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 text-sm">
-                <CalendarIcon className="w-3.5 h-3.5 mr-1" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 rounded-lg bg-muted/60 px-3 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground" />
                 {periodLabel}
+                <ChevronDown className="w-3 h-3 text-muted-foreground ml-0.5" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-3" align="start">
