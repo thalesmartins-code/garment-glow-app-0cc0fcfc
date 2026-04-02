@@ -1505,7 +1505,7 @@ export default function MercadoLivre() {
                   <ResponsiveContainer width="100%" height={180}>
                     <FunnelChart>
                       <Funnel dataKey="value" data={funnelData} isAnimationActive>
-                        <LabelList position="center" fill="#fff" fontSize={11} fontWeight={700}
+                        <LabelList position="right" fill="#000" fontSize={11} fontWeight={700}
                           formatter={(v: number) => numFmt(v)} />
                       </Funnel>
                       <RechartsTooltip
