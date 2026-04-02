@@ -7,11 +7,9 @@ import {
   PackageX,
   Plug,
   Receipt,
-  RefreshCw,
   ShoppingBag,
   Star,
   TrendingUp,
-  Upload,
   Users,
 } from "lucide-react";
 import { EnvironmentSidebar, type SidebarNavSection } from "./EnvironmentSidebar";
