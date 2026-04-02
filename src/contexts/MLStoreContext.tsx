@@ -8,6 +8,7 @@ export interface MLStore {
   custom_name: string | null;
   access_token: string;
   displayName: string;
+  seller_id: string | null;
 }
 
 export interface MLSalesDaily {

@@ -240,7 +240,8 @@ export default function Integrations() {
           expires_at: expiresAt,
           ml_user_id: String(tokenData.user_id),
           token_type: "bearer",
-        },
+          seller_id: selectedSeller?.id || null,
+        } as any,
         { onConflict: "user_id,ml_user_id" },
       );
     } catch (e) {

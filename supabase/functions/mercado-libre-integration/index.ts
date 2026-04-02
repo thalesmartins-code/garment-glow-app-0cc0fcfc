@@ -134,7 +134,7 @@ serve(async (req) => {
   }
 
   try {
-    const { access_token, days = 1, user_id, date_from, date_to } = await req.json();
+    const { access_token, days = 1, user_id, date_from, date_to, seller_id } = await req.json();
 
     if (!access_token) {
       return new Response(JSON.stringify({ error: "Missing access_token" }), {
