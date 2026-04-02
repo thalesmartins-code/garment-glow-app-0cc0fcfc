@@ -1014,6 +1014,14 @@ export default function MercadoLivre() {
       {/* Seller + Marketplace selector */}
       <SellerMarketplaceBar />
 
+      <Tabs defaultValue="vendas" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="vendas">Vendas</TabsTrigger>
+          <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="vendas" className="space-y-5 mt-0">
+
       <AnimatePresence>
         {syncProgress && (() => {
           const pct = Math.round((syncProgress.current / syncProgress.total) * 100);
