@@ -28,7 +28,13 @@ const BRAZILIAN_STATES = [
   { uf: "PE", name: "Pernambuco" }, { uf: "CE", name: "Ceará" },
   { uf: "DF", name: "Distrito Federal" }, { uf: "PA", name: "Pará" },
   { uf: "ES", name: "Espírito Santo" }, { uf: "MT", name: "Mato Grosso" },
-  { uf: "MA", name: "Maranhão" },
+  { uf: "MA", name: "Maranhão" }, { uf: "AM", name: "Amazonas" },
+  { uf: "MS", name: "Mato Grosso do Sul" }, { uf: "PI", name: "Piauí" },
+  { uf: "RN", name: "Rio Grande do Norte" }, { uf: "PB", name: "Paraíba" },
+  { uf: "AL", name: "Alagoas" }, { uf: "SE", name: "Sergipe" },
+  { uf: "TO", name: "Tocantins" }, { uf: "RO", name: "Rondônia" },
+  { uf: "AC", name: "Acre" }, { uf: "AP", name: "Amapá" },
+  { uf: "RR", name: "Roraima" },
 ];
 
 function useReportData() {
