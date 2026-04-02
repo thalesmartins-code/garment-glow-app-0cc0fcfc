@@ -1114,7 +1114,7 @@ export default function MercadoLivre() {
   const chartData = showHourlyChart ? hourlyChartData : dailyChartData;
   const hasData = useRealData ? allDaily.length > 0 || effectiveDaily.length > 0 : effectiveDaily.length > 0;
   const hasHourlyData = effectiveHourly.length > 0;
-  const chartTitle = showHourlyChart ? `Venda / Hora — ${periodLabel}` : `Vendas Diárias — ${periodLabel}`;
+  const chartTitle = showHourlyChart ? `Receita por Hora — ${periodLabel}` : `Receita Diária — ${periodLabel}`;
 
   return (
     <div className="space-y-5">
@@ -1342,7 +1342,7 @@ export default function MercadoLivre() {
           <div className="px-4 pt-4 pb-1">
             <span className="text-sm font-medium text-foreground inline-flex items-center gap-1.5">
               <Clock3 className="w-3.5 h-3.5 text-muted-foreground" />
-              Venda / Hora — Todos os Marketplaces
+              Receita por Hora — Todos os Marketplaces
             </span>
           </div>
           <CardContent className="px-4 pb-4">
