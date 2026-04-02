@@ -1107,16 +1107,7 @@ export default function MercadoLivre() {
           </TabsList>
         </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-          >
-            {activeTab === "vendas" && (
-        <TabsContent value="vendas" className="space-y-5 mt-0" forceMount>
+        <TabsContent value="vendas" className="space-y-5 mt-0 animate-fade-in">
 
       <AnimatePresence>
         {syncProgress && (() => {
@@ -1503,15 +1494,10 @@ export default function MercadoLivre() {
         </div>
       )}
         </TabsContent>
-            )}
 
-            {activeTab === "relatorios" && (
-        <TabsContent value="relatorios" className="mt-0" forceMount>
+        <TabsContent value="relatorios" className="mt-0 animate-fade-in">
           <MLRelatorios />
         </TabsContent>
-            )}
-          </motion.div>
-        </AnimatePresence>
       </Tabs>
     </div>
   );
