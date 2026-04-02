@@ -1359,16 +1359,16 @@ export default function MercadoLivre() {
                         fill="url(#mlTotal)"
                         strokeWidth={2}
                       />
+                    </>
                   ) : (
-                    <>
-                      <Area
-                        yAxisId="revenue"
-                        type="monotone"
-                        dataKey="Venda Total"
-                        stroke="hsl(var(--accent))"
-                        fill="url(#mlTotal)"
-                        strokeWidth={2}
-                      />
+                    <Area
+                      yAxisId="revenue"
+                      type="monotone"
+                      dataKey="Venda Total"
+                      stroke="hsl(var(--accent))"
+                      fill="url(#mlTotal)"
+                      strokeWidth={2}
+                    />
                   )}
                 </ComposedChart>
               </ResponsiveContainer>
