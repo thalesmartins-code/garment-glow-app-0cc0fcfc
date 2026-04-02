@@ -678,9 +678,9 @@ export default function MercadoLivre() {
         }
 
         await Promise.all([
-          loadFromCache(fromDateStr, toDateStr),
+          loadFromCache(fetchFrom, fetchTo),
           loadHourlyCache(hourlyDateOverride),
-          loadProductCache(fromDateStr, toDateStr),
+          loadProductCache(currentFrom, currentTo),
         ]);
         if (lastUserInfo) setMlUser(lastUserInfo);
 
@@ -719,8 +719,8 @@ export default function MercadoLivre() {
 
   const reloadCache = useCallback(async () => {
     cacheLoadedRef.current = false;
-    const { fromDate, toDate } = getFilterDates(customRange, period);
-    await Promise.all([loadFromCache(), loadHourlyCache(), loadProductCache(fromDate, toDate)]);
+      const { fetchFrom, fetchTo, currentFrom, currentTo } = getComparisonRanges(customRange, period);
+      await Promise.all([loadFromCache(fetchFrom, fetchTo), loadHourlyCache(), loadProductCache(currentFrom, currentTo)]);
   }, [loadFromCache, loadHourlyCache, loadProductCache, customRange, period]);
 
   const autoSyncTriggeredRef = useRef(false);
@@ -781,10 +781,10 @@ export default function MercadoLivre() {
   // Reload caches when store selection changes
   useEffect(() => {
     if (!user || !cacheLoadedRef.current) return;
-    const { fromDate, toDate } = getFilterDates(customRange, period);
-    void loadFromCache();
+    const { fetchFrom, fetchTo, currentFrom, currentTo } = getComparisonRanges(customRange, period);
+    void loadFromCache(fetchFrom, fetchTo);
     void loadHourlyCache();
-    void loadProductCache(fromDate, toDate);
+    void loadProductCache(currentFrom, currentTo);
   }, [selectedStore]);
 
   // Recarrega diário, horário E produtos sempre que o filtro mudar
@@ -793,10 +793,9 @@ export default function MercadoLivre() {
       setAllHourly([]);
       return;
     }
-    const { fromDate, toDate } = getFilterDates(customRange, period);
-    void loadFromCache(fromDate, toDate);
+    void loadFromCache(fetchFrom, fetchTo);
     void loadHourlyCache();
-    void loadProductCache(fromDate, toDate);
+    void loadProductCache(currentFrom, currentTo);
   }, [user, loadFromCache, loadHourlyCache, loadProductCache, activeFilterKey]);
 
   const handleConfirm = useCallback(() => {
