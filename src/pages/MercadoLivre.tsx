@@ -25,7 +25,7 @@ import { MLStoreSelector } from "@/components/mercadolivre/MLStoreSelector";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
 import { GoalsCard } from "@/components/mercadolivre/GoalsCard";
 
-import { SellerMarketplaceBar } from "@/components/layout/SellerMarketplaceBar";
+
 import {
   DollarSign,
   ShoppingCart,
@@ -1089,7 +1089,7 @@ export default function MercadoLivre() {
   if (onlyMLSelected && !loading && !connected) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <SellerMarketplaceBar className="mb-2" />
+        
         <Plug className="w-16 h-16 text-muted-foreground/40" />
         <h2 className="text-xl font-semibold text-foreground">Mercado Livre não conectado</h2>
         <p className="text-muted-foreground text-sm">
@@ -1123,10 +1123,8 @@ export default function MercadoLivre() {
 
   return (
     <div className="space-y-5">
-      {/* Seller + Marketplace selector */}
       <Tabs defaultValue="vendas" className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <SellerMarketplaceBar />
+        <div className="flex items-center justify-end gap-4">
           <TabsList className="h-8">
             <TabsTrigger value="vendas" className="text-xs px-3 h-7">Vendas</TabsTrigger>
             <TabsTrigger value="relatorios" className="text-xs px-3 h-7">Relatórios</TabsTrigger>
