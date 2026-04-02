@@ -240,15 +240,51 @@ export default function MercadoLivre() {
     setChartMode(isHourlyAvailable ? "hourly" : "daily");
   }, [activeFilterKey, isHourlyAvailable]);
 
-  const daily = allDaily.filter((d) => {
+  // Compute current and previous period date ranges
+  const { currentFrom, currentTo, prevFrom, prevTo } = useMemo(() => {
     if (customRange?.from) {
       const from = format(startOfDay(customRange.from), "yyyy-MM-dd");
       const to = format(startOfDay(customRange.to ?? customRange.from), "yyyy-MM-dd");
-      return d.date >= from && d.date <= to;
+      const diffMs = startOfDay(customRange.to ?? customRange.from).getTime() - startOfDay(customRange.from).getTime();
+      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
+      const pTo = new Date(startOfDay(customRange.from));
+      pTo.setDate(pTo.getDate() - 1);
+      const pFrom = new Date(pTo);
+      pFrom.setDate(pFrom.getDate() - diffDays + 1);
+      return {
+        currentFrom: from,
+        currentTo: to,
+        prevFrom: format(pFrom, "yyyy-MM-dd"),
+        prevTo: format(pTo, "yyyy-MM-dd"),
+      };
+    }
+    const today = todayUTC();
+    if (period === 0) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      return {
+        currentFrom: today,
+        currentTo: today,
+        prevFrom: format(yesterday, "yyyy-MM-dd"),
+        prevTo: format(yesterday, "yyyy-MM-dd"),
+      };
     }
     const cutoff = cutoffDateStr(period);
-    return d.date >= cutoff;
-  });
+    const prevCutoffTo = new Date();
+    prevCutoffTo.setDate(prevCutoffTo.getDate() - period - 1);
+    const prevCutoffFrom = new Date();
+    prevCutoffFrom.setDate(prevCutoffFrom.getDate() - period * 2 - 1);
+    return {
+      currentFrom: cutoff,
+      currentTo: today,
+      prevFrom: format(prevCutoffFrom, "yyyy-MM-dd"),
+      prevTo: format(prevCutoffTo, "yyyy-MM-dd"),
+    };
+  }, [customRange, period]);
+
+  const daily = allDaily.filter((d) => d.date >= currentFrom && d.date <= currentTo);
+
+  const previousDaily = allDaily.filter((d) => d.date >= prevFrom && d.date <= prevTo);
 
   const hourly = allHourly.filter((d) => {
     if (isHourlyAvailable) {
