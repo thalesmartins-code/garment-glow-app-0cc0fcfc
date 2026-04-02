@@ -33,11 +33,9 @@ export function TopSellingProducts({ products, loading, showOrigin }: Props) {
   if (loading) {
     return (
       <Card className="h-full flex flex-col">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">
-            Produtos mais vendidos
-          </CardTitle>
-        </CardHeader>
+        <div className="px-4 pt-4 pb-2">
+          <span className="text-sm font-medium text-foreground">Produtos mais vendidos</span>
+        </div>
         <CardContent>
           <div className="space-y-3">
             {Array.from({ length: 5 }, (_, i) => (
@@ -58,11 +56,9 @@ export function TopSellingProducts({ products, loading, showOrigin }: Props) {
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">
-          Produtos mais vendidos
-        </CardTitle>
-      </CardHeader>
+      <div className="px-4 pt-4 pb-2">
+        <span className="text-sm font-medium text-foreground">Produtos mais vendidos</span>
+      </div>
       <CardContent className="flex-1 p-0 flex flex-col">
         {products.length === 0 ? (
           <div className="flex flex-col items-center justify-center flex-1 text-muted-foreground text-sm">
