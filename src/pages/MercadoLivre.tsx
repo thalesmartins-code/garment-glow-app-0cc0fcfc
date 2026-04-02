@@ -240,15 +240,51 @@ export default function MercadoLivre() {
     setChartMode(isHourlyAvailable ? "hourly" : "daily");
   }, [activeFilterKey, isHourlyAvailable]);
 
-  const daily = allDaily.filter((d) => {
+  // Compute current and previous period date ranges
+  const { currentFrom, currentTo, prevFrom, prevTo } = useMemo(() => {
     if (customRange?.from) {
       const from = format(startOfDay(customRange.from), "yyyy-MM-dd");
       const to = format(startOfDay(customRange.to ?? customRange.from), "yyyy-MM-dd");
-      return d.date >= from && d.date <= to;
+      const diffMs = startOfDay(customRange.to ?? customRange.from).getTime() - startOfDay(customRange.from).getTime();
+      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
+      const pTo = new Date(startOfDay(customRange.from));
+      pTo.setDate(pTo.getDate() - 1);
+      const pFrom = new Date(pTo);
+      pFrom.setDate(pFrom.getDate() - diffDays + 1);
+      return {
+        currentFrom: from,
+        currentTo: to,
+        prevFrom: format(pFrom, "yyyy-MM-dd"),
+        prevTo: format(pTo, "yyyy-MM-dd"),
+      };
+    }
+    const today = todayUTC();
+    if (period === 0) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      return {
+        currentFrom: today,
+        currentTo: today,
+        prevFrom: format(yesterday, "yyyy-MM-dd"),
+        prevTo: format(yesterday, "yyyy-MM-dd"),
+      };
     }
     const cutoff = cutoffDateStr(period);
-    return d.date >= cutoff;
-  });
+    const prevCutoffTo = new Date();
+    prevCutoffTo.setDate(prevCutoffTo.getDate() - period - 1);
+    const prevCutoffFrom = new Date();
+    prevCutoffFrom.setDate(prevCutoffFrom.getDate() - period * 2 - 1);
+    return {
+      currentFrom: cutoff,
+      currentTo: today,
+      prevFrom: format(prevCutoffFrom, "yyyy-MM-dd"),
+      prevTo: format(prevCutoffTo, "yyyy-MM-dd"),
+    };
+  }, [customRange, period]);
+
+  const daily = allDaily.filter((d) => d.date >= currentFrom && d.date <= currentTo);
+
+  const previousDaily = allDaily.filter((d) => d.date >= prevFrom && d.date <= prevTo);
 
   const hourly = allHourly.filter((d) => {
     if (isHourlyAvailable) {
@@ -870,6 +906,56 @@ export default function MercadoLivre() {
     return m;
   }, [effectiveDaily]);
 
+  // Previous period daily data (same merge logic)
+  const effectivePreviousDaily = useMemo(() => {
+    if (isAll) {
+      const dateMap = new Map<string, DailyBreakdown>();
+      for (const d of previousDaily) dateMap.set(d.date, { ...d });
+      for (const d of mockDaily) {
+        if (d.date < prevFrom || d.date > prevTo) continue;
+        const existing = dateMap.get(d.date);
+        if (existing) {
+          existing.total += d.total;
+          existing.approved += d.approved;
+          existing.qty += d.qty;
+          existing.units_sold += d.units_sold;
+          existing.cancelled += d.cancelled;
+          existing.shipped += d.shipped;
+          existing.unique_visits += d.unique_visits;
+          existing.unique_buyers += d.unique_buyers;
+        } else {
+          dateMap.set(d.date, { ...d });
+        }
+      }
+      return Array.from(dateMap.values());
+    }
+    if (isML) return previousDaily;
+    return mockDaily.filter(d => d.date >= prevFrom && d.date <= prevTo);
+  }, [isAll, isML, previousDaily, mockDaily, prevFrom, prevTo]);
+
+  const previousMetrics = useMemo(() => {
+    if (effectivePreviousDaily.length === 0) return null;
+    const m = {
+      total_revenue: effectivePreviousDaily.reduce((s, d) => s + d.total, 0),
+      units_sold: effectivePreviousDaily.reduce((s, d) => s + d.units_sold, 0),
+      unique_visits: effectivePreviousDaily.reduce((s, d) => s + (d.unique_visits || 0), 0),
+      unique_buyers: effectivePreviousDaily.reduce((s, d) => s + (d.unique_buyers || 0), 0),
+      total_orders: effectivePreviousDaily.reduce((s, d) => s + d.qty, 0),
+      avg_ticket: 0,
+      conversion_rate: 0,
+    };
+    if (m.total_orders > 0) m.avg_ticket = m.total_revenue / m.total_orders;
+    if (m.unique_visits > 0) m.conversion_rate = (m.unique_buyers / m.unique_visits) * 100;
+    return m;
+  }, [effectivePreviousDaily]);
+
+  const calcDelta = (current: number, previous: number | undefined) => {
+    if (previous === undefined || previous === 0) return undefined;
+    return ((current - previous) / previous) * 100;
+  };
+
+  const deltaLabel = period === 0 ? "vs ontem" : customRange ? "vs período anterior" : `vs ${period}d anteriores`;
+
   // Per-marketplace hourly data for "Todos" grid view
   const perMarketplaceHourly = useMemo(() => {
     if (!isAll) return null;
@@ -1169,6 +1255,8 @@ export default function MercadoLivre() {
           size="compact"
           loading={effectiveLoading}
           refreshing={effectiveSyncing && !syncProgress}
+          delta={effectiveMetrics && previousMetrics ? calcDelta(effectiveMetrics.total_revenue, previousMetrics.total_revenue) : undefined}
+          deltaLabel={deltaLabel}
         />
         <KPICard
           title="Qtd. Vendas"
@@ -1180,6 +1268,8 @@ export default function MercadoLivre() {
           loading={effectiveLoading}
           refreshing={effectiveSyncing && !syncProgress}
           tooltip="Nas vendas do carrinho, cada produto diferente conta como uma nova venda."
+          delta={effectiveMetrics && previousMetrics ? calcDelta(effectiveMetrics.units_sold, previousMetrics.units_sold) : undefined}
+          deltaLabel={deltaLabel}
         />
         <KPICard
           title="Ticket Médio"
@@ -1199,6 +1289,8 @@ export default function MercadoLivre() {
           size="compact"
           loading={effectiveLoading}
           refreshing={effectiveSyncing && !syncProgress}
+          delta={effectiveMetrics && previousMetrics ? calcDelta(effectiveMetrics.avg_ticket, previousMetrics.avg_ticket) : undefined}
+          deltaLabel={deltaLabel}
         />
         <KPICard
           title="Visitas"
@@ -1209,6 +1301,8 @@ export default function MercadoLivre() {
           size="compact"
           loading={effectiveLoading}
           refreshing={effectiveSyncing && !syncProgress}
+          delta={effectiveMetrics && previousMetrics ? calcDelta(effectiveMetrics.unique_visits, previousMetrics.unique_visits) : undefined}
+          deltaLabel={deltaLabel}
         />
         <KPICard
           title="Conversão"
@@ -1219,6 +1313,8 @@ export default function MercadoLivre() {
           size="compact"
           loading={effectiveLoading}
           refreshing={effectiveSyncing && !syncProgress}
+          delta={effectiveMetrics && previousMetrics ? calcDelta(effectiveMetrics.conversion_rate, previousMetrics.conversion_rate) : undefined}
+          deltaLabel={deltaLabel}
         />
       </div>
 
