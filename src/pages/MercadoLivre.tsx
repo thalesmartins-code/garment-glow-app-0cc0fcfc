@@ -25,7 +25,7 @@ import { MLStoreSelector } from "@/components/mercadolivre/MLStoreSelector";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
 import { GoalsCard } from "@/components/mercadolivre/GoalsCard";
 
-import { SellerMarketplaceBar } from "@/components/layout/SellerMarketplaceBar";
+
 import {
   DollarSign,
   ShoppingCart,
