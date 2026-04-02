@@ -45,13 +45,18 @@ export function Header({ title, subtitle, showSellerSwitcher = true, showMarketp
 
   return (
     <header className="flex items-center justify-between border-b border-border bg-card px-8 py-4">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
+      <div className="flex items-center gap-4">
+        {showSellerMarketplaceBar ? (
+          <SellerMarketplaceBar />
+        ) : (
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
+            {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-3">
-        {showSellerMarketplaceBar && <SellerMarketplaceBar />}
         {showMarketplaceSwitcher && !showSellerMarketplaceBar && <MarketplaceSwitcher />}
         {showSellerSwitcher && (
           <DropdownMenu>

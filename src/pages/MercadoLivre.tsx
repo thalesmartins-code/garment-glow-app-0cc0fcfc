@@ -1124,12 +1124,6 @@ export default function MercadoLivre() {
   return (
     <div className="space-y-5">
       <Tabs defaultValue="vendas" className="space-y-4">
-        <div className="flex items-center justify-end gap-4">
-          <TabsList className="h-8">
-            <TabsTrigger value="vendas" className="text-xs px-3 h-7">Vendas</TabsTrigger>
-            <TabsTrigger value="relatorios" className="text-xs px-3 h-7">Relatórios</TabsTrigger>
-          </TabsList>
-        </div>
 
         <TabsContent value="vendas" className="space-y-5 mt-0 animate-fade-in">
 
@@ -1154,9 +1148,13 @@ export default function MercadoLivre() {
           );
         })()}
       </AnimatePresence>
-      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4">
         <MLPageHeader title="Vendas" lastUpdated={useRealData && lastSyncedAt ? new Date(lastSyncedAt) : null} />
         <div className="flex items-center gap-2 flex-wrap">
+          <TabsList className="h-8">
+            <TabsTrigger value="vendas" className="text-xs px-3 h-7">Vendas</TabsTrigger>
+            <TabsTrigger value="relatorios" className="text-xs px-3 h-7">Relatórios</TabsTrigger>
+          </TabsList>
           {isML && <MLStoreSelector />}
           <Popover
             open={popoverOpen}
