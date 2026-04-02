@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSeller } from "@/contexts/SellerContext";
 
 export interface MLStore {
   ml_user_id: string;
@@ -84,6 +85,7 @@ const MLStoreContext = createContext<MLStoreState | null>(null);
 
 export function MLStoreProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { selectedSeller } = useSeller();
   const [stores, setStores] = useState<MLStore[]>([]);
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [loading, setLoading] = useState(true);
@@ -107,14 +109,23 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { data: tokens } = await supabase
+      let query = supabase
         .from("ml_tokens")
         .select("ml_user_id, access_token, seller_id")
         .eq("user_id", user.id)
         .not("access_token", "is", null);
 
+      // Filter by active seller when one is selected
+      if (selectedSeller?.id) {
+        query = query.eq("seller_id", selectedSeller.id);
+      }
+
+      const { data: tokens } = await query;
+
       if (!tokens || tokens.length === 0) {
         setStores([]);
+        setSelectedStore("all");
+        setSalesCacheRaw(defaultSalesCache);
         setLoading(false);
         return;
       }
@@ -148,15 +159,15 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
 
       setStores(storeList);
 
-      if (storeList.length === 1) {
-        setSelectedStore(storeList[0].ml_user_id);
-      }
+      // Reset to "all" when seller changes; auto-select if only one store
+      setSelectedStore(storeList.length === 1 ? storeList[0].ml_user_id : "all");
+      setSalesCacheRaw(defaultSalesCache);
     } catch (err) {
       console.error("Failed to fetch ML stores:", err);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, selectedSeller?.id]);
 
   useEffect(() => {
     fetchStores();
