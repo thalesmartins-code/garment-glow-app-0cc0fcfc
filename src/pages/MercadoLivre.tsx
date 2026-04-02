@@ -1140,14 +1140,12 @@ export default function MercadoLivre() {
         </Card>
       )}
 
-      <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <KPICard
           title="Receita Total"
           value={effectiveMetrics ? currencyFmt(effectiveMetrics.total_revenue) : "—"}
           icon={<DollarSign className="w-4 h-4" />}
-          variant="minimal"
-          iconClassName="bg-accent/10 text-accent"
-          size="compact"
+          variant="info"
           loading={effectiveLoading}
           refreshing={effectiveSyncing && !syncProgress}
         />
@@ -1155,9 +1153,7 @@ export default function MercadoLivre() {
           title="Receita Aprovada"
           value={effectiveMetrics ? currencyFmt(effectiveMetrics.approved_revenue) : "—"}
           icon={<DollarSign className="w-4 h-4" />}
-          variant="minimal"
-          iconClassName="bg-success/10 text-success"
-          size="compact"
+          variant="success"
           loading={effectiveLoading}
           refreshing={effectiveSyncing && !syncProgress}
         />
@@ -1165,9 +1161,7 @@ export default function MercadoLivre() {
           title="Qtd. Vendas"
           value={effectiveMetrics ? String(effectiveMetrics.units_sold) : "—"}
           icon={<ShoppingCart className="w-4 h-4" />}
-          variant="minimal"
-          iconClassName="bg-[hsl(270,70%,50%)]/10 text-[hsl(270,70%,50%)]"
-          size="compact"
+          variant="purple"
           loading={effectiveLoading}
           refreshing={effectiveSyncing && !syncProgress}
           tooltip="Nas vendas do carrinho, cada produto diferente conta como uma nova venda."
@@ -1185,9 +1179,7 @@ export default function MercadoLivre() {
               : "—"
           }
           icon={<Tag className="w-4 h-4" />}
-          variant="minimal"
-          iconClassName="bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]"
-          size="compact"
+          variant="orange"
           loading={effectiveLoading}
           refreshing={effectiveSyncing && !syncProgress}
         />
@@ -1195,9 +1187,7 @@ export default function MercadoLivre() {
           title="Visitas"
           value={effectiveMetrics ? effectiveMetrics.unique_visits.toLocaleString("pt-BR") : "—"}
           icon={<Eye className="w-4 h-4" />}
-          variant="minimal"
-          iconClassName="bg-accent/10 text-accent"
-          size="compact"
+          variant="neutral"
           loading={effectiveLoading}
           refreshing={effectiveSyncing && !syncProgress}
         />
@@ -1205,9 +1195,7 @@ export default function MercadoLivre() {
           title="Conversão"
           value={effectiveMetrics ? `${effectiveMetrics.conversion_rate.toFixed(2)}%` : "—"}
           icon={<Percent className="w-4 h-4" />}
-          variant="minimal"
-          iconClassName="bg-success/10 text-success"
-          size="compact"
+          variant="success"
           loading={effectiveLoading}
           refreshing={effectiveSyncing && !syncProgress}
         />
