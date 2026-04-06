@@ -1,0 +1,270 @@
+import { useState, useEffect, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Save, Target, TrendingUp, ShoppingCart, Receipt, Percent, Store, Calendar, CheckCircle2 } from "lucide-react";
+import { useMLStore } from "@/contexts/MLStoreContext";
+import { useSettings } from "@/contexts/SettingsContext";
+import { generateTargetId, generateDefaultPMTDistribution, monthLabels } from "@/types/settings";
+import type { MonthlyTarget } from "@/types/settings";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+
+const today = new Date();
+const currentYear = today.getFullYear();
+const currentMonth = today.getMonth() + 1;
+const years = [currentYear - 1, currentYear, currentYear + 1];
+const months = Array.from({ length: 12 }, (_, i) => i + 1);
+
+const currencyFmt = (v: number) =>
+  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
+function parseCurrency(raw: string): number {
+  const n = parseFloat(raw.replace(/\D/g, "")) / 100;
+  return isNaN(n) ? 0 : n;
+}
+
+function parseDecimal(raw: string): number {
+  const n = parseFloat(raw.replace(/[^\d.]/g, ""));
+  return isNaN(n) ? 0 : n;
+}
+
+function KpiInput({ label, icon, value, onChange, format: fmt, color }: {
+  label: string; icon: React.ReactNode; value: number;
+  onChange: (v: number) => void; format: "currency" | "number" | "percent"; color: string;
+}) {
+  const toDisplay = (v: number) => {
+    if (v <= 0) return "";
+    if (fmt === "currency") return currencyFmt(v).replace("R$", "").trim();
+    if (fmt === "percent") return v.toFixed(1);
+    return String(Math.round(v));
+  };
+  const [raw, setRaw] = useState(() => toDisplay(value));
+  useEffect(() => { setRaw(toDisplay(value)); }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    setRaw(v);
+    if (fmt === "currency") onChange(parseCurrency(v));
+    else onChange(parseDecimal(v));
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <Label className={cn("flex items-center gap-1.5 text-xs font-medium", color)}>
+        {icon}{label}
+      </Label>
+      <div className="relative">
+        {fmt === "currency" && (
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+        )}
+        <Input
+          type="text" inputMode="numeric" value={raw}
+          onChange={handleChange}
+          placeholder={fmt === "currency" ? "0,00" : fmt === "percent" ? "0.0" : "0"}
+          className={cn("text-sm font-semibold", fmt === "currency" ? "pl-9" : fmt === "percent" ? "pr-6" : "")}
+        />
+        {fmt === "percent" && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function MLMetas() {
+  const { toast } = useToast();
+  const { stores } = useMLStore();
+  const { getTarget, saveTarget } = useSettings();
+
+  const [selectedStoreId, setSelectedStoreId] = useState<string>("");
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [kpi, setKpi] = useState({ revenue: 0, orders: 0, ticket: 0, conversion: 0 });
+
+  useEffect(() => {
+    if (!selectedStoreId && stores.length > 0) setSelectedStoreId(stores[0].ml_user_id);
+  }, [stores, selectedStoreId]);
+
+  useEffect(() => {
+    if (!selectedStoreId) return;
+    const existing = getTarget(selectedStoreId, "mercado-livre", selectedYear, selectedMonth);
+    if (existing?.kpiTargets) {
+      setKpi({
+        revenue:    existing.kpiTargets.revenue    ?? existing.targetValue ?? 0,
+        orders:     existing.kpiTargets.orders     ?? 0,
+        ticket:     existing.kpiTargets.ticket     ?? 0,
+        conversion: existing.kpiTargets.conversion ?? 0,
+      });
+    } else if (existing?.targetValue) {
+      setKpi({ revenue: existing.targetValue, orders: 0, ticket: 0, conversion: 0 });
+    } else {
+      setKpi({ revenue: 0, orders: 0, ticket: 0, conversion: 0 });
+    }
+  }, [selectedStoreId, selectedYear, selectedMonth, getTarget]);
+
+  const selectedStore = stores.find((s) => s.ml_user_id === selectedStoreId);
+  const hasAnyTarget = kpi.revenue > 0 || kpi.orders > 0 || kpi.ticket > 0 || kpi.conversion > 0;
+
+  const handleSave = () => {
+    if (!selectedStoreId) { toast({ title: "Selecione uma loja", variant: "destructive" }); return; }
+    const id = generateTargetId(selectedStoreId, "mercado-livre", selectedYear, selectedMonth);
+    const existing = getTarget(selectedStoreId, "mercado-livre", selectedYear, selectedMonth);
+    const target: MonthlyTarget = {
+      id, sellerId: selectedStoreId, marketplaceId: "mercado-livre",
+      year: selectedYear, month: selectedMonth,
+      targetValue: kpi.revenue,
+      kpiTargets: { ...kpi },
+      pmtDistribution: existing?.pmtDistribution ?? generateDefaultPMTDistribution(selectedYear, selectedMonth),
+    };
+    saveTarget(target);
+    toast({ title: "Metas salvas", description: selectedStore?.displayName ?? selectedStoreId });
+  };
+
+  const savedTargets = useMemo(() => {
+    if (!selectedStoreId) return [];
+    return months
+      .map((m) => ({ month: m, target: getTarget(selectedStoreId, "mercado-livre", selectedYear, m) }))
+      .filter((r) => !!r.target && ((r.target.kpiTargets?.revenue ?? r.target.targetValue) > 0));
+  }, [selectedStoreId, selectedYear, getTarget]);
+
+  const kpiDefs = [
+    { key: "revenue" as const,    label: "Receita Mensal",  icon: <TrendingUp className="w-3.5 h-3.5" />,  format: "currency" as const, color: "text-emerald-600" },
+    { key: "orders" as const,     label: "Pedidos",         icon: <ShoppingCart className="w-3.5 h-3.5" />, format: "number"   as const, color: "text-blue-600"   },
+    { key: "ticket" as const,     label: "Ticket M\u00e9dio", icon: <Receipt className="w-3.5 h-3.5" />,   format: "currency" as const, color: "text-orange-600" },
+    { key: "conversion" as const, label: "Convers\u00e3o",  icon: <Percent className="w-3.5 h-3.5" />,     format: "percent"  as const, color: "text-purple-600" },
+  ];
+
+  return (
+    <div className="space-y-6 p-4 md:p-6 max-w-3xl mx-auto">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold flex items-center gap-2">
+            <Target className="w-5 h-5 text-primary" /> Metas
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Defina metas mensais por loja e acompanhe no card de Vendas.
+          </p>
+        </div>
+        <Button onClick={handleSave} disabled={!selectedStoreId || !hasAnyTarget} className="gap-2">
+          <Save className="w-4 h-4" /> Salvar
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="pt-4 pb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Store className="w-3.5 h-3.5" /> Loja
+              </Label>
+              {stores.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">Nenhuma loja conectada</p>
+              ) : (
+                <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    {stores.map((s) => (
+                      <SelectItem key={s.ml_user_id} value={s.ml_user_id}>{s.displayName}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Calendar className="w-3.5 h-3.5" /> M\u00eas
+              </Label>
+              <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {months.map((m) => <SelectItem key={m} value={String(m)}>{monthLabels[m]}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Calendar className="w-3.5 h-3.5" /> Ano
+              </Label>
+              <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            Metas de {monthLabels[selectedMonth]} {selectedYear}
+            {selectedStore && (
+              <Badge variant="secondary" className="font-normal text-xs">{selectedStore.displayName}</Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {kpiDefs.map((def) => (
+              <KpiInput
+                key={def.key} label={def.label} icon={def.icon}
+                value={kpi[def.key]}
+                onChange={(v) => setKpi((p) => ({ ...p, [def.key]: v }))}
+                format={def.format} color={def.color}
+              />
+            ))}
+          </div>
+          {hasAnyTarget && (
+            <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/10 text-xs">
+              <p className="font-medium text-foreground mb-1.5 text-sm">Resumo</p>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-1">
+                {kpi.revenue > 0 && <span className="text-muted-foreground">Receita: <strong className="text-foreground">{currencyFmt(kpi.revenue)}</strong></span>}
+                {kpi.orders > 0 && <span className="text-muted-foreground">Pedidos: <strong className="text-foreground">{kpi.orders.toLocaleString("pt-BR")}</strong></span>}
+                {kpi.ticket > 0 && <span className="text-muted-foreground">Ticket: <strong className="text-foreground">{currencyFmt(kpi.ticket)}</strong></span>}
+                {kpi.conversion > 0 && <span className="text-muted-foreground">Convers\u00e3o: <strong className="text-foreground">{kpi.conversion.toFixed(1)}%</strong></span>}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {savedTargets.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm text-muted-foreground font-normal">
+              Metas salvas \u2014 {selectedStore?.displayName ?? selectedStoreId} \u2014 {selectedYear}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {savedTargets.map(({ month, target }) => (
+                <button
+                  key={month}
+                  onClick={() => setSelectedMonth(month)}
+                  className={cn(
+                    "text-left p-2.5 rounded-lg border text-xs transition-colors hover:bg-muted/50",
+                    month === selectedMonth ? "border-primary bg-primary/5" : "border-border"
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-medium">{monthLabels[month]}</span>
+                    <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                  </div>
+                  <span className="text-muted-foreground">
+                    {currencyFmt(target!.kpiTargets?.revenue ?? target!.targetValue)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

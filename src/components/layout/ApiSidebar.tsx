@@ -1,4 +1,5 @@
 import {
+  Target,
   ArrowLeft,
   ClipboardList,
   Layers,
@@ -14,7 +15,8 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import { EnvironmentSidebar, type SidebarNavSection } from "./EnvironmentSidebar";
+import {
+  EnvironmentSidebar, type SidebarNavSection } from "./EnvironmentSidebar";
 
 const apiSections: SidebarNavSection[] = [
   {
@@ -54,6 +56,7 @@ const apiSections: SidebarNavSection[] = [
   {
     label: "Sistema",
     items: [
+      { icon: Target, label: "Metas",       path: "/api/metas"       },
       { icon: Users, label: "Sellers",     path: "/api/sellers"     },
       { icon: Plug,  label: "Integrações", path: "/api/integracoes" },
     ],

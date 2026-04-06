@@ -35,6 +35,7 @@ import MLDevolucoes from "./pages/mercadolivre/MLDevolucoes";
 import MLPerguntas from "./pages/mercadolivre/MLPerguntas";
 import MLSincronizacoes from "./pages/mercadolivre/MLSincronizacoes";
 import MLImportacao from "./pages/mercadolivre/MLImportacao";
+import MLMetas from "./pages/mercadolivre/MLMetas";
 
 
 import Login from "./pages/Login";
@@ -135,6 +136,10 @@ const App = () => (
                         <Route
                           path="/api/importacao"
                           element={<RoleRoute><MLImportacao /></RoleRoute>}
+                        />
+                        <Route
+                          path="/api/metas"
+                          element={<RoleRoute><MLMetas /></RoleRoute>}
                         />
                         <Route
                           path="/api/sellers"

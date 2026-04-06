@@ -9,7 +9,14 @@ export interface MonthlyTarget {
   marketplaceId: string;
   year: number;
   month: number; // 1-12
-  targetValue: number; // Meta de vendas total
+  targetValue: number; // Legacy: total revenue target (kept for backward compat)
+  // Multi-KPI targets (optional — fallback to targetValue for revenue if absent)
+  kpiTargets?: {
+    revenue?: number;    // Meta de receita mensal
+    orders?: number;     // Meta de pedidos
+    ticket?: number;     // Meta de ticket médio
+    conversion?: number; // Meta de conversão (%)
+  };
   pmtDistribution: DailyPMT[];
 }
 

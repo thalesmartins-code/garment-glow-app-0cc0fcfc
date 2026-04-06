@@ -1500,6 +1500,9 @@ export default function MercadoLivre() {
         currentOrders={effectiveMetrics?.units_sold ?? 0}
         currentTicket={effectiveMetrics?.avg_ticket ?? 0}
         currentConversion={effectiveMetrics?.conversion_rate ?? 0}
+        storeId={selectedStore !== "all" ? String(selectedStore) : (stores[0]?.ml_user_id ?? undefined)}
+        year={parseISO(currentTo).getFullYear()}
+        month={parseISO(currentTo).getMonth() + 1}
       />
       </div>
 
