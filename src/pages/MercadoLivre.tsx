@@ -260,6 +260,7 @@ export default function MercadoLivre() {
   const [allProductSales, setAllProductSales] = useState<(ProductSalesRow & { date: string })[]>(() => salesCache.products as any);
   const [productStockMap, setProductStockMap] = useState<Record<string, number>>(() => salesCache.productStockMap);
   const [sellerReputation, setSellerReputation] = useState<any>(null);
+  const { reputation: realReputation, isRealData: isRealReputation, refresh: refreshReputation } = useMLReputation();
   const [period, setPeriod] = useState(0);
   const [customRange, setCustomRange] = useState<DateRange>(null);
   const [chartMode, setChartMode] = useState<ChartMode>("hourly");
