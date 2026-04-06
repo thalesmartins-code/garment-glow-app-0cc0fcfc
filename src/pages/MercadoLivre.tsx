@@ -1685,7 +1685,7 @@ export default function MercadoLivre() {
                   <div className="flex justify-between items-end">
                     <div>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Gasto</p>
-                      <p className="text-xl font-bold text-foreground tabular-nums">
+                       <p className="text-2xl font-bold text-foreground tabular-nums">
                         {adsSummary.total_spend.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                       </p>
                     </div>
