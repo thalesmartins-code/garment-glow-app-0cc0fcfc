@@ -1734,7 +1734,7 @@ export default function MercadoLivre() {
                   </div>
 
                   {/* Métricas secundárias */}
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 pt-1 border-t border-border/50">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-2 border-t border-border/50">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-muted-foreground">Receita</span>
                       <span className="font-semibold tabular-nums">
@@ -1779,42 +1779,10 @@ export default function MercadoLivre() {
                           : "R$ 0,00"}
                       </span>
                     </div>
-                  </div>
-
-                  {/* Top Campanhas */}
-                  {adsCampaigns.length > 0 && (
-                    <div className="pt-2 border-t border-border/50 space-y-1.5">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Top Campanhas</p>
-                      {adsCampaigns
-                        .slice()
-                        .sort((a, b) => b.roas - a.roas)
-                        .slice(0, 3)
-                        .map((c, i) => (
-                          <div key={c.id} className="flex items-center justify-between text-xs gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="text-muted-foreground shrink-0">{i + 1}.</span>
-                              <span className="truncate text-foreground">{c.name}</span>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className={`inline-block w-1.5 h-1.5 rounded-full ${
-                                c.status === "active" ? "bg-green-500" :
-                                c.status === "paused" ? "bg-yellow-500" :
-                                "bg-muted-foreground"
-                              }`} />
-                              <span className={`font-semibold tabular-nums ${
-                                c.roas >= 3 ? "text-green-500" :
-                                c.roas >= 1.5 ? "text-yellow-500" :
-                                "text-red-500"
-                              }`}>
-                                {c.roas.toFixed(1)}x
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  )}
+                   </div>
                 </div>
               )}
+
             </CardContent>
           </Card>
         </motion.div>
