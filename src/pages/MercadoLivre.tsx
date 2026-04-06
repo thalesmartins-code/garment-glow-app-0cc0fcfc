@@ -1720,11 +1720,8 @@ export default function MercadoLivre() {
         </motion.div>
 
       </div>
-          </div>
-          <CardContent className="px-4 pb-4">
-            {effectiveMetrics ? (() => {
-              const funnelData = [
-                { name: "Visitas", value: effectiveMetrics.unique_visits, fill: "#2563eb" },
+
+
                 { name: "Compradores", value: effectiveMetrics.unique_buyers, fill: "#7c3aed" },
               ];
               const numFmt = (v: number) => v.toLocaleString("pt-BR");
