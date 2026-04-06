@@ -1706,6 +1706,21 @@ export default function MercadoLivre() {
                             <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                           </linearGradient>
                         </defs>
+                        <RechartsTooltip
+                          contentStyle={{
+                            background: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: 8,
+                            fontSize: 11,
+                            padding: "4px 8px",
+                          }}
+                          formatter={(value: number) => [`${value.toFixed(2)}x`, "ROAS"]}
+                          labelFormatter={(label: string) => {
+                            try {
+                              return format(parseISO(label), "dd/MM", { locale: ptBR });
+                            } catch { return label; }
+                          }}
+                        />
                         <Area
                           type="monotone"
                           dataKey="roas"
