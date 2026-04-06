@@ -1781,8 +1781,6 @@ export default function MercadoLivre() {
                     </div>
                   </div>
 
-                  {/* Top Campanhas */}
-                  {adsCampaigns.length > 0 && (
                     <div className="pt-2 border-t border-border/50 space-y-1.5">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Top Campanhas</p>
                       {adsCampaigns
