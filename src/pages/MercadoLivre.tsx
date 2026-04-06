@@ -1782,8 +1782,7 @@ export default function MercadoLivre() {
                   </div>
 
 
-                        .slice(0, 3)
-                        .map((c, i) => (
+                
                           <div key={c.id} className="flex items-center justify-between text-xs gap-2">
                             <div className="flex items-center gap-1.5 min-w-0">
                               <span className="text-muted-foreground shrink-0">{i + 1}.</span>
