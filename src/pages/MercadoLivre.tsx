@@ -1475,6 +1475,50 @@ export default function MercadoLivre() {
 
       {/* === Ads + Funnel + Reputation + Products === */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Card de Publicidade (ADS) */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0 }}>
+          <Card className="h-full">
+            <div className="px-4 pt-4 pb-2 flex items-center gap-2">
+              <Megaphone className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">Publicidade</span>
+            </div>
+            <CardContent className="px-4 pb-4">
+              {adsLoading ? (
+                <div className="space-y-3">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="h-4 bg-muted rounded animate-pulse" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Gasto</span>
+                    <span className="font-bold text-foreground tabular-nums">
+                      {adsSummary.total_spend.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Impressões</span>
+                    <span className="font-semibold tabular-nums">{adsSummary.total_impressions.toLocaleString("pt-BR")}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Cliques</span>
+                    <span className="font-semibold tabular-nums">{adsSummary.total_clicks.toLocaleString("pt-BR")}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Pedidos atribuídos</span>
+                    <span className="font-semibold tabular-nums">{adsSummary.total_attributed_orders.toLocaleString("pt-BR")}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs pt-2 border-t border-border/50">
+                    <span className="text-muted-foreground">ROAS</span>
+                    <span className="font-bold text-foreground tabular-nums">{adsSummary.avg_roas.toFixed(2)}x</span>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Funil de Conversão */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }}>
         <Card className="h-full">
