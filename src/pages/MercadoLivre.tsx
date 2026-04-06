@@ -333,31 +333,7 @@ export default function MercadoLivre() {
     () => computeAdsSummary(adsDaily.filter((d) => d.date >= currentFrom && d.date <= currentTo)),
     [adsDaily, currentFrom, currentTo],
   );
-  // ── Cost card computations ──────────────────────────────────────────────────
-  // storeId used to seed the financial estimates (commission rates / shipping)
-  const costStoreId = selectedStore !== "all" ? String(selectedStore) : (stores[0]?.ml_user_id ?? "default");
-
-  const financialDaily = useMemo(() => {
-    const rev = effectiveDaily.map((d) => ({ date: d.date, total: d.total, qty: d.qty }));
-    return getFinancialDailyStats(costStoreId, Math.max(rev.length, 1), rev);
-  }, [costStoreId, effectiveDaily]);
-
-  const costSummary = useMemo(() => {
-    const fin = computeFinancialSummary(financialDaily);
-    const ads = adsSummary.total_spend;
-    const totalKnown = fin.ml_commission + fin.shipping_cost + ads;
-    const grossRevenue = effectiveMetrics?.total_revenue ?? fin.gross_revenue;
-    return {
-      comissao: fin.ml_commission,
-      frete: fin.shipping_cost,
-      publicidade: ads,
-      custo_produto: 0 as number,
-      impostos: 0 as number,
-      total_known: totalKnown,
-      gross_revenue: grossRevenue,
-      pct_receita: grossRevenue > 0 ? Math.round((totalKnown / grossRevenue) * 10000) / 100 : 0,
-    };
-  }, [financialDaily, adsSummary, effectiveMetrics]);
+  // ── Cost card computations (placeholder – moved after effectiveMetrics) ──
 
   const daily = allDaily.filter((d) => d.date >= currentFrom && d.date <= currentTo);
 
@@ -1039,7 +1015,27 @@ export default function MercadoLivre() {
     }));
   }, [isAll, hourly]);
 
-  
+  // ── Cost card computations ──────────────────────────────────────────────────
+  const costSummary = useMemo(() => {
+    const grossRevenue = effectiveMetrics?.total_revenue ?? 0;
+    // Estimate ML commission (~11%) and shipping (~5%) from revenue
+    const comissao = grossRevenue * 0.11;
+    const frete = grossRevenue * 0.05;
+    const ads = adsSummary.total_spend;
+    const totalKnown = comissao + frete + ads;
+    return {
+      comissao,
+      frete,
+      publicidade: ads,
+      custo_produto: 0 as number,
+      impostos: 0 as number,
+      total_known: totalKnown,
+      gross_revenue: grossRevenue,
+      pct_receita: grossRevenue > 0 ? Math.round((totalKnown / grossRevenue) * 10000) / 100 : 0,
+    };
+  }, [effectiveMetrics, adsSummary]);
+
+
 
   const MARKETPLACE_STROKE_COLORS: Record<string, string> = {
     "mercado-livre": "hsl(45, 93%, 47%)",
