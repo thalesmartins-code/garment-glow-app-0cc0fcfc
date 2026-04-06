@@ -1770,7 +1770,7 @@ export default function MercadoLivre() {
 
       {/* === Ranking de Anúncios === */}
       <TopSellingProducts products={effectiveProducts} loading={effectiveLoading} showOrigin={isAll} />
-    </div>
+
         </TabsContent>
 
         <TabsContent value="relatorios" className="mt-0 animate-fade-in">
