@@ -50,6 +50,7 @@ import {
 import {
   ComposedChart,
   Area,
+  AreaChart,
   Bar,
   Line,
   XAxis,
