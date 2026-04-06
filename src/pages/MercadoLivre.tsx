@@ -25,6 +25,7 @@ import { MLStoreSelector } from "@/components/mercadolivre/MLStoreSelector";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
 import { GoalsCard } from "@/components/mercadolivre/GoalsCard";
 import { useMLAds } from "@/hooks/useMLAds";
+import { computeAdsSummary } from "@/data/adsMockData";
 import { useMLReputation } from "@/hooks/useMLReputation";
 
 
@@ -64,7 +65,7 @@ import {
   Funnel,
   LabelList,
 } from "recharts";
-import { format, parseISO, startOfDay } from "date-fns";
+import { format, parseISO, startOfDay, subDays, differenceInCalendarDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
@@ -310,11 +311,26 @@ export default function MercadoLivre() {
   );
 
 
-  // Ads hook — receives current date range so the card stays in sync with the page filter
-  const { summary: adsSummary, daily: adsDaily, campaigns: adsCampaigns, loading: adsLoading } = useMLAds({
-    dateFrom: currentFrom,
+  // Chart range: always at least 7 days ending at currentTo (so the sparkline has enough data points)
+  const adsChartFrom = useMemo(() => {
+    const diffDays = differenceInCalendarDays(parseISO(currentTo), parseISO(currentFrom));
+    if (diffDays < 6) {
+      return format(subDays(parseISO(currentTo), 6), "yyyy-MM-dd");
+    }
+    return currentFrom;
+  }, [currentFrom, currentTo]);
+
+  // Ads hook uses the wider chart range so sparkline always has 7+ days
+  const { daily: adsDaily, campaigns: adsCampaigns, loading: adsLoading } = useMLAds({
+    dateFrom: adsChartFrom,
     dateTo: currentTo,
   });
+
+  // Summary is computed from the exact selected period (not the wider chart range)
+  const adsSummary = useMemo(
+    () => computeAdsSummary(adsDaily.filter((d) => d.date >= currentFrom && d.date <= currentTo)),
+    [adsDaily, currentFrom, currentTo],
+  );
   const daily = allDaily.filter((d) => d.date >= currentFrom && d.date <= currentTo);
 
   const previousDaily = allDaily.filter((d) => d.date >= prevFrom && d.date <= prevTo);
