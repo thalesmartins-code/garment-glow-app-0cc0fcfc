@@ -1734,7 +1734,7 @@ export default function MercadoLivre() {
                   </div>
 
                   {/* Métricas secundárias */}
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 pt-1 border-t border-border/50">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-2 border-t border-border/50">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-muted-foreground">Receita</span>
                       <span className="font-semibold tabular-nums">
