@@ -1722,7 +1722,6 @@ export default function MercadoLivre() {
       </div>
 
 
-                { name: "Compradores", value: effectiveMetrics.unique_buyers, fill: "#7c3aed" },
               ];
               const numFmt = (v: number) => v.toLocaleString("pt-BR");
               const pctFmt = (v: number) => `${v.toFixed(2)}%`;
