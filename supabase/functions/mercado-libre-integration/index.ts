@@ -428,7 +428,7 @@ serve(async (req) => {
         }));
 
         // Paraleliza upserts de daily + hourly + user simultaneamente
-        const upsertPromises: Promise<any>[] = [];
+        const upsertPromises: PromiseLike<any>[] = [];
 
         if (dailyRows.length > 0) {
           upsertPromises.push(

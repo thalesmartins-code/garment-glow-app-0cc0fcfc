@@ -1685,13 +1685,13 @@ export default function MercadoLivre() {
                   <div className="flex justify-between items-end">
                     <div>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Gasto</p>
-                      <p className="text-xl font-bold text-foreground tabular-nums">
+                       <p className="text-2xl font-bold text-foreground tabular-nums">
                         {adsSummary.total_spend.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider">ROAS</p>
-                      <p className={`text-xl font-bold tabular-nums ${
+                      <p className={`text-2xl font-bold tabular-nums ${
                         adsSummary.avg_roas >= 3 ? "text-green-500" :
                         adsSummary.avg_roas >= 1.5 ? "text-yellow-500" :
                         "text-red-500"
@@ -1705,6 +1705,7 @@ export default function MercadoLivre() {
                   <div className="h-10">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={adsDaily}>
+                        <XAxis dataKey="date" hide />
                         <defs>
                           <linearGradient id="colorRoasSparkline" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
