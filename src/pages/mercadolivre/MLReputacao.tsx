@@ -7,7 +7,7 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Star, ThumbsUp, ThumbsDown, Minus, ShieldCheck,
-  Clock, MessageSquare, Plug, RefreshCw, Info,
+  Clock, MessageSquare, Plug, RefreshCw, Info, Check,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +17,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { KPICard } from "@/components/dashboard/KPICard";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
 import { useMLStore } from "@/contexts/MLStoreContext";
+import { useMLReputation } from "@/hooks/useMLReputation";
 import {
-  getMockReputationSummary,
   getMockFeedbackDaily,
   getMockFeedbackEntries,
   type ReputationLevel,
@@ -70,12 +70,32 @@ function NotConnected() {
 
 export default function MLReputacao() {
   const { stores, selectedStore } = useMLStore();
-  const [syncing, setSyncing] = useState(false);
+  const { reputation: realRep, mockReputation, isRealData, loading: repLoading, refresh } = useMLReputation();
 
   const connected = stores.length > 0;
   const storeId = selectedStore !== "all" && selectedStore ? selectedStore : stores[0]?.ml_user_id ?? "default";
 
-  const reputation = useMemo(() => getMockReputationSummary(storeId), [storeId]);
+  // Use real data when available, mock as fallback
+  const reputation = useMemo(() => {
+    if (realRep) {
+      return {
+        level: realRep.level,
+        levelLabel: realRep.levelLabel,
+        transactions_completed: realRep.transactions_completed,
+        positive_rating: realRep.positive_rating !== null ? realRep.positive_rating * 100 : mockReputation.positive_rating,
+        neutral_rating: realRep.neutral_rating !== null ? realRep.neutral_rating * 100 : mockReputation.neutral_rating,
+        negative_rating: realRep.negative_rating !== null ? realRep.negative_rating * 100 : mockReputation.negative_rating,
+        claims_rate: realRep.claims_rate !== null ? realRep.claims_rate * 100 : mockReputation.claims_rate,
+        delayed_handling_rate: realRep.delayed_handling_rate !== null ? realRep.delayed_handling_rate * 100 : mockReputation.delayed_handling_rate,
+        cancellation_rate: realRep.cancellation_rate !== null ? realRep.cancellation_rate * 100 : mockReputation.cancellation_rate,
+        is_power_seller: !!realRep.power_seller_status,
+        power_seller_status: realRep.power_seller_status,
+        response_time_hours: mockReputation.response_time_hours,
+      };
+    }
+    return { ...mockReputation, power_seller_status: null as string | null };
+  }, [realRep, mockReputation]);
+
   const feedbackDaily = useMemo(() => getMockFeedbackDaily(storeId, 30), [storeId]);
   const feedbackEntries = useMemo(() => getMockFeedbackEntries(storeId, 20), [storeId]);
 
@@ -102,26 +122,34 @@ export default function MLReputacao() {
           </Badge>
           {reputation.is_power_seller && (
             <Badge className="bg-violet-500/15 text-violet-600 border-violet-500/30 gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" /> MercadoLíder
+              <ShieldCheck className="w-3.5 h-3.5" />
+              {reputation.power_seller_status === "platinum" ? "MercadoLíder Platinum" :
+               reputation.power_seller_status === "gold" ? "MercadoLíder Gold" : "MercadoLíder"}
             </Badge>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-xs gap-1.5 text-muted-foreground cursor-help">
-                <Info className="w-3 h-3" /> Dados simulados
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>Integração com a API de reputação em breve</TooltipContent>
-          </Tooltip>
+          {isRealData ? (
+            <Badge variant="outline" className="text-xs gap-1.5 text-emerald-600 border-emerald-500/30 cursor-default">
+              <Check className="w-3 h-3" /> Dados reais
+            </Badge>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="text-xs gap-1.5 text-muted-foreground cursor-help">
+                  <Info className="w-3 h-3" /> Dados simulados
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>Conecte uma loja para ver dados reais da API</TooltipContent>
+            </Tooltip>
+          )}
           <Button
             variant="outline"
             size="sm"
-            disabled={syncing}
-            onClick={() => { setSyncing(true); setTimeout(() => setSyncing(false), 1200); }}
+            disabled={repLoading}
+            onClick={async () => { await refresh(); }}
           >
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${syncing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${repLoading ? "animate-spin" : ""}`} />
             Atualizar
           </Button>
         </div>

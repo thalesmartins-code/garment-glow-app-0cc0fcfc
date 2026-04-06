@@ -25,6 +25,7 @@ import { MLStoreSelector } from "@/components/mercadolivre/MLStoreSelector";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
 import { GoalsCard } from "@/components/mercadolivre/GoalsCard";
 import { useMLAds } from "@/hooks/useMLAds";
+import { useMLReputation } from "@/hooks/useMLReputation";
 
 
 import {
@@ -259,6 +260,7 @@ export default function MercadoLivre() {
   const [allProductSales, setAllProductSales] = useState<(ProductSalesRow & { date: string })[]>(() => salesCache.products as any);
   const [productStockMap, setProductStockMap] = useState<Record<string, number>>(() => salesCache.productStockMap);
   const [sellerReputation, setSellerReputation] = useState<any>(null);
+  const { reputation: realReputation, isRealData: isRealReputation, refresh: refreshReputation } = useMLReputation();
   const [period, setPeriod] = useState(0);
   const [customRange, setCustomRange] = useState<DateRange>(null);
   const [chartMode, setChartMode] = useState<ChartMode>("hourly");
@@ -1484,7 +1486,7 @@ export default function MercadoLivre() {
           </div>
           <CardContent className="px-4 pb-4">
             {(() => {
-              const rep = sellerReputation;
+              const rep = realReputation?.raw ?? sellerReputation;
               const levelColorMap: Record<string, string> = {
                 "1_red": "hsl(0, 72%, 51%)",
                 "2_orange": "hsl(25, 95%, 53%)",
