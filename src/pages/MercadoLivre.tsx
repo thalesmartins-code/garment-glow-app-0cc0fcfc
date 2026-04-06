@@ -1490,11 +1490,17 @@ export default function MercadoLivre() {
                   ))}
                 </div>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Gasto</span>
                     <span className="font-bold text-foreground tabular-nums">
                       {adsSummary.total_spend.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Receita atribuída</span>
+                    <span className="font-bold text-foreground tabular-nums">
+                      {adsSummary.total_attributed_revenue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
@@ -1510,6 +1516,16 @@ export default function MercadoLivre() {
                     <span className="font-semibold tabular-nums">{adsSummary.total_attributed_orders.toLocaleString("pt-BR")}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs pt-2 border-t border-border/50">
+                    <span className="text-muted-foreground">CTR</span>
+                    <span className="font-semibold tabular-nums">{adsSummary.avg_ctr.toFixed(2)}%</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">CPC médio</span>
+                    <span className="font-semibold tabular-nums">
+                      {adsSummary.avg_cpc.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">ROAS</span>
                     <span className="font-bold text-foreground tabular-nums">{adsSummary.avg_roas.toFixed(2)}x</span>
                   </div>
