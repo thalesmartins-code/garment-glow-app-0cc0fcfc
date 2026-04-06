@@ -1284,7 +1284,7 @@ export default function MercadoLivre() {
           size="compact"
           loading={effectiveLoading}
           refreshing={effectiveSyncing && !syncProgress}
-          tooltip="Nas vendas do carrinho, cada produto diferente conta como uma nova venda."
+          
           delta={effectiveMetrics && previousMetrics ? calcDelta(effectiveMetrics.units_sold, previousMetrics.units_sold) : undefined}
 
         />
