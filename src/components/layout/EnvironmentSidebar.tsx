@@ -20,6 +20,8 @@ export interface SidebarNavItem {
   comingSoon?: boolean;
   /** Sub-items rendered as a collapsible group under this item */
   children?: SidebarNavItem[];
+  /** When true, suppresses the parent self-link in expanded collapsible and collapsed tooltip */
+  noSelfLink?: boolean;
 }
 
 export interface SidebarNavSection {
@@ -195,6 +197,7 @@ export function EnvironmentSidebar({ sections, items, footerItem }: EnvironmentS
           </TooltipTrigger>
           <TooltipContent side="right" className="p-0">
             <div className="flex flex-col py-1 min-w-[160px]">
+              {!item.noSelfLink && (<>
               <Link
                 to={item.path}
                 className={cn(
@@ -206,6 +209,7 @@ export function EnvironmentSidebar({ sections, items, footerItem }: EnvironmentS
                 {item.label}
               </Link>
               <div className="h-px bg-border mx-2 my-1" />
+              </>)}
               {item.children.map((child) => (
                 <Link
                   key={child.path}
@@ -241,8 +245,8 @@ export function EnvironmentSidebar({ sections, items, footerItem }: EnvironmentS
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="ml-3 pl-3 border-l border-sidebar-border space-y-0.5 mt-0.5 mb-1">
-            {/* Parent page link as first sub-item */}
-            {renderSubLink({ ...item, label: item.label, children: undefined })}
+            {/* Parent page link as first sub-item (suppressed when noSelfLink is set) */}
+            {!item.noSelfLink && renderSubLink({ ...item, children: undefined })}
             {item.children.map(renderSubLink)}
           </div>
         </CollapsibleContent>
