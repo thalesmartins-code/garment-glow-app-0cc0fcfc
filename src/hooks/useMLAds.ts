@@ -87,14 +87,7 @@ export function useMLAds(opts: UseMLAdsOptions = {}): UseMLAdsResult {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ml-ads", {
-        body: null,
-        headers: { "Content-Type": "application/json" },
-        method: "GET",
-      });
-
-      // supabase.functions.invoke doesn't support query params natively,
-      // so we construct the URL manually
+      // Construct URL manually to pass query params
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const supabaseUrl = `https://${projectId}.supabase.co/functions/v1/ml-ads?ml_user_id=${encodeURIComponent(targetStoreId)}&date_from=${effectiveDateFrom}&date_to=${effectiveDateTo}`;
       
