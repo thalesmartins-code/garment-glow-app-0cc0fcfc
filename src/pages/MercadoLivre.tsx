@@ -1517,9 +1517,6 @@ export default function MercadoLivre() {
           </div>
           <div className="px-4 pt-4 pb-2 flex items-center justify-between">
             <span className="text-sm font-medium text-foreground">Custos</span>
-            <span className="text-[10px] text-muted-foreground tabular-nums">
-              {costSummary.pct_receita.toFixed(1)}% da receita
-            </span>
           </div>
           <CardContent className="px-4 pb-4">
             <div className="space-y-1">
