@@ -232,7 +232,7 @@ export default function MercadoLivre() {
   const { stores, selectedStore, salesCache, setSalesCache } = useMLStore();
   const { selectedMarketplace, activeMarketplace } = useMarketplace();
   const { selectedSeller, selectedStoreIds } = useSeller();
-  const { summary: adsSummary, loading: adsLoading } = useMLAds();
+  const { summary: adsSummary, daily: adsDaily, loading: adsLoading } = useMLAds();
 
   // Resolve which stores are effectively selected
   const effectiveStores = useMemo<StoreRef[]>(() => {
@@ -1490,11 +1490,17 @@ export default function MercadoLivre() {
                   ))}
                 </div>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Gasto</span>
                     <span className="font-bold text-foreground tabular-nums">
                       {adsSummary.total_spend.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Receita atribuída</span>
+                    <span className="font-bold text-foreground tabular-nums">
+                      {adsSummary.total_attributed_revenue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
@@ -1510,6 +1516,16 @@ export default function MercadoLivre() {
                     <span className="font-semibold tabular-nums">{adsSummary.total_attributed_orders.toLocaleString("pt-BR")}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs pt-2 border-t border-border/50">
+                    <span className="text-muted-foreground">CTR</span>
+                    <span className="font-semibold tabular-nums">{adsSummary.avg_ctr.toFixed(2)}%</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">CPC médio</span>
+                    <span className="font-semibold tabular-nums">
+                      {adsSummary.avg_cpc.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">ROAS</span>
                     <span className="font-bold text-foreground tabular-nums">{adsSummary.avg_roas.toFixed(2)}x</span>
                   </div>
@@ -1709,8 +1725,52 @@ export default function MercadoLivre() {
         </Card>
         </motion.div>
 
-        <TopSellingProducts products={effectiveProducts} loading={effectiveLoading} showOrigin={isAll} />
       </div>
+
+      {/* === Gráfico ADS Evolution === */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
+        <Card>
+          <div className="px-4 pt-4 pb-2 flex items-center gap-2">
+            <Megaphone className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">Evolução ADS — Gasto × ROAS</span>
+          </div>
+          <CardContent className="px-4 pb-4">
+            <ResponsiveContainer width="100%" height={220}>
+              <ComposedChart data={adsDaily} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  tickFormatter={(v: string) => {
+                    const d = new Date(v + "T00:00:00");
+                    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+                  }}
+                  interval={Math.max(0, Math.floor(adsDaily.length / 10))}
+                />
+                <YAxis yAxisId="spend" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}k`} />
+                <YAxis yAxisId="roas" orientation="right" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v: number) => `${v.toFixed(1)}x`} />
+                <RechartsTooltip
+                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                  formatter={(value: number, name: string) => {
+                    if (name === "Gasto") return [value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }), name];
+                    return [`${Number(value).toFixed(2)}x`, name];
+                  }}
+                  labelFormatter={(label: string) => {
+                    const d = new Date(label + "T00:00:00");
+                    return d.toLocaleDateString("pt-BR");
+                  }}
+                />
+                <Area yAxisId="spend" type="monotone" dataKey="spend" name="Gasto" fill="hsl(var(--primary) / 0.15)" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                <Line yAxisId="roas" type="monotone" dataKey="roas" name="ROAS" stroke="hsl(142, 70%, 45%)" strokeWidth={2} dot={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* === Ranking de Anúncios === */}
+      <TopSellingProducts products={effectiveProducts} loading={effectiveLoading} showOrigin={isAll} />
+
         </TabsContent>
 
         <TabsContent value="relatorios" className="mt-0 animate-fade-in">
