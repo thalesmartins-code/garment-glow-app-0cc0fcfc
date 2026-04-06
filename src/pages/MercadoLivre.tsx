@@ -234,7 +234,6 @@ export default function MercadoLivre() {
   const { stores, selectedStore, salesCache, setSalesCache } = useMLStore();
   const { selectedMarketplace, activeMarketplace } = useMarketplace();
   const { selectedSeller, selectedStoreIds } = useSeller();
-  const { summary: adsSummary, daily: adsDaily, campaigns: adsCampaigns, loading: adsLoading } = useMLAds();
 
   // Resolve which stores are effectively selected
   const effectiveStores = useMemo<StoreRef[]>(() => {
@@ -310,6 +309,12 @@ export default function MercadoLivre() {
     [customRange, period],
   );
 
+
+  // Ads hook — receives current date range so the card stays in sync with the page filter
+  const { summary: adsSummary, daily: adsDaily, campaigns: adsCampaigns, loading: adsLoading } = useMLAds({
+    dateFrom: currentFrom,
+    dateTo: currentTo,
+  });
   const daily = allDaily.filter((d) => d.date >= currentFrom && d.date <= currentTo);
 
   const previousDaily = allDaily.filter((d) => d.date >= prevFrom && d.date <= prevTo);
