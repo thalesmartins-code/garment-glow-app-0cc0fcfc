@@ -1,31 +1,39 @@
 
 
-## Plano: Melhorar layout do card de Publicidade + Corrigir build errors
+## Plano: Preencher espaço do card de Publicidade
 
-### 1. Corrigir erros de build (linhas 1726+)
+O card de Publicidade tem menos conteúdo que os cards de Reputação e Funil, deixando espaço em branco. A solução é adicionar mais informações úteis para preencher o card.
 
-O arquivo `MercadoLivre.tsx` tem JSX duplicado/quebrado a partir da linha 1726. O bloco `</TabsContent>` até o final do arquivo (1726-1734) precisa ser corrigido — removendo código residual e garantindo o fechamento correto das tags.
+### Alterações em `src/pages/MercadoLivre.tsx`
 
-### 2. Redesign do card de Publicidade
+1. **Adicionar métricas extras após o grid atual:**
+   - **Conversão ADS** (Cliques → Pedidos): percentual calculado como `(pedidos / cliques) * 100`
+   - **Custo por Pedido**: calculado como `gasto / pedidos`
 
-Transformar o card atual (lista vertical simples) em um layout mais rico:
+2. **Adicionar mini ranking dos top 3 campanhas** (do array `campaigns` retornado pelo hook `useMLAds`):
+   - Listar nome da campanha, status (badge colorido), e ROAS
+   - Separar visualmente com `border-t`
 
-**Destaque no topo:**
-- **Gasto total** e **ROAS** exibidos como valores grandes (text-lg/text-xl font-bold) lado a lado em 2 colunas, com labels menores acima
-- Cores condicionais no ROAS: verde se >= 3, amarelo se >= 1.5, vermelho se < 1.5
+3. **Ajustar hook**: Destructurar `campaigns` (renomeado `adsCampaigns`) do `useMLAds` que já retorna esse dado.
 
-**Mini sparkline:**
-- Usar `recharts` `<AreaChart>` compacto (altura ~40px) abaixo dos destaques, mostrando a evolução do ROAS nos últimos dias do período
-- Sem eixos, sem legendas — apenas a linha com gradiente sutil
+### Resultado visual
 
-**Métricas secundárias:**
-- Receita atribuída, Impressões, Cliques, Pedidos atribuídos, CTR, CPC médio organizados em grid 2x3 (grid-cols-2) com texto compacto
-
-### 3. Dados para sparkline
-
-O hook `useMLAds` já retorna `daily` (array de `AdsDailyStat` com campo `roas`). Será necessário voltar a destructurar `daily` do hook (renomeado como `adsDaily`) para alimentar o sparkline.
+```text
+┌─ Publicidade ──────────────────┐
+│  Gasto          ROAS           │
+│  R$ 5.200      3.42x          │
+│  ─── sparkline ROAS ────────  │
+│  Receita    R$17.8k │ Impr 45k│
+│  Cliques     1.2k   │ Ped  89 │
+│  CTR        2.67%   │ CPC R$4 │
+│  Conv. ADS  7.4%  │ CPP R$58 │
+│  ── Top Campanhas ──────────  │
+│  1. Campanha X    ● 4.2x      │
+│  2. Campanha Y    ● 2.8x      │
+│  3. Campanha Z    ● 1.9x      │
+└────────────────────────────────┘
+```
 
 ### Arquivos editados
-
-- `src/pages/MercadoLivre.tsx` — corrigir build errors + redesign do card de Publicidade com sparkline e layout em destaque
+- `src/pages/MercadoLivre.tsx`
 
