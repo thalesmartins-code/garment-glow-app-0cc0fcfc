@@ -1779,35 +1779,10 @@ export default function MercadoLivre() {
                           : "R$ 0,00"}
                       </span>
                     </div>
-                  </div>
-
-
-                
-                          <div key={c.id} className="flex items-center justify-between text-xs gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="text-muted-foreground shrink-0">{i + 1}.</span>
-                              <span className="truncate text-foreground">{c.name}</span>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className={`inline-block w-1.5 h-1.5 rounded-full ${
-                                c.status === "active" ? "bg-green-500" :
-                                c.status === "paused" ? "bg-yellow-500" :
-                                "bg-muted-foreground"
-                              }`} />
-                              <span className={`font-semibold tabular-nums ${
-                                c.roas >= 3 ? "text-green-500" :
-                                c.roas >= 1.5 ? "text-yellow-500" :
-                                "text-red-500"
-                              }`}>
-                                {c.roas.toFixed(1)}x
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  )}
+                   </div>
                 </div>
               )}
+
             </CardContent>
           </Card>
         </motion.div>
