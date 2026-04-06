@@ -1486,7 +1486,7 @@ export default function MercadoLivre() {
           </div>
           <CardContent className="px-4 pb-4">
             {(() => {
-              const rep = sellerReputation;
+              const rep = realReputation?.raw ?? sellerReputation;
               const levelColorMap: Record<string, string> = {
                 "1_red": "hsl(0, 72%, 51%)",
                 "2_orange": "hsl(25, 95%, 53%)",
