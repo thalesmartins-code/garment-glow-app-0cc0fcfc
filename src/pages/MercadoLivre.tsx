@@ -1719,11 +1719,7 @@ export default function MercadoLivre() {
           </Card>
         </motion.div>
 
-        {/* Funil de Conversão */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }}>
-        <Card className="h-full">
-          <div className="px-4 pt-4 pb-2">
-            <span className="text-sm font-medium text-foreground">Funil de Conversão</span>
+      </div>
           </div>
           <CardContent className="px-4 pb-4">
             {effectiveMetrics ? (() => {
