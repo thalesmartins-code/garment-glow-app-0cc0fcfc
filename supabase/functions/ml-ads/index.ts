@@ -46,24 +46,28 @@ async function fetchCampaigns(userId: string, accessToken: string) {
 
 async function fetchDailyMetrics(userId: string, dateFrom: string, dateTo: string, accessToken: string) {
   try {
-    const data = await mlFetch(
-      `/advertising/product_ads/metrics/report?user_id=${userId}&date_from=${dateFrom}&date_to=${dateTo}&granularity=day`,
+    const data: any = await mlFetch(
+      `/advertising/product_ads/metrics?seller_id=${userId}&date_from=${dateFrom}&date_to=${dateTo}&granularity=DAY`,
       accessToken,
     );
-    return (data.results || data || []);
-  } catch (e) {
-    console.error("fetchDailyMetrics error:", e);
-    try {
-      const data = await mlFetch(
-        `/advertising/campaigns/metrics?user_id=${userId}&date_from=${dateFrom}&date_to=${dateTo}&granularity=day`,
-        accessToken,
-      );
-      return (data.results || data || []);
-    } catch (e2) {
-      console.error("fetchDailyMetrics fallback error:", e2);
-      return [];
-    }
-  }
+    const r = data.results ?? data.data ?? (Array.isArray(data) ? data : []);
+    if (r.length > 0) return r;
+  } catch (e) { console.warn("[ml-ads] primary failed:", String(e)); }
+  try {
+    const data: any = await mlFetch(
+      `/advertising/product_ads/metrics?user_id=${userId}&date_from=${dateFrom}&date_to=${dateTo}&granularity=DAY`,
+      accessToken,
+    );
+    const r = data.results ?? data.data ?? (Array.isArray(data) ? data : []);
+    if (r.length > 0) return r;
+  } catch (e) { console.warn("[ml-ads] fb1 failed:", String(e)); }
+  try {
+    const data: any = await mlFetch(
+      `/advertising/campaigns/metrics?seller_id=${userId}&date_from=${dateFrom}&date_to=${dateTo}&granularity=DAY`,
+      accessToken,
+    );
+    return data.results ?? data.data ?? (Array.isArray(data) ? data : []);
+  } catch (e) { return []; }
 }
 
 async function fetchProductAds(userId: string, accessToken: string) {
@@ -90,11 +94,11 @@ function calcMetrics(impressions: number, clicks: number, spend: number, orders:
 
 function transformDaily(metrics: any[]) {
   return metrics.map((m: any) => {
-    const impressions = m.impressions || 0;
-    const clicks = m.clicks || 0;
-    const spend = m.cost || 0;
-    const attributed_orders = m.orders_quantity || 0;
-    const attributed_revenue = m.orders_amount || 0;
+    const impressions        = m.print_count        ?? m.impressions     ?? 0;
+    const clicks             = m.click_count        ?? m.clicks          ?? 0;
+    const spend              = m.cost               ?? m.investment      ?? 0;
+    const attributed_orders  = m.converted_quantity ?? m.orders_quantity ?? 0;
+    const attributed_revenue = m.converted_amount   ?? m.orders_amount   ?? 0;
     const { cpc, ctr, roas } = calcMetrics(impressions, clicks, spend, attributed_orders, attributed_revenue);
     return {
       date: (m.date || "").substring(0, 10),
@@ -193,12 +197,11 @@ function isCacheFresh(rows: any[]): boolean {
   return (Date.now() - new Date(latest).getTime()) < CACHE_TTL_MS;
 }
 
-async function upsertDailyCache(supabase: any, userId: string, mlUserId: string, sellerId: string | null, daily: any[]) {
+async function upsertDailyCache(supabase: any, userId: string, mlUserId: string, daily: any[]) {
   if (daily.length === 0) return;
   const rows = daily.map((d: any) => ({
     user_id: userId,
     ml_user_id: mlUserId,
-    seller_id: sellerId,
     date: d.date,
     impressions: d.impressions,
     clicks: d.clicks,
@@ -216,12 +219,11 @@ async function upsertDailyCache(supabase: any, userId: string, mlUserId: string,
   if (error) console.error("upsertDailyCache error:", error);
 }
 
-async function upsertCampaignsCache(supabase: any, userId: string, mlUserId: string, sellerId: string | null, campaigns: any[]) {
+async function upsertCampaignsCache(supabase: any, userId: string, mlUserId: string, campaigns: any[]) {
   if (campaigns.length === 0) return;
   const rows = campaigns.map((c: any) => ({
     user_id: userId,
     ml_user_id: mlUserId,
-    seller_id: sellerId,
     campaign_id: c.campaign_id,
     name: c.name,
     status: c.status,
@@ -242,12 +244,11 @@ async function upsertCampaignsCache(supabase: any, userId: string, mlUserId: str
   if (error) console.error("upsertCampaignsCache error:", error);
 }
 
-async function upsertProductsCache(supabase: any, userId: string, mlUserId: string, sellerId: string | null, products: any[]) {
+async function upsertProductsCache(supabase: any, userId: string, mlUserId: string, products: any[]) {
   if (products.length === 0) return;
   const rows = products.map((p: any) => ({
     user_id: userId,
     ml_user_id: mlUserId,
-    seller_id: sellerId,
     item_id: p.item_id,
     title: p.title,
     thumbnail: p.thumbnail,
@@ -275,85 +276,72 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader) return jsonResponse({ error: "Missing authorization" }, 401);
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase   = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
-    if (userErr || !user) return jsonResponse({ error: "Unauthorized" }, 401);
-
-    const url = new URL(req.url);
-    const mlUserId = url.searchParams.get("ml_user_id");
-    const dateFrom = url.searchParams.get("date_from");
-    const dateTo = url.searchParams.get("date_to");
+    const url       = new URL(req.url);
+    const mlUserId  = url.searchParams.get("ml_user_id");
+    const dateFrom  = url.searchParams.get("date_from");
+    const dateTo    = url.searchParams.get("date_to");
     const forceSync = url.searchParams.get("force") === "true";
 
-    if (!mlUserId) return jsonResponse({ error: "ml_user_id required" }, 400);
+    if (!mlUserId)            return jsonResponse({ error: "ml_user_id required" }, 400);
     if (!dateFrom || !dateTo) return jsonResponse({ error: "date_from and date_to required" }, 400);
 
-    // Try cache first (unless force sync)
-    if (!forceSync) {
-      const [cachedDaily, cachedCampaigns, cachedProducts] = await Promise.all([
-        loadCachedDaily(supabase, user.id, mlUserId, dateFrom, dateTo),
-        loadCachedCampaigns(supabase, user.id, mlUserId),
-        loadCachedProducts(supabase, user.id, mlUserId),
-      ]);
+    console.log(`[ml-ads] store=${mlUserId} from=${dateFrom} to=${dateTo}`);
 
-      if (isCacheFresh(cachedDaily) && cachedDaily.length > 0) {
-        console.log(`ml-ads: serving from cache user=${user.id} store=${mlUserId} daily=${cachedDaily.length}`);
-        const summary = computeSummary(cachedDaily);
-        return jsonResponse({
-          daily: cachedDaily,
-          campaigns: cachedCampaigns,
-          products: cachedProducts,
-          summary,
-          source: "cache",
-        });
-      }
-    }
-
-    // Get access token
     const { data: tokenRow, error: tokenErr } = await supabase
       .from("ml_tokens")
-      .select("access_token, seller_id")
-      .eq("user_id", user.id)
+      .select("access_token, user_id")
       .eq("ml_user_id", mlUserId)
+      .order("updated_at", { ascending: false })
+      .limit(1)
       .single();
 
     if (tokenErr || !tokenRow?.access_token) {
+      console.error("[ml-ads] token lookup failed:", tokenErr?.message);
       return jsonResponse({ error: "No ML token found for this store" }, 404);
     }
 
-    const accessToken = tokenRow.access_token;
-    const sellerId = tokenRow.seller_id || null;
+    const accessToken = tokenRow.access_token as string;
+    const userId      = tokenRow.user_id      as string;
 
-    // Fetch fresh data from ML API
+    if (!forceSync) {
+      const [cachedDaily, cachedCampaigns, cachedProducts] = await Promise.all([
+        loadCachedDaily(supabase, userId, mlUserId, dateFrom, dateTo),
+        loadCachedCampaigns(supabase, userId, mlUserId),
+        loadCachedProducts(supabase, userId, mlUserId),
+      ]);
+      if (isCacheFresh(cachedDaily) && cachedDaily.length > 0) {
+        console.log(`[ml-ads] cache hit: ${cachedDaily.length} rows`);
+        return jsonResponse({ daily: cachedDaily, campaigns: cachedCampaigns,
+          products: cachedProducts, summary: computeSummary(cachedDaily), source: "cache" });
+      }
+    }
+
     const [rawDaily, rawCampaigns, rawProducts] = await Promise.all([
       fetchDailyMetrics(mlUserId, dateFrom, dateTo, accessToken),
       fetchCampaigns(mlUserId, accessToken),
       fetchProductAds(mlUserId, accessToken),
     ]);
 
-    const daily = transformDaily(rawDaily);
+    console.log(`[ml-ads] raw: daily=${rawDaily.length} campaigns=${rawCampaigns.length}`);
+    if (rawDaily.length > 0) console.log("[ml-ads] rawDaily[0]:", JSON.stringify(rawDaily[0]).substring(0, 300));
+
+    const daily     = transformDaily(rawDaily);
     const campaigns = transformCampaigns(rawCampaigns);
-    const products = transformProducts(rawProducts);
-    const summary = computeSummary(daily);
+    const products  = transformProducts(rawProducts);
+    const summary   = computeSummary(daily);
 
-    // Write to cache in background (don't block response)
-    const cachePromise = Promise.all([
-      upsertDailyCache(supabase, user.id, mlUserId, sellerId, daily),
-      upsertCampaignsCache(supabase, user.id, mlUserId, sellerId, campaigns),
-      upsertProductsCache(supabase, user.id, mlUserId, sellerId, products),
-    ]).catch(err => console.error("Cache write error:", err));
+    console.log(`[ml-ads] transformed: daily=${daily.length}`);
+    if (daily.length > 0) console.log("[ml-ads] summary:", JSON.stringify(summary));
 
-    console.log(`ml-ads: fetched from API user=${user.id} store=${mlUserId} daily=${daily.length} campaigns=${campaigns.length} products=${products.length}`);
-
-    // Wait for cache write before responding (edge functions terminate after response)
-    await cachePromise;
+    await Promise.all([
+      upsertDailyCache(supabase, userId, mlUserId, daily),
+      upsertCampaignsCache(supabase, userId, mlUserId, campaigns),
+      upsertProductsCache(supabase, userId, mlUserId, products),
+    ]).catch(err => console.error("[ml-ads] cache error:", err));
 
     return jsonResponse({ daily, campaigns, products, summary, source: "api" });
   } catch (err) {
