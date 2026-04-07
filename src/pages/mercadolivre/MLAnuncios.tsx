@@ -233,11 +233,9 @@ export default function MLAnuncios() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Main chart — 2/3 width */}
         <Card className="lg:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              Gasto vs Receita Atribuída
-            </CardTitle>
+          <div className="px-4 pt-4 pb-3">
+            <span className="text-sm font-medium text-foreground">Gasto vs Receita Atribuída</span>
+          </div>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
