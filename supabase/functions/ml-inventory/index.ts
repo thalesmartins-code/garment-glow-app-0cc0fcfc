@@ -97,6 +97,7 @@ serve(async (req) => {
             sold_quantity: v.sold_quantity ?? 0,
             price: v.price ?? b.price ?? 0,
             picture_id: v.picture_ids?.[0] ?? null,
+            seller_custom_field: v.seller_custom_field ?? null,
           }));
           const brandAttr = (b.attributes || []).find((a: any) => a.id === "BRAND");
           const brand = brandAttr?.value_name || null;
