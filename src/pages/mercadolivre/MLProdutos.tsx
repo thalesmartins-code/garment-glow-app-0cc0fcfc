@@ -80,7 +80,7 @@ function CatalogBadge() {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="inline-flex items-center gap-0.5 rounded-full border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 cursor-default leading-none">
+        <span className="inline-flex items-center gap-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 cursor-default leading-none">
           <BookOpen className="w-2.5 h-2.5" />
           Catálogo
         </span>
