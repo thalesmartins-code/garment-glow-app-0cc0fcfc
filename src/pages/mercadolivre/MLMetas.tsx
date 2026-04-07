@@ -23,8 +23,9 @@ const currencyFmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 function parseCurrency(raw: string): number {
-  const n = parseFloat(raw.replace(/\D/g, "")) / 100;
-  return isNaN(n) ? 0 : n;
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return 0;
+  return parseInt(digits, 10);
 }
 
 function parseDecimal(raw: string): number {
@@ -33,20 +34,24 @@ function parseDecimal(raw: string): number {
 }
 
 function KpiInput({ label, icon, value, onChange, format: fmt, color }: {
-  label: string; icon: React.ReactNode; value: number;
-  onChange: (v: number) => void; format: "currency" | "number" | "percent"; color: string;
+  label: string;
+  icon: React.ReactNode;
+  value: number;
+  onChange: (v: number) => void;
+  format: "currency" | "number" | "percent";
+  color: string;
 }) {
-  const toDisplay = (v: number) => {
-    if (v <= 0) return "";
-    if (fmt === "currency") return currencyFmt(v).replace("R$", "").trim();
-    if (fmt === "percent") return v.toFixed(1);
-    return String(Math.round(v));
-  };
-  const [raw, setRaw] = useState(() => toDisplay(value));
-  useEffect(() => { setRaw(toDisplay(value)); }, [value]);
+  const [raw, setRaw] = useState(value > 0 ? String(Math.round(value)) : "");
+  const [lastExternal, setLastExternal] = useState(value);
+
+  // Only sync from external when the parent resets (store/month change)
+  if (value !== lastExternal) {
+    setLastExternal(value);
+    setRaw(value > 0 ? String(Math.round(value)) : "");
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value;
+    const v = e.target.value.replace(/[^\d.,]/g, "");
     setRaw(v);
     if (fmt === "currency") onChange(parseCurrency(v));
     else onChange(parseDecimal(v));
@@ -62,9 +67,11 @@ function KpiInput({ label, icon, value, onChange, format: fmt, color }: {
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
         )}
         <Input
-          type="text" inputMode="numeric" value={raw}
+          type="text"
+          inputMode="numeric"
+          value={raw}
           onChange={handleChange}
-          placeholder={fmt === "currency" ? "0,00" : fmt === "percent" ? "0.0" : "0"}
+          placeholder={fmt === "currency" ? "0" : fmt === "percent" ? "0.0" : "0"}
           className={cn("text-sm font-semibold", fmt === "currency" ? "pl-9" : fmt === "percent" ? "pr-6" : "")}
         />
         {fmt === "percent" && (
@@ -132,10 +139,10 @@ export default function MLMetas() {
   }, [selectedStoreId, selectedYear, getTarget]);
 
   const kpiDefs = [
-    { key: "revenue" as const,    label: "Receita Mensal",  icon: <TrendingUp className="w-3.5 h-3.5" />,  format: "currency" as const, color: "text-emerald-600" },
-    { key: "orders" as const,     label: "Pedidos",         icon: <ShoppingCart className="w-3.5 h-3.5" />, format: "number"   as const, color: "text-blue-600"   },
-    { key: "ticket" as const,     label: "Ticket M\u00e9dio", icon: <Receipt className="w-3.5 h-3.5" />,   format: "currency" as const, color: "text-orange-600" },
-    { key: "conversion" as const, label: "Convers\u00e3o",  icon: <Percent className="w-3.5 h-3.5" />,     format: "percent"  as const, color: "text-purple-600" },
+    { key: "revenue" as const,    label: "Receita Mensal", icon: <TrendingUp className="w-3.5 h-3.5" />,  format: "currency" as const, color: "text-emerald-600" },
+    { key: "orders" as const,     label: "Pedidos",        icon: <ShoppingCart className="w-3.5 h-3.5" />, format: "number"   as const, color: "text-blue-600"   },
+    { key: "ticket" as const,     label: "Ticket M\u00e9dio",  icon: <Receipt className="w-3.5 h-3.5" />,  format: "currency" as const, color: "text-orange-600" },
+    { key: "conversion" as const, label: "Convers\u00e3o", icon: <Percent className="w-3.5 h-3.5" />,      format: "percent"  as const, color: "text-purple-600" },
   ];
 
   return (
@@ -176,7 +183,7 @@ export default function MLMetas() {
             </div>
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Calendar className="w-3.5 h-3.5" /> M\u00eas
+                <Calendar className="w-3.5 h-3.5" /> M&ecirc;s
               </Label>
               <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -227,7 +234,7 @@ export default function MLMetas() {
                 {kpi.revenue > 0 && <span className="text-muted-foreground">Receita: <strong className="text-foreground">{currencyFmt(kpi.revenue)}</strong></span>}
                 {kpi.orders > 0 && <span className="text-muted-foreground">Pedidos: <strong className="text-foreground">{kpi.orders.toLocaleString("pt-BR")}</strong></span>}
                 {kpi.ticket > 0 && <span className="text-muted-foreground">Ticket: <strong className="text-foreground">{currencyFmt(kpi.ticket)}</strong></span>}
-                {kpi.conversion > 0 && <span className="text-muted-foreground">Convers\u00e3o: <strong className="text-foreground">{kpi.conversion.toFixed(1)}%</strong></span>}
+                {kpi.conversion > 0 && <span className="text-muted-foreground">Convers&atilde;o: <strong className="text-foreground">{kpi.conversion.toFixed(1)}%</strong></span>}
               </div>
             </div>
           )}
@@ -238,7 +245,7 @@ export default function MLMetas() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm text-muted-foreground font-normal">
-              Metas salvas \u2014 {selectedStore?.displayName ?? selectedStoreId} \u2014 {selectedYear}
+              Metas salvas &mdash; {selectedStore?.displayName ?? selectedStoreId} &mdash; {selectedYear}
             </CardTitle>
           </CardHeader>
           <CardContent>
