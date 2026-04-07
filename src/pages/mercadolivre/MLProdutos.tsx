@@ -356,7 +356,7 @@ export default function MLProdutos() {
                           
                         </>
                       )}
-                      <TableHead className="w-10"></TableHead>
+                      
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -391,7 +391,9 @@ export default function MLProdutos() {
                             </TableCell>
 
                             <TableCell>
-                              <p className="text-sm font-medium line-clamp-2 leading-tight">{item.title}</p>
+                              <a href={`https://produto.mercadolivre.com.br/${item.id.replace(/^(MLB)(\d+)$/, "$1-$2")}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-sm font-medium line-clamp-2 leading-tight hover:underline hover:text-primary transition-colors">
+                                {item.title} <ExternalLink className="w-3 h-3 inline mb-0.5 ml-0.5" />
+                              </a>
                               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                 <p className="text-xs text-muted-foreground">{item.id}</p>
                                 {sku && (
@@ -464,11 +466,6 @@ export default function MLProdutos() {
                               );
                             })()}
 
-                            <TableCell onClick={(e) => e.stopPropagation()}>
-                              <a href={`https://produto.mercadolivre.com.br/${item.id.replace(/^(MLB)(\d+)$/, "$1-$2")}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
-                                <ExternalLink className="w-4 h-4" />
-                              </a>
-                            </TableCell>
                           </TableRow>
 
                           {/* Expanded variations sub-table */}
