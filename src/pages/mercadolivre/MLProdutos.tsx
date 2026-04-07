@@ -60,8 +60,6 @@ const stockBadge = (qty: number) => {
 const variationLabel = (v: ProductVariation) =>
   v.attribute_combinations.map((a) => a.value).join(" / ") || `Var. ${v.variation_id}`;
 
-const MAX_PILLS = 5;
-
 // ─── Brand extraction from title ──────────────────────────────────────────────
 function extractBrand(title: string): string {
   const words = title.trim().split(/\s+/);
