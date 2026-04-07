@@ -882,27 +882,9 @@ export default function MLProdutos() {
             {/* Summary KPIs */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <KPICard title="Total de Anúncios" value={String(abcSummary.total)} icon={<ShoppingBag className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-accent/10 text-accent" />
-              <Card>
-                <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground">Curva A</p>
-                  <p className="text-lg font-bold">{abcSummary.A.count} <span className="text-xs font-normal text-muted-foreground">anúncios</span></p>
-                  <p className="text-xs text-muted-foreground">{abcSummary.A.pct.toFixed(1)}% da receita · {currencyFmt(abcSummary.A.revenue)}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground">Curva B</p>
-                  <p className="text-lg font-bold">{abcSummary.B.count} <span className="text-xs font-normal text-muted-foreground">anúncios</span></p>
-                  <p className="text-xs text-muted-foreground">{abcSummary.B.pct.toFixed(1)}% da receita · {currencyFmt(abcSummary.B.revenue)}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground">Curva C</p>
-                  <p className="text-lg font-bold">{abcSummary.C.count} <span className="text-xs font-normal text-muted-foreground">anúncios</span></p>
-                  <p className="text-xs text-muted-foreground">{abcSummary.C.pct.toFixed(1)}% da receita · {currencyFmt(abcSummary.C.revenue)}</p>
-                </CardContent>
-              </Card>
+              <KPICard title="Curva A" value={String(abcSummary.A.count)} subtitle={`${abcSummary.A.pct.toFixed(1)}% · ${currencyFmt(abcSummary.A.revenue)}`} icon={<TrendingUp className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-success/10 text-success" />
+              <KPICard title="Curva B" value={String(abcSummary.B.count)} subtitle={`${abcSummary.B.pct.toFixed(1)}% · ${currencyFmt(abcSummary.B.revenue)}`} icon={<Package className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]" />
+              <KPICard title="Curva C" value={String(abcSummary.C.count)} subtitle={`${abcSummary.C.pct.toFixed(1)}% · ${currencyFmt(abcSummary.C.revenue)}`} icon={<Tag className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-[hsl(270,70%,50%)]/10 text-[hsl(270,70%,50%)]" />
             </div>
 
             {/* ABC Chart */}
