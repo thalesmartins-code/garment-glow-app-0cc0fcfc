@@ -837,7 +837,6 @@ export default function MLEstoque() {
                       <TableHead className="text-xs">Produto</TableHead>
                       <TableHead className="text-xs text-right">Preço</TableHead>
                       <TableHead className="text-xs text-right">Disp.</TableHead>
-                      <TableHead className="text-xs text-right">Visitas</TableHead>
                       <TableHead className="text-xs text-right">Vendidos</TableHead>
                       <TableHead className="text-xs">Cobertura</TableHead>
                       <TableHead className="text-xs">Saúde</TableHead>
