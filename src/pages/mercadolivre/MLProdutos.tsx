@@ -311,7 +311,6 @@ export default function MLProdutos() {
                       const soldRevenue = item.sold_quantity * item.price;
                       const isExpanded = expandedRows.has(item.id);
                       const sku = (item as any).seller_custom_field || "—";
-                      const sku = (item as any).seller_custom_field || "—";
 
                       return (
                         <>
