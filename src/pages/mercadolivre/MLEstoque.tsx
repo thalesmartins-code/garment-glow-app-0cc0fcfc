@@ -736,8 +736,7 @@ export default function MLEstoque() {
       {/* ═══════════════════ ABA ESTOQUE ═══════════════════ */}
       <TabsContent value="estoque" className="space-y-5 mt-0">
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <KPICard title="Total SKUs" value={numFmt(items.length)} icon={<Boxes className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-primary/10 text-primary" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <KPICard title="Valor em Estoque" value={currencyFmt(totalStockValue)} icon={<DollarSign className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-accent/10 text-accent" />
           <KPICard
             title="Cobertura Média"
