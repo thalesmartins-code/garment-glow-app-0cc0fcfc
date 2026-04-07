@@ -254,29 +254,38 @@ export default function MLEstoque() {
             <KPICard
               title="Anúncios Ativos"
               value={summary ? String(summary.totalItems) : "—"}
-              icon={<Boxes className="w-5 h-5" />}
+              icon={<Boxes className="w-4 h-4" />}
               subtitle="Total listados"
+              variant="minimal"
+              iconClassName="bg-primary/10 text-primary"
+              size="compact"
             />
             <KPICard
               title="Cobertura Média"
               value={coverageLoading ? "…" : stats.avg_coverage !== null ? `${stats.avg_coverage} dias` : "—"}
-              icon={<Clock className="w-5 h-5" />}
+              icon={<Clock className="w-4 h-4" />}
               subtitle={`Base ${COVERAGE_PERIODS.find((p) => p.value === coveragePeriod)?.label.toLowerCase()}`}
-              variant="info"
+              variant="minimal"
+              iconClassName="bg-accent/10 text-accent"
+              size="compact"
             />
             <KPICard
               title="Críticos"
               value={coverageLoading ? "…" : String(stats.ruptura + stats.critico)}
-              icon={<PackageX className="w-5 h-5" />}
+              icon={<PackageX className="w-4 h-4" />}
               subtitle="Ruptura ou < 7 dias"
-              variant={stats.ruptura + stats.critico > 0 ? "danger" : "default"}
+              variant="minimal"
+              iconClassName={stats.ruptura + stats.critico > 0 ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}
+              size="compact"
             />
             <KPICard
               title="Em Alerta"
               value={coverageLoading ? "…" : String(stats.alerta)}
-              icon={<AlertTriangle className="w-5 h-5" />}
+              icon={<AlertTriangle className="w-4 h-4" />}
               subtitle="7 a 30 dias"
-              variant={stats.alerta > 0 ? "warning" : "default"}
+              variant="minimal"
+              iconClassName={stats.alerta > 0 ? "bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]" : "bg-muted text-muted-foreground"}
+              size="compact"
             />
           </>
         )}
