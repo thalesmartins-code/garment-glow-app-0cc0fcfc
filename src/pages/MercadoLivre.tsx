@@ -1629,9 +1629,20 @@ export default function MercadoLivre() {
                       {p.thumbnail && (
                         <img src={p.thumbnail} alt="" className="w-7 h-7 rounded object-cover flex-shrink-0" />
                       )}
-                      <span className="text-xs text-foreground truncate flex-1 leading-tight">
-                        {p.title}
-                      </span>
+                      {p.item_id ? (
+                        <a
+                          href={`https://produto.mercadolivre.com.br/${p.item_id.replace(/^(MLB)(\d+)/, "$1-$2")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-foreground truncate flex-1 leading-tight hover:text-primary hover:underline transition-colors"
+                        >
+                          {p.title}
+                        </a>
+                      ) : (
+                        <span className="text-xs text-foreground truncate flex-1 leading-tight">
+                          {p.title}
+                        </span>
+                      )}
                       <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                         {p.available_quantity != null ? `${p.available_quantity} un` : "—"}
                       </span>
