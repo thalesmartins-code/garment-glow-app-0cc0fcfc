@@ -323,7 +323,7 @@ export default function MercadoLivre() {
   }, [currentFrom, currentTo]);
 
   // Ads hook uses the wider chart range so sparkline always has 7+ days
-  const { daily: adsDaily, campaigns: adsCampaigns, loading: adsLoading } = useMLAds({
+  const { daily: adsDaily, campaigns: adsCampaigns, loading: adsLoading, isRealData: adsIsRealData, adsAvailable } = useMLAds({
     dateFrom: adsChartFrom,
     dateTo: currentTo,
   });
@@ -1662,13 +1662,20 @@ export default function MercadoLivre() {
 
         {/* Card de Publicidade (ADS) */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
-          <Card className="h-full relative overflow-hidden opacity-75 border border-dashed border-muted-foreground/30">
-            {/* Overlay "Em desenvolvimento" */}
+          <Card className={`h-full relative overflow-hidden ${adsAvailable === false ? "opacity-60 border-dashed border-muted-foreground/30" : ""}`}>
+            {/* Badge de status */}
             <div className="absolute top-2 right-2 z-10">
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                Em desenvolvimento
-              </span>
+              {adsAvailable === false ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-500 ring-1 ring-red-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                  N&atilde;o ativo
+                </span>
+              ) : !adsIsRealData && adsAvailable === null && !adsLoading ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  Simulado
+                </span>
+              ) : null}
             </div>
             <div className="px-4 pt-4 pb-2">
               <span className="text-sm font-medium text-foreground">Publicidade</span>
@@ -1679,6 +1686,24 @@ export default function MercadoLivre() {
                   {[...Array(5)].map((_, i) => (
                     <div key={i} className="h-4 bg-muted rounded animate-pulse" />
                   ))}
+                </div>
+              ) : adsAvailable === false ? (
+                <div className="flex flex-col items-center justify-center py-6 gap-3 text-center">
+                  <Megaphone className="w-8 h-8 text-muted-foreground/40" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-foreground">Mercado Ads n&atilde;o ativado</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed max-w-[200px]">
+                      A API de Publicidade retornou erro 404. Verifique se o Mercado Ads est&aacute; ativo na sua conta ou se o App possui o escopo <span className="font-mono bg-muted px-1 rounded">advertising</span>.
+                    </p>
+                  </div>
+                  <a
+                    href="https://www.mercadolivre.com.br/publicidade"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary underline underline-offset-2"
+                  >
+                    Ativar Mercado Ads →
+                  </a>
                 </div>
               ) : (
                 <div className="space-y-3">

@@ -40,8 +40,14 @@ export interface UseMLAdsResult {
   summary: AdsSummary;
   loading: boolean;
   connected: boolean;
-  /** true = showing real ML Ads data, false = mock */
+  /** true = showing real ML Ads data, false = mock/unavailable */
   isRealData: boolean;
+  /**
+   * null  = not yet checked (loading)
+   * true  = Mercado Ads API is accessible for this seller
+   * false = API returned 404/403 — ads not activated or app scope missing
+   */
+  adsAvailable: boolean | null;
   sync: () => Promise<void>;
   syncing: boolean;
 }
@@ -58,6 +64,7 @@ export function useMLAds(opts: UseMLAdsOptions = {}): UseMLAdsResult {
     summary: AdsSummary;
   } | null>(null);
   const [isRealData, setIsRealData] = useState(false);
+  const [adsAvailable, setAdsAvailable] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
 
   const storeId = useMemo(() => {
@@ -131,6 +138,10 @@ export function useMLAds(opts: UseMLAdsOptions = {}): UseMLAdsResult {
       }
 
       const result = await res.json();
+      // Track whether the Ads API is accessible at all
+      if (typeof result.adsAvailable === "boolean") {
+        setAdsAvailable(result.adsAvailable);
+      }
       if (result.daily && result.daily.length > 0) {
         setRealData({
           daily: result.daily,
@@ -142,7 +153,11 @@ export function useMLAds(opts: UseMLAdsOptions = {}): UseMLAdsResult {
         setIsRealData(true);
         console.log(`ml-ads: loaded from ${result.source || "unknown"}`);
       } else {
-        console.log("ml-ads: No daily data returned, using mock");
+        if (result.adsAvailable === false) {
+          console.warn("ml-ads: Advertising API not available for this seller (404/403) — account may not have Mercado Ads activated");
+        } else {
+          console.log("ml-ads: API accessible but no data for period, using mock");
+        }
       }
     } catch (err) {
       console.warn("ml-ads: Error fetching real data, falling back to mock", err);
@@ -204,6 +219,7 @@ export function useMLAds(opts: UseMLAdsOptions = {}): UseMLAdsResult {
     loading: storeLoading || loading,
     connected,
     isRealData,
+    adsAvailable,
     sync,
     syncing,
   };

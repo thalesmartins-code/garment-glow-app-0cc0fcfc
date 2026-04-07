@@ -91,7 +91,7 @@ function aggregateByDate(rows: any[]): any[] {
   return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
 }
 
-async function fetchDailyMetrics(userId: string, dateFrom: string, dateTo: string, accessToken: string) {
+async function fetchDailyMetrics(userId: string, dateFrom: string, dateTo: string, accessToken: string): Promise<{ rows: any[]; accessible: boolean }> {
   // Try seller_id param first (paginated)
   try {
     const rows = await fetchAllMetricPages(
@@ -99,7 +99,7 @@ async function fetchDailyMetrics(userId: string, dateFrom: string, dateTo: strin
       accessToken,
     );
     console.log(`[ml-ads] primary (seller_id) total rows fetched: ${rows.length}`);
-    if (rows.length > 0) return aggregateByDate(rows);
+    if (rows.length > 0) return { rows: aggregateByDate(rows), accessible: true };
   } catch (e) { console.warn("[ml-ads] primary failed:", String(e)); }
 
   // Fallback: user_id param
@@ -109,7 +109,7 @@ async function fetchDailyMetrics(userId: string, dateFrom: string, dateTo: strin
       accessToken,
     );
     console.log(`[ml-ads] fb1 (user_id) total rows fetched: ${rows.length}`);
-    if (rows.length > 0) return aggregateByDate(rows);
+    if (rows.length > 0) return { rows: aggregateByDate(rows), accessible: true };
   } catch (e) { console.warn("[ml-ads] fb1 failed:", String(e)); }
 
   // Fallback: campaigns/metrics
@@ -118,8 +118,16 @@ async function fetchDailyMetrics(userId: string, dateFrom: string, dateTo: strin
       `/advertising/campaigns/metrics?seller_id=${userId}&date_from=${dateFrom}&date_to=${dateTo}&granularity=DAY`,
       accessToken,
     );
-    return aggregateByDate(rows);
-  } catch (e) { return []; }
+    // API accessible — just 0 rows for this period
+    return { rows: aggregateByDate(rows), accessible: true };
+  } catch (e) {
+    const msg = String(e);
+    console.warn("[ml-ads] all daily metrics attempts failed:", msg);
+    // 404 / 403 = ads not available on this account or app scope missing
+    const notAvailable = /404|resource not found|not found|403|forbidden/i.test(msg);
+    console.log(`[ml-ads] adsAvailable=${!notAvailable}`);
+    return { rows: [], accessible: !notAvailable };
+  }
 }
 
 async function fetchProductAds(userId: string, accessToken: string) {
@@ -373,13 +381,13 @@ serve(async (req) => {
       }
     }
 
-    const [rawDaily, rawCampaigns, rawProducts] = await Promise.all([
+    const [{ rows: rawDaily, accessible: adsAvailable }, rawCampaigns, rawProducts] = await Promise.all([
       fetchDailyMetrics(mlUserId, dateFrom, dateTo, accessToken),
       fetchCampaigns(mlUserId, accessToken),
       fetchProductAds(mlUserId, accessToken),
     ]);
 
-    console.log(`[ml-ads] raw: daily=${rawDaily.length} campaigns=${rawCampaigns.length}`);
+    console.log(`[ml-ads] raw: daily=${rawDaily.length} campaigns=${rawCampaigns.length} adsAvailable=${adsAvailable}`);
     if (rawDaily.length > 0) console.log("[ml-ads] rawDaily[0]:", JSON.stringify(rawDaily[0]).substring(0, 300));
 
     const daily     = transformDaily(rawDaily);
@@ -396,7 +404,7 @@ serve(async (req) => {
       upsertProductsCache(supabase, userId, mlUserId, products),
     ]).catch(err => console.error("[ml-ads] cache error:", err));
 
-    return jsonResponse({ daily, campaigns, products, summary, source: "api" });
+    return jsonResponse({ daily, campaigns, products, summary, adsAvailable, source: "api" });
   } catch (err) {
     console.error("ml-ads error:", err);
     return jsonResponse({ error: "Internal server error" }, 500);
