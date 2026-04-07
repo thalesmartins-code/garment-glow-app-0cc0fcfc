@@ -29,7 +29,7 @@ const apiSections: SidebarNavSection[] = [
         noSelfLink: true,
         children: [
           { icon: TrendingUp,  label: "Vendas",   path: "/api"            },
-          { icon: ShoppingBag, label: "Anúncios", path: "/api/produtos"   },
+          { icon: Megaphone,   label: "Ads",      path: "/api/anuncios"  },
           { icon: Receipt,     label: "Margem",   path: "/api/financeiro" },
         ],
       },
@@ -39,7 +39,7 @@ const apiSections: SidebarNavSection[] = [
         path: "/api/estoque",
         noSelfLink: true,
         children: [
-          { icon: Megaphone,     label: "Ads",     path: "/api/anuncios" },
+          { icon: ShoppingBag, label: "Anúncios", path: "/api/produtos"  },
           { icon: Package,       label: "Estoque", path: "/api/estoque"  },
           { icon: ClipboardList, label: "Pedidos", path: "/api/pedidos"  },
         ],
