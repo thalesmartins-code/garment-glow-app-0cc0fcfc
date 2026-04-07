@@ -17,7 +17,7 @@ import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { TopSellingProducts, type ProductSalesRow } from "@/components/mercadolivre/TopSellingProducts";
+
 import type { ProductVariation } from "@/contexts/MLInventoryContext";
 import { LISTING_TYPE_RATES } from "@/data/financialMockData";
 
