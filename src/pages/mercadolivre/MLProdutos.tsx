@@ -83,6 +83,7 @@ export default function MLProdutos() {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [columnView, setColumnView] = useState<ColumnView>("estoque");
   const [brandFilter, setBrandFilter] = useState("all");
+  const [hideOutOfStock, setHideOutOfStock] = useState(true);
 
   const toggleRow = (id: string) => {
     setExpandedRows((prev) => {
@@ -120,6 +121,7 @@ export default function MLProdutos() {
         if (stockFilter === "low" && !(item.available_quantity > 0 && item.available_quantity <= 5)) return false;
         if (stockFilter === "in_stock" && item.available_quantity === 0) return false;
         if (brandFilter !== "all" && (item.brand || "") !== brandFilter) return false;
+        if (hideOutOfStock && item.available_quantity === 0) return false;
         return true;
       })
       .sort((a, b) => {
@@ -128,7 +130,7 @@ export default function MLProdutos() {
         if (sortBy === "sold") return b.sold_quantity - a.sold_quantity;
         return a.title.localeCompare(b.title);
       });
-  }, [items, search, statusFilter, stockFilter, sortBy, brandFilter]);
+  }, [items, search, statusFilter, stockFilter, sortBy, brandFilter, hideOutOfStock]);
 
   // ─── Reports data ───────────────────────────────────────────────────────────
   const rankingProducts: ProductSalesRow[] = useMemo(
@@ -246,6 +248,17 @@ export default function MLProdutos() {
                     <SelectItem value="title">A–Z</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {/* Hide out of stock */}
+                <label className="flex items-center gap-1.5 cursor-pointer text-xs text-muted-foreground whitespace-nowrap select-none">
+                  <input
+                    type="checkbox"
+                    checked={hideOutOfStock}
+                    onChange={(e) => setHideOutOfStock(e.target.checked)}
+                    className="rounded border-border h-3.5 w-3.5 accent-primary"
+                  />
+                  Ocultar sem estoque
+                </label>
 
                 {/* Column view toggle */}
                 <Tooltip>
