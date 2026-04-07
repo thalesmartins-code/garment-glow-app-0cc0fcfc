@@ -1,39 +1,33 @@
 
 
-## Reformulação da Aba Relatórios - Anúncios
-
-### Objetivo
-Separar Ranking e Vendas por Marca em sub-abas (TabsList interna), tornar ambos mais completos, e corrigir "Vendas por Marca" para usar o atributo `brand` real da API do ML (já disponível em `item.brand`) em vez de extrair a primeira palavra do título.
+## Filtro de Marca no Ranking + Reformulação "Por Marca" com Gráficos
 
 ### Alterações
 
-**1. Sub-abas na aba Relatórios**
+**1. Ranking de Anúncios — Filtro de marca**
+- Adicionar um `Select` de marca acima da tabela de ranking (mesmo componente já usado no catálogo).
+- Criar estado `rankingBrandFilter` e filtrar `rankingAll` por marca selecionada.
+- Recalcular os KPIs com base nos itens filtrados.
 
-Substituir o grid lado-a-lado por um `Tabs` interno com duas sub-abas: "Ranking" e "Por Marca", ocupando largura total.
+**2. Renomear sub-aba "Por Marca" → "Análise por Marca"**
 
-**2. Ranking de Anúncios (mais completo)**
+**3. Análise por Marca — Adicionar gráficos**
+Acima da tabela existente, inserir dois gráficos lado a lado usando Recharts (já instalado via `chart.tsx`):
 
-- Manter o `TopSellingProducts` mas adicionar colunas extras: preço unitário, estoque disponível, e % de participação na receita total.
-- Mostrar todos os itens em tabela ao invés de apenas os top 10, com scroll.
-- Incluir KPIs resumidos no topo: total de unidades vendidas, receita total gerada, ticket médio dos top sellers.
+- **Gráfico de barras horizontal**: Receita por marca (top 10), usando `BarChart` com layout vertical.
+- **Gráfico de pizza/donut**: Distribuição de unidades vendidas por marca (top 8 + "Outros").
 
-**3. Vendas por Marca (correção + enriquecimento)**
-
-- Usar `item.brand` (atributo BRAND da API do ML) em vez de `extractBrand(title)` (primeira palavra do título).
-- Itens sem marca ficam agrupados como "Sem marca".
-- Adicionar colunas: quantidade de anúncios por marca, unidades vendidas, receita, ticket médio, e estoque total.
-- Apresentar em formato tabela com barras de progresso na coluna de receita.
-- Manter o filtro de marca existente no catálogo funcionando com o mesmo campo `brand`.
+Manter a tabela completa abaixo dos gráficos.
 
 ### Arquivo modificado
 
-- `src/pages/mercadolivre/MLProdutos.tsx` — Refatorar a seção `TabsContent value="relatorios"`: adicionar sub-abas, enriquecer ranking com tabela completa, corrigir e enriquecer vendas por marca.
+`src/pages/mercadolivre/MLProdutos.tsx`
 
-### Detalhes Técnicos
+### Detalhes técnicos
 
-- Remover a função `extractBrand()` (não mais necessária).
-- O `brandData` usará `item.brand || "Sem marca"` diretamente.
-- Sub-tabs usarão o mesmo componente `Tabs`/`TabsList`/`TabsTrigger`/`TabsContent` já importado, com estilo `h-8` / `text-xs px-3 h-7` consistente.
-- Ranking em formato `Table` com colunas: #, Anúncio (thumb+título), Preço, Vendidos, Receita, Estoque, % Part.
-- Marca em formato `Table` com colunas: Marca, Anúncios, Vendidos, Receita (com barra), TM, Estoque.
+- Importar `BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell` de `recharts`.
+- Usar paleta de cores derivada do tema (hsl vars ou array fixo harmonizado).
+- Estado `rankingBrandFilter` (string, default `"all"`).
+- `rankingFiltered = rankingAll.filter(...)` com memo derivado.
+- Gráficos em `grid grid-cols-2 gap-4` com altura de 280px, dentro de Cards com título.
 
