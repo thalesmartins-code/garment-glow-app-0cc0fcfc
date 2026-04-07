@@ -46,7 +46,7 @@ const apiSections: SidebarNavSection[] = [
         ],
       },
       {
-        icon: Shield,
+        icon: Handshake,
         label: "Pós-venda",
         path: "/api/reputacao",
         noSelfLink: true,
