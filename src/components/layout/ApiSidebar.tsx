@@ -2,6 +2,7 @@ import {
   Target,
   ArrowLeft,
   ClipboardList,
+  HeartHandshake,
   Layers,
   LayoutDashboard,
   Megaphone,
@@ -28,9 +29,9 @@ const apiSections: SidebarNavSection[] = [
         path: "/api",
         noSelfLink: true,
         children: [
-          { icon: TrendingUp,  label: "Vendas",   path: "/api"            },
-          { icon: Megaphone,   label: "Ads",      path: "/api/anuncios"  },
-          { icon: Receipt,     label: "Margem",   path: "/api/financeiro" },
+          { icon: TrendingUp,  label: "Vendas",      path: "/api"            },
+          { icon: Megaphone,   label: "Publicidade", path: "/api/anuncios"   },
+          { icon: Receipt,     label: "Margem",      path: "/api/financeiro" },
         ],
       },
       {
@@ -39,27 +40,33 @@ const apiSections: SidebarNavSection[] = [
         path: "/api/estoque",
         noSelfLink: true,
         children: [
-          { icon: ShoppingBag, label: "Anúncios", path: "/api/produtos"  },
-          { icon: Package,       label: "Estoque", path: "/api/estoque"  },
-          { icon: ClipboardList, label: "Pedidos", path: "/api/pedidos"  },
+          { icon: ShoppingBag,   label: "Anúncios", path: "/api/produtos" },
+          { icon: Package,       label: "Estoque",  path: "/api/estoque"  },
+          { icon: ClipboardList, label: "Pedidos",  path: "/api/pedidos"  },
         ],
       },
-    ],
-  },
-  {
-    label: "Pós-venda",
-    items: [
-      { icon: Star,         label: "Reputação",  path: "/api/reputacao"  },
-      { icon: PackageX,     label: "Devoluções", path: "/api/devolucoes" },
-      { icon: MessageCircle, label: "Mensagens",  path: "/api/perguntas"  },
-    ],
-  },
-  {
-    label: "Configurações",
-    items: [
-      { icon: Target,   label: "Metas",       path: "/api/metas"       },
-      { icon: Users,    label: "Sellers",     path: "/api/sellers"     },
-      { icon: Plug,     label: "Integrações", path: "/api/integracoes" },
+      {
+        icon: HeartHandshake,
+        label: "Pós-venda",
+        path: "/api/reputacao",
+        noSelfLink: true,
+        children: [
+          { icon: Star,          label: "Reputação",  path: "/api/reputacao"  },
+          { icon: PackageX,      label: "Devoluções", path: "/api/devolucoes" },
+          { icon: MessageCircle, label: "Mensagens",  path: "/api/perguntas"  },
+        ],
+      },
+      {
+        icon: Settings2,
+        label: "Configurações",
+        path: "/api/metas",
+        noSelfLink: true,
+        children: [
+          { icon: Target, label: "Metas",       path: "/api/metas"       },
+          { icon: Users,  label: "Sellers",     path: "/api/sellers"     },
+          { icon: Plug,   label: "Integrações", path: "/api/integracoes" },
+        ],
+      },
     ],
   },
 ];
