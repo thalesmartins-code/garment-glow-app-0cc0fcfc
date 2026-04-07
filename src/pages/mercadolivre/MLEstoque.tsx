@@ -32,6 +32,9 @@ import { Link } from "react-router-dom";
 const currencyFmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
+const currencyFmtShort = (v: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
+
 const numFmt = (v: number) =>
   new Intl.NumberFormat("pt-BR").format(v);
 
