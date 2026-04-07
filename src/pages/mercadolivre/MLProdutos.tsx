@@ -480,6 +480,7 @@ export default function MLProdutos() {
                                                     {stockBadge(v.available_quantity)}
                                                   </div>
                                                 </TableCell>
+                                                <TableCell className="py-2" colSpan={2} />
                                               </>
                                             ) : (() => {
                                               const commRate = getCommissionRate(item.listing_type_id);
