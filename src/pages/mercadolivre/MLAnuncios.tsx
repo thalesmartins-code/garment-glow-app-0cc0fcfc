@@ -335,7 +335,7 @@ export default function MLAnuncios() {
         <div className="px-4 pt-4 pb-3">
           <span className="text-sm font-medium text-foreground">Campanhas</span>
         </div>
-        </CardHeader>
+        
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
