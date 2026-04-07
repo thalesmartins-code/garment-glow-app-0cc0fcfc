@@ -194,28 +194,36 @@ export default function MLReputacao() {
         <KPICard
           title="Avaliações positivas"
           value={pctFmt(reputation.positive_rating)}
-          variant="success"
+          variant="minimal"
+          iconClassName="bg-success/10 text-success"
+          size="compact"
           icon={<ThumbsUp className="w-4 h-4" />}
           subtitle={`${reputation.transactions_completed.toLocaleString("pt-BR")} transações`}
         />
         <KPICard
           title="Avaliações negativas"
           value={pctFmt(reputation.negative_rating)}
-          variant={reputation.negative_rating < 2 ? "warning" : "danger"}
+          variant="minimal"
+          iconClassName={reputation.negative_rating < 2 ? "bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]" : "bg-destructive/10 text-destructive"}
+          size="compact"
           icon={<ThumbsDown className="w-4 h-4" />}
           subtitle="Últimas transações"
         />
         <KPICard
           title="Taxa de reclamações"
           value={pctFmt(reputation.claims_rate)}
-          variant={reputation.claims_rate < 1 ? "success" : reputation.claims_rate < 3 ? "warning" : "danger"}
+          variant="minimal"
+          iconClassName={reputation.claims_rate < 1 ? "bg-success/10 text-success" : "bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]"}
+          size="compact"
           icon={<MessageSquare className="w-4 h-4" />}
           subtitle="Meta ML: abaixo de 1%"
         />
         <KPICard
           title="Tempo de resposta"
           value={`${reputation.response_time_hours}h`}
-          variant={reputation.response_time_hours <= 12 ? "success" : "warning"}
+          variant="minimal"
+          iconClassName={reputation.response_time_hours <= 12 ? "bg-success/10 text-success" : "bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]"}
+          size="compact"
           icon={<Clock className="w-4 h-4" />}
           subtitle="Tempo médio"
         />
