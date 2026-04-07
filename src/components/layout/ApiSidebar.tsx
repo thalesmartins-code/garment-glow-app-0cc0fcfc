@@ -11,7 +11,7 @@ import {
   Plug,
   Receipt,
   Settings2,
-  Shield,
+  Handshake,
   ShoppingBag,
   Star,
   TrendingUp,
@@ -46,7 +46,7 @@ const apiSections: SidebarNavSection[] = [
         ],
       },
       {
-        icon: Shield,
+        icon: Handshake,
         label: "Pós-venda",
         path: "/api/reputacao",
         noSelfLink: true,
