@@ -376,7 +376,6 @@ export default function MLProdutos() {
 
                             {columnView === "estoque" ? (
                               <>
-                                <TableCell className="text-right text-xs text-muted-foreground italic">A informar</TableCell>
                                 <TableCell className="text-center">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <span className={`text-sm font-semibold ${item.available_quantity === 0 ? "text-destructive" : "text-foreground"}`}>
@@ -385,17 +384,16 @@ export default function MLProdutos() {
                                     {stockBadge(item.available_quantity)}
                                   </div>
                                 </TableCell>
-                                
                               </>
                             ) : (() => {
                               const commRate = getCommissionRate(item.listing_type_id);
                               const commPerUnit = Math.round(item.price * commRate * 100) / 100;
                               const netPerUnit = Math.round((item.price - commPerUnit) * 100) / 100;
                               const marginPct = item.price > 0 ? Math.round((netPerUnit / item.price) * 1000) / 10 : 0;
-                              const totalNet = Math.round(netPerUnit * item.sold_quantity * 100) / 100;
                               const marginColor = marginPct >= 70 ? "text-emerald-600" : marginPct >= 50 ? "text-amber-600" : "text-red-600";
                               return (
                                 <>
+                                  <TableCell className="text-right text-xs text-muted-foreground italic">A informar</TableCell>
                                   <TableCell className="text-left">
                                     {listingBadge(item.listing_type_id, commRate)}
                                   </TableCell>
@@ -403,7 +401,6 @@ export default function MLProdutos() {
                                   <TableCell className="text-right">
                                     <span className={`text-sm font-bold ${marginColor}`}>{marginPct.toFixed(1)}%</span>
                                   </TableCell>
-                                  
                                 </>
                               );
                             })()}
