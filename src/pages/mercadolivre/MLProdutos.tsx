@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ShoppingBag, RefreshCw, Search, ExternalLink, Plug, DollarSign, Tag, TrendingUp, Package,
-  ChevronDown, ChevronRight, Receipt, LayoutGrid,
+  ChevronDown, ChevronRight, Receipt, LayoutGrid, Truck,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -309,6 +309,8 @@ export default function MLProdutos() {
                       {columnView === "estoque" ? (
                         <>
                           <TableHead className="text-center w-20">Estoque</TableHead>
+                          <TableHead className="text-center w-24">Logística</TableHead>
+                          <TableHead className="text-center w-20">Frete Grátis</TableHead>
                         </>
                       ) : (
                         <>
@@ -384,6 +386,28 @@ export default function MLProdutos() {
                                     {stockBadge(item.available_quantity)}
                                   </div>
                                 </TableCell>
+                                <TableCell className="text-center">
+                                  {item.logistic_type ? (
+                                    <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
+                                      item.logistic_type === "fulfillment" ? "border-blue-500 text-blue-600 bg-blue-50" :
+                                      item.logistic_type === "self_service" ? "border-amber-500 text-amber-600 bg-amber-50" :
+                                      ""
+                                    }`}>
+                                      {item.logistic_type === "fulfillment" ? "Full" :
+                                       item.logistic_type === "cross_docking" ? "Coleta" :
+                                       item.logistic_type === "self_service" ? "Flex" :
+                                       item.logistic_type === "drop_off" ? "Drop Off" :
+                                       item.logistic_type}
+                                    </Badge>
+                                  ) : <span className="text-xs text-muted-foreground">—</span>}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {item.free_shipping ? (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-500 text-emerald-600 bg-emerald-50">
+                                      <Truck className="w-3 h-3 mr-0.5" /> Sim
+                                    </Badge>
+                                  ) : <span className="text-xs text-muted-foreground">Não</span>}
+                                </TableCell>
                               </>
                             ) : (() => {
                               const commRate = getCommissionRate(item.listing_type_id);
@@ -426,6 +450,7 @@ export default function MLProdutos() {
                                         {columnView === "estoque" ? (
                                           <>
                                             <TableHead className="text-xs h-8 font-medium text-center">Estoque</TableHead>
+                                            <TableHead className="text-xs h-8 font-medium text-center" colSpan={2}>—</TableHead>
                                           </>
                                         ) : (
                                           <>
@@ -455,6 +480,7 @@ export default function MLProdutos() {
                                                     {stockBadge(v.available_quantity)}
                                                   </div>
                                                 </TableCell>
+                                                <TableCell className="py-2" colSpan={2} />
                                               </>
                                             ) : (() => {
                                               const commRate = getCommissionRate(item.listing_type_id);
