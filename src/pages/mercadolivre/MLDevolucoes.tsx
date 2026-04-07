@@ -154,10 +154,10 @@ export default function MLDevolucoes() {
         {/* Chart */}
         <div className="lg:col-span-2">
           <Card className="h-full">
-            <CardHeader>
-              <CardTitle className="text-base">Reclamações — últimos 30 dias</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <div className="px-4 pt-4 pb-3">
+              <span className="text-sm font-medium text-foreground">Reclamações — últimos 30 dias</span>
+            </div>
+            <CardContent className="px-4 pb-2 pt-0">
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={chartData} barSize={10}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
