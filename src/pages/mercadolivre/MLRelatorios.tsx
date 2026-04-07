@@ -1,13 +1,14 @@
 import { useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock3, MapPin, CreditCard, TrendingUp, GitMerge, Info } from "lucide-react";
+import { Clock3, MapPin, CreditCard, TrendingUp, GitMerge, Info, ShoppingCart, DollarSign, Eye, Users, Percent, Tag } from "lucide-react";
 import { BrazilHeatMap } from "@/components/mercadolivre/BrazilHeatMap";
 import { useMLStore } from "@/contexts/MLStoreContext";
+import { KPICard } from "@/components/dashboard/KPICard";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, FunnelChart, Funnel, LabelList,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell,
   AreaChart, Area,
 } from "recharts";
 
@@ -17,6 +18,15 @@ const currencyFmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 const pctFmt = (v: number) => `${v.toFixed(1)}%`;
+
+const tooltipStyle = {
+  borderRadius: 12,
+  border: "1px solid hsl(var(--border))",
+  backgroundColor: "hsl(var(--card))",
+  color: "hsl(var(--card-foreground))",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+  fontSize: 12,
+};
 
 const BRAND_COLORS = {
   primary: "#e6b422",
@@ -90,27 +100,11 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
-// ─── Custom tooltip helpers ───────────────────────────────────────────────────
-
-function CurrencyTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="rounded-lg border bg-background px-3 py-2 shadow-lg text-xs space-y-1">
-      <p className="font-medium text-foreground">{label}</p>
-      {payload.map((p: any) => (
-        <p key={p.dataKey} style={{ color: p.color }}>
-          {p.name}: {p.name?.toLowerCase().includes("pedido") ? p.value : currencyFmt(p.value)}
-        </p>
-      ))}
-    </div>
-  );
-}
-
 // ─── Tab: Venda por Hora ──────────────────────────────────────────────────────
 
 function TabHorario() {
   const { salesCache } = useMLStore();
-  const { daily, hourly } = salesCache;
+  const { hourly } = salesCache;
 
   const { hourlyAgg, peakHour, totalRevenue } = useMemo(() => {
     const buckets = Array.from({ length: 24 }, (_, h) => ({
@@ -132,31 +126,11 @@ function TabHorario() {
     return { hourlyAgg: buckets, peakHour: peak, totalRevenue };
   }, [hourly]);
 
-  // Day-of-week × hour heatmap from daily+hourly breakdown
-  const dayHeatmap = useMemo(() => {
-    const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-    const matrix: { day: string; hour: number; value: number }[] = [];
-    // Group hourly by weekday
-    const byDayHour = new Map<string, number>();
-    hourly.forEach((r) => {
-      const dow = new Date(r.date + "T12:00:00").getDay();
-      const key = `${dow}:${r.hour}`;
-      byDayHour.set(key, (byDayHour.get(key) ?? 0) + r.total);
-    });
-    let maxVal = 0;
-    for (let d = 0; d < 7; d++) {
-      for (let h = 0; h < 24; h++) {
-        const v = byDayHour.get(`${d}:${h}`) ?? 0;
-        if (v > maxVal) maxVal = v;
-        matrix.push({ day: days[d], hour: h, value: v });
-      }
-    }
-    return { matrix, maxVal, days };
-  }, [hourly]);
-
   if (hourly.length === 0) {
     return <EmptyState message="Selecione o período 'Hoje' ou um dia específico para ver vendas por hora." />;
   }
+
+  const totalPedidos = hourlyAgg.reduce((s, b) => s + b.pedidos, 0);
 
   const topHours = [...hourlyAgg]
     .filter((b) => b.pedidos > 0)
@@ -164,55 +138,73 @@ function TabHorario() {
     .slice(0, 5);
 
   return (
-    <div className="space-y-5">
-      {/* Summary chips */}
-      <div className="flex flex-wrap gap-3">
-        <div className="rounded-xl border bg-card px-4 py-2.5 text-center min-w-[120px]">
-          <p className="text-xs text-muted-foreground">Pico de receita</p>
-          <p className="text-lg font-bold text-primary">{peakHour.label}</p>
-          <p className="text-xs text-muted-foreground">{currencyFmt(peakHour.receita)}</p>
-        </div>
-        <div className="rounded-xl border bg-card px-4 py-2.5 text-center min-w-[120px]">
-          <p className="text-xs text-muted-foreground">Total pedidos</p>
-          <p className="text-lg font-bold">{hourlyAgg.reduce((s, b) => s + b.pedidos, 0).toLocaleString("pt-BR")}</p>
-        </div>
-        <div className="rounded-xl border bg-card px-4 py-2.5 text-center min-w-[120px]">
-          <p className="text-xs text-muted-foreground">Receita total</p>
-          <p className="text-lg font-bold">{currencyFmt(totalRevenue)}</p>
-        </div>
+    <div className="space-y-4">
+      {/* KPI chips */}
+      <div className="grid grid-cols-3 gap-3">
+        <KPICard
+          title="Pico de receita"
+          value={peakHour.label}
+          subtitle={currencyFmt(peakHour.receita)}
+          icon={<Clock3 className="w-4 h-4" />}
+          variant="minimal"
+          iconClassName="bg-accent/10 text-accent"
+          size="compact"
+        />
+        <KPICard
+          title="Total pedidos"
+          value={totalPedidos.toLocaleString("pt-BR")}
+          icon={<ShoppingCart className="w-4 h-4" />}
+          variant="minimal"
+          iconClassName="bg-[hsl(270,70%,50%)]/10 text-[hsl(270,70%,50%)]"
+          size="compact"
+        />
+        <KPICard
+          title="Receita total"
+          value={currencyFmt(totalRevenue)}
+          icon={<DollarSign className="w-4 h-4" />}
+          variant="minimal"
+          iconClassName="bg-success/10 text-success"
+          size="compact"
+        />
       </div>
 
-      {/* Bar chart */}
+      {/* Bar chart — Receita */}
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Receita por hora do dia</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Receita por hora do dia</span>
+        </div>
+        <CardContent className="px-4 pb-2 pt-0">
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={hourlyAgg} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={2} />
-              <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} width={48} />
-              <Tooltip content={<CurrencyTooltip />} />
-              <Bar dataKey="receita" name="Receita" fill={BRAND_COLORS.primary} radius={[3, 3, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" interval={2} />
+              <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} width={48} />
+              <Tooltip
+                formatter={(value: number) => [currencyFmt(value), "Receita"]}
+                contentStyle={tooltipStyle}
+              />
+              <Bar dataKey="receita" name="Receita" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} maxBarSize={24} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
 
-      {/* Pedidos bar */}
+      {/* Bar chart — Pedidos */}
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Pedidos por hora</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={180}>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Pedidos por hora</span>
+        </div>
+        <CardContent className="px-4 pb-2 pt-0">
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart data={hourlyAgg} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={2} />
-              <YAxis tick={{ fontSize: 10 }} width={32} />
-              <Tooltip content={<CurrencyTooltip />} />
-              <Bar dataKey="pedidos" name="Pedidos" fill={BRAND_COLORS.blue} radius={[3, 3, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" interval={2} />
+              <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" width={32} />
+              <Tooltip
+                formatter={(value: number) => [value, "Pedidos"]}
+                contentStyle={tooltipStyle}
+              />
+              <Bar dataKey="pedidos" name="Pedidos" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} maxBarSize={24} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -221,10 +213,10 @@ function TabHorario() {
       {/* Top 5 hours */}
       {topHours.length > 0 && (
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Top horários</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <div className="px-4 pt-4 pb-3">
+            <span className="text-sm font-medium text-foreground">Top horários</span>
+          </div>
+          <CardContent className="px-4 pb-4 pt-0">
             <div className="space-y-2">
               {topHours.map((h, i) => {
                 const pct = totalRevenue > 0 ? (h.receita / totalRevenue) * 100 : 0;
@@ -232,10 +224,10 @@ function TabHorario() {
                   <div key={h.hour} className="flex items-center gap-3">
                     <span className="text-xs font-medium w-5 text-muted-foreground">#{i + 1}</span>
                     <span className="text-sm font-semibold w-10">{h.label}</span>
-                    <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
                       <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
                     </div>
-                    <span className="text-xs text-muted-foreground w-10 text-right">{pctFmt(pct)}</span>
+                    <span className="text-[10px] text-muted-foreground w-10 text-right">{pctFmt(pct)}</span>
                     <span className="text-xs font-medium w-24 text-right">{currencyFmt(h.receita)}</span>
                     <span className="text-xs text-muted-foreground">{h.pedidos} ped.</span>
                   </div>
@@ -259,7 +251,7 @@ function TabTicket() {
     return [...daily]
       .sort((a, b) => a.date.localeCompare(b.date))
       .map((d) => ({
-        date: d.date.slice(5), // MM-DD
+        date: d.date.slice(5),
         ticket: d.qty > 0 ? Math.round(d.approved / d.qty) : 0,
         pedidos: d.qty,
         receita: d.approved,
@@ -275,7 +267,6 @@ function TabTicket() {
     const min = Math.min(...tickets);
     const bestDay = chartData.find((d) => d.ticket === max);
     const worstDay = chartData.find((d) => d.ticket === min);
-    // Simple linear trend
     const n = chartData.length;
     const sumX = (n * (n - 1)) / 2;
     const sumY = tickets.reduce((s, v) => s + v, 0);
@@ -290,53 +281,71 @@ function TabTicket() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {stats && (
-        <div className="flex flex-wrap gap-3">
-          {[
-            { label: "Ticket médio", value: currencyFmt(stats.avg), color: "text-foreground" },
-            { label: "Melhor dia", value: currencyFmt(stats.max), sub: stats.bestDay?.date, color: "text-emerald-600" },
-            { label: "Pior dia",   value: currencyFmt(stats.min), sub: stats.worstDay?.date, color: "text-red-500" },
-            {
-              label: "Tendência",
-              value: stats.trend > 0 ? `+${currencyFmt(stats.trend)}/dia` : `${currencyFmt(stats.trend)}/dia`,
-              color: stats.trend >= 0 ? "text-emerald-600" : "text-red-500",
-            },
-          ].map((s) => (
-            <div key={s.label} className="rounded-xl border bg-card px-4 py-2.5 min-w-[130px]">
-              <p className="text-xs text-muted-foreground">{s.label}</p>
-              <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
-              {s.sub && <p className="text-xs text-muted-foreground">{s.sub}</p>}
-            </div>
-          ))}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <KPICard
+            title="Ticket médio"
+            value={currencyFmt(stats.avg)}
+            icon={<Tag className="w-4 h-4" />}
+            variant="minimal"
+            iconClassName="bg-accent/10 text-accent"
+            size="compact"
+          />
+          <KPICard
+            title="Melhor dia"
+            value={currencyFmt(stats.max)}
+            subtitle={stats.bestDay?.date}
+            icon={<TrendingUp className="w-4 h-4" />}
+            variant="minimal"
+            iconClassName="bg-success/10 text-success"
+            size="compact"
+          />
+          <KPICard
+            title="Pior dia"
+            value={currencyFmt(stats.min)}
+            subtitle={stats.worstDay?.date}
+            icon={<TrendingUp className="w-4 h-4" />}
+            variant="minimal"
+            iconClassName="bg-destructive/10 text-destructive"
+            size="compact"
+          />
+          <KPICard
+            title="Tendência"
+            value={stats.trend > 0 ? `+${currencyFmt(stats.trend)}/dia` : `${currencyFmt(stats.trend)}/dia`}
+            icon={<TrendingUp className="w-4 h-4" />}
+            variant="minimal"
+            iconClassName={stats.trend >= 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}
+            size="compact"
+          />
         </div>
       )}
 
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Evolução do ticket médio</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={240}>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Evolução do ticket médio</span>
+        </div>
+        <CardContent className="px-4 pb-2 pt-0">
+          <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
               <defs>
                 <linearGradient id="ticketGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={BRAND_COLORS.primary} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={BRAND_COLORS.primary} stopOpacity={0.02} />
+                  <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-              <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `R$${v}`} width={56} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" interval="preserveStartEnd" />
+              <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `R$${v}`} width={56} />
               <Tooltip
                 formatter={(v: any) => [currencyFmt(v), "Ticket médio"]}
                 labelFormatter={(l) => `Data: ${l}`}
-                contentStyle={{ fontSize: 12 }}
+                contentStyle={tooltipStyle}
               />
               <Area
                 type="monotone"
                 dataKey="ticket"
-                stroke={BRAND_COLORS.primary}
+                stroke="hsl(var(--accent))"
                 strokeWidth={2}
                 fill="url(#ticketGrad)"
                 dot={false}
@@ -347,17 +356,20 @@ function TabTicket() {
       </Card>
 
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Receita aprovada por dia</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={180}>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Receita aprovada por dia</span>
+        </div>
+        <CardContent className="px-4 pb-2 pt-0">
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-              <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} width={48} />
-              <Tooltip content={<CurrencyTooltip />} />
-              <Bar dataKey="receita" name="Receita" fill={BRAND_COLORS.blue} radius={[3, 3, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" interval="preserveStartEnd" />
+              <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} width={48} />
+              <Tooltip
+                formatter={(value: number) => [currencyFmt(value), "Receita"]}
+                contentStyle={tooltipStyle}
+              />
+              <Bar dataKey="receita" name="Receita" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} maxBarSize={24} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -398,37 +410,37 @@ function TabEstado() {
   const top10 = stateData.slice(0, 10);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <SimNote text="Distribuição estimada com base em padrões típicos do e-commerce brasileiro. A API de Pedidos (Orders) é necessária para dados reais por estado." />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Mapa do Brasil</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <div className="px-4 pt-4 pb-3">
+            <span className="text-sm font-medium text-foreground">Mapa do Brasil</span>
+          </div>
+          <CardContent className="px-4 pb-4 pt-0">
             <BrazilHeatMap data={stateData} />
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Top 10 estados por receita</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <div className="px-4 pt-4 pb-3">
+            <span className="text-sm font-medium text-foreground">Top 10 estados por receita</span>
+          </div>
+          <CardContent className="px-4 pb-4 pt-0">
             <div className="space-y-2">
               {top10.map((s, i) => (
                 <div key={s.uf} className="flex items-center gap-2">
                   <span className="text-[10px] font-medium w-4 text-muted-foreground text-right">{i + 1}</span>
                   <Badge variant="outline" className="text-[10px] w-8 justify-center font-mono font-semibold">{s.uf}</Badge>
-                  <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                  <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
                     <div
-                      className="h-full rounded-full"
-                      style={{ width: `${(s.pct / top10[0].pct) * 100}%`, background: BRAND_COLORS.primary }}
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${(s.pct / top10[0].pct) * 100}%` }}
                     />
                   </div>
                   <span className="text-[10px] text-muted-foreground w-8 text-right">{pctFmt(s.pct)}</span>
-                  <span className="text-xs font-medium w-24 text-right tabular-nums">{currencyFmt(s.revenue)}</span>
+                  <span className="text-xs font-medium w-24 text-right">{currencyFmt(s.revenue)}</span>
                 </div>
               ))}
             </div>
@@ -437,20 +449,23 @@ function TabEstado() {
       </div>
 
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Receita por estado — top 10</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Receita por estado — top 10</span>
+        </div>
+        <CardContent className="px-4 pb-2 pt-0">
           <ResponsiveContainer width="100%" height={220}>
             <BarChart
               data={top10.map((s) => ({ name: s.uf, receita: Math.round(s.revenue), pedidos: s.orders }))}
               margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} width={48} />
-              <Tooltip content={<CurrencyTooltip />} />
-              <Bar dataKey="receita" name="Receita" fill={BRAND_COLORS.primary} radius={[3, 3, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" />
+              <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} width={48} />
+              <Tooltip
+                formatter={(value: number, name: string) => [currencyFmt(value), "Receita"]}
+                contentStyle={tooltipStyle}
+              />
+              <Bar dataKey="receita" name="Receita" fill="hsl(var(--accent))" radius={[6, 6, 0, 0]} maxBarSize={24} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -481,18 +496,16 @@ function TabPagamento() {
     return <EmptyState message="Nenhum dado de vendas disponível para o período selecionado." />;
   }
 
-  const totalRevenue = payData.reduce((s, p) => s + p.revenue, 0);
-
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <SimNote text="Distribuição estimada com base em padrões típicos do Mercado Livre Brasil. A API de Pagamentos é necessária para dados reais por forma de pagamento." />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Participação na receita</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center">
+          <div className="px-4 pt-4 pb-3">
+            <span className="text-sm font-medium text-foreground">Participação na receita</span>
+          </div>
+          <CardContent className="px-4 pb-2 pt-0 flex flex-col items-center">
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
                 <Pie
@@ -513,7 +526,7 @@ function TabPagamento() {
                 </Pie>
                 <Tooltip
                   formatter={(v: any, name: any) => [currencyFmt(v), name]}
-                  contentStyle={{ fontSize: 12 }}
+                  contentStyle={tooltipStyle}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -521,10 +534,10 @@ function TabPagamento() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Detalhamento</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <div className="px-4 pt-4 pb-3">
+            <span className="text-sm font-medium text-foreground">Detalhamento</span>
+          </div>
+          <CardContent className="px-4 pb-4 pt-0">
             <div className="space-y-3">
               {payData.map((p) => (
                 <div key={p.name} className="space-y-1">
@@ -550,21 +563,24 @@ function TabPagamento() {
       </div>
 
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Receita por forma de pagamento</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={180}>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Receita por forma de pagamento</span>
+        </div>
+        <CardContent className="px-4 pb-2 pt-0">
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart
               data={payData.map((p) => ({ name: p.name, receita: Math.round(p.revenue) }))}
               layout="vertical"
               margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
-              <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={110} />
-              <Tooltip content={<CurrencyTooltip />} />
-              <Bar dataKey="receita" name="Receita" radius={[0, 3, 3, 0]}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" width={110} />
+              <Tooltip
+                formatter={(value: number) => [currencyFmt(value), "Receita"]}
+                contentStyle={tooltipStyle}
+              />
+              <Bar dataKey="receita" name="Receita" radius={[0, 6, 6, 0]} maxBarSize={24}>
                 {payData.map((p) => <Cell key={p.name} fill={p.color} />)}
               </Bar>
             </BarChart>
@@ -588,9 +604,9 @@ function TabFunil() {
     const revenue = daily.reduce((s, d) => s + d.approved, 0);
 
     const funnelData = [
-      { name: "Visitas únicas",    value: visits,  fill: BRAND_COLORS.blue },
-      { name: "Compradores únicos",value: buyers,  fill: BRAND_COLORS.primary },
-      { name: "Pedidos",           value: orders,  fill: BRAND_COLORS.green },
+      { name: "Visitas únicas",    value: visits,  fill: "hsl(var(--primary))" },
+      { name: "Compradores únicos",value: buyers,  fill: "hsl(var(--accent))" },
+      { name: "Pedidos",           value: orders,  fill: "hsl(var(--success))" },
     ].filter((f) => f.value > 0);
 
     const conversionStats = {
@@ -604,12 +620,6 @@ function TabFunil() {
     return { funnelData, conversionStats };
   }, [daily]);
 
-  const hasAny = daily.some((d) => d.unique_visits > 0 || d.qty > 0);
-
-  if (!hasAny) {
-    return <EmptyState message="Nenhum dado de conversão disponível para o período selecionado." />;
-  }
-
   // Daily conversion rate chart
   const dailyConv = useMemo(() =>
     [...daily]
@@ -622,31 +632,58 @@ function TabFunil() {
       .filter((d) => d.visitas > 0),
     [daily]);
 
+  const hasAny = daily.some((d) => d.unique_visits > 0 || d.qty > 0);
+
+  if (!hasAny) {
+    return <EmptyState message="Nenhum dado de conversão disponível para o período selecionado." />;
+  }
+
   return (
-    <div className="space-y-5">
-      {/* KPI chips */}
-      <div className="flex flex-wrap gap-3">
-        {[
-          { label: "Visita → Comprador", value: pctFmt(conversionStats.visitToBuyer), color: "text-blue-600" },
-          { label: "Comprador → Pedido", value: pctFmt(conversionStats.buyerToOrder), color: "text-primary" },
-          { label: "Tx. geral (visit→ped)", value: pctFmt(conversionStats.visitToOrder), color: "text-emerald-600" },
-          { label: "Ticket médio", value: currencyFmt(conversionStats.avgTicket), color: "text-foreground" },
-        ].map((s) => (
-          <div key={s.label} className="rounded-xl border bg-card px-4 py-2.5 min-w-[150px]">
-            <p className="text-xs text-muted-foreground">{s.label}</p>
-            <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
-          </div>
-        ))}
+    <div className="space-y-4">
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <KPICard
+          title="Visita → Comprador"
+          value={pctFmt(conversionStats.visitToBuyer)}
+          icon={<Eye className="w-4 h-4" />}
+          variant="minimal"
+          iconClassName="bg-primary/10 text-primary"
+          size="compact"
+        />
+        <KPICard
+          title="Comprador → Pedido"
+          value={pctFmt(conversionStats.buyerToOrder)}
+          icon={<Users className="w-4 h-4" />}
+          variant="minimal"
+          iconClassName="bg-accent/10 text-accent"
+          size="compact"
+        />
+        <KPICard
+          title="Tx. geral"
+          value={pctFmt(conversionStats.visitToOrder)}
+          icon={<Percent className="w-4 h-4" />}
+          variant="minimal"
+          iconClassName="bg-success/10 text-success"
+          size="compact"
+        />
+        <KPICard
+          title="Ticket médio"
+          value={currencyFmt(conversionStats.avgTicket)}
+          icon={<Tag className="w-4 h-4" />}
+          variant="minimal"
+          iconClassName="bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]"
+          size="compact"
+        />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Funnel */}
         {funnelData.length > 0 && (
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Funil de conversão</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <div className="px-4 pt-4 pb-3">
+              <span className="text-sm font-medium text-foreground">Funil de conversão</span>
+            </div>
+            <CardContent className="px-4 pb-4 pt-0">
               <div className="space-y-3 py-2">
                 {funnelData.map((step, i) => {
                   const pct = i === 0 ? 100 : (step.value / funnelData[0].value) * 100;
@@ -674,30 +711,30 @@ function TabFunil() {
 
         {/* Daily conversion rate */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Taxa de conversão diária</CardTitle>
-            <CardDescription className="text-xs">Compradores únicos / Visitas únicas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
+          <div className="px-4 pt-4 pb-3">
+            <span className="text-sm font-medium text-foreground">Taxa de conversão diária</span>
+            <p className="text-xs text-muted-foreground mt-0.5">Compradores únicos / Visitas únicas</p>
+          </div>
+          <CardContent className="px-4 pb-2 pt-0">
+            <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={dailyConv} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
                 <defs>
                   <linearGradient id="convGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={BRAND_COLORS.green} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={BRAND_COLORS.green} stopOpacity={0.02} />
+                    <stop offset="5%" stopColor="hsl(var(--success))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-                <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${v}%`} width={36} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" interval="preserveStartEnd" />
+                <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `${v}%`} width={36} />
                 <Tooltip
                   formatter={(v: any) => [`${v}%`, "Taxa de conversão"]}
-                  contentStyle={{ fontSize: 12 }}
+                  contentStyle={tooltipStyle}
                 />
                 <Area
                   type="monotone"
                   dataKey="taxa"
-                  stroke={BRAND_COLORS.green}
+                  stroke="hsl(var(--success))"
                   strokeWidth={2}
                   fill="url(#convGrad)"
                   dot={false}
