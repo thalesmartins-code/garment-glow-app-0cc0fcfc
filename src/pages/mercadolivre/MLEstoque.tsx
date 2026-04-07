@@ -298,9 +298,9 @@ export default function MLEstoque() {
 
       {/* Table */}
       <Card>
-        <CardHeader className="pb-3">
+        <div className="px-4 pt-4 pb-3">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <CardTitle className="text-base">Anúncios</CardTitle>
+            <span className="text-sm font-medium text-foreground">Anúncios</span>
             <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
               {/* Hide out of stock toggle */}
               <label className="flex items-center gap-1.5 cursor-pointer opacity-60 hover:opacity-100 transition-opacity">
