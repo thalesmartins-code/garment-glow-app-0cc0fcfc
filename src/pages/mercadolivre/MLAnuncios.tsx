@@ -272,7 +272,7 @@ export default function MLAnuncios() {
                     return [currFmt(value as number), name];
                   }}
                 />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
+                
                 <Bar yAxisId="brl" dataKey="Gasto" fill="hsl(var(--destructive))" fillOpacity={0.7} radius={[3, 3, 0, 0]} maxBarSize={24} />
                 <Area yAxisId="brl" type="monotone" dataKey="Receita Atribuída" fill="hsl(var(--primary))" fillOpacity={0.12} stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
                 <Line yAxisId="roas" type="monotone" dataKey="ROAS" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="4 2" />
