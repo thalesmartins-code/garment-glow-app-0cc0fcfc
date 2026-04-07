@@ -92,11 +92,7 @@ function SortableHead({ label, field, current, onSort, className = "" }: {
   );
 }
 
-// ─── Brand extraction from title ──────────────────────────────────────────────
-function extractBrand(title: string): string {
-  const words = title.trim().split(/\s+/);
-  return words[0] || "Outros";
-}
+import { Progress } from "@/components/ui/progress";
 
 export default function MLProdutos() {
   const { items, loading, hasToken, lastUpdated, refresh } = useMLInventory();
