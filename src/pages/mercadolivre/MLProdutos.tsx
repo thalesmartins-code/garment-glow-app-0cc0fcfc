@@ -274,7 +274,7 @@ export default function MLProdutos() {
                         onClick={() => setColumnView("financeiro")}
                         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${columnView === "financeiro" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                       >
-                        <Receipt className="w-3.5 h-3.5" /> Financeiro
+                        <Receipt className="w-3.5 h-3.5" /> Margem
                       </button>
                     </div>
                   </TooltipTrigger>
