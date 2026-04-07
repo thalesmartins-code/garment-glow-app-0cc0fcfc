@@ -201,9 +201,9 @@ export default function MLDevolucoes() {
 
       {/* Claims table */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Reclamações recentes</CardTitle>
-        </CardHeader>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Reclamações recentes</span>
+        </div>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

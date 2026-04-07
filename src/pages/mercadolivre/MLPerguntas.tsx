@@ -182,9 +182,9 @@ export default function MLPerguntas() {
 
       {/* Questions list */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Perguntas</CardTitle>
-        </CardHeader>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Perguntas</span>
+        </div>
         <CardContent className="p-0">
           <Tabs defaultValue="pending">
             <div className="px-6 pt-2 pb-0 border-b border-border">

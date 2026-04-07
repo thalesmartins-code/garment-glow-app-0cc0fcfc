@@ -301,7 +301,7 @@ export default function MLPedidos() {
               </Select>
             </div>
           </div>
-        </CardHeader>
+        </div>
         <CardContent className="p-0">
           <div className="overflow-x-auto max-h-[560px] overflow-y-auto">
             <table className="w-full text-sm">

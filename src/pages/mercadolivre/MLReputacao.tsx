@@ -277,9 +277,9 @@ export default function MLReputacao() {
 
       {/* Feedback list */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Últimas avaliações</CardTitle>
-        </CardHeader>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Últimas avaliações</span>
+        </div>
         <CardContent className="p-0">
           <div className="divide-y divide-border">
             {feedbackEntries.slice(0, 10).map((entry) => (

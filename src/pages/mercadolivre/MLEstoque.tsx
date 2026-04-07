@@ -359,7 +359,7 @@ export default function MLEstoque() {
               </Select>
             </div>
           </div>
-        </CardHeader>
+        </div>
 
         <CardContent className="p-0">
           {loading && items.length === 0 ? (
