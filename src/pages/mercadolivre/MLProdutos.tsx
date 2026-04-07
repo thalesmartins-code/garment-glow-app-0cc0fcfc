@@ -350,6 +350,7 @@ export default function MLProdutos() {
                               </div>
                             </TableCell>
 
+                            <TableCell className="text-left text-xs text-muted-foreground">{item.brand || "—"}</TableCell>
                             <TableCell className="text-left text-xs text-muted-foreground font-mono">{sku}</TableCell>
                             <TableCell className="text-right text-sm font-medium">{currencyFmt(item.price)}</TableCell>
 
