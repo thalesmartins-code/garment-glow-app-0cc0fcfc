@@ -177,28 +177,36 @@ export default function MLPedidos() {
         <KPICard
           title="Pedidos ativos"
           value={String(summary.total_orders)}
-          variant="info"
+          variant="minimal"
+          iconClassName="bg-primary/10 text-primary"
+          size="compact"
           icon={<ClipboardList className="w-4 h-4" />}
           subtitle={`${summary.cancelled_orders} cancelados/devolvidos`}
         />
         <KPICard
           title="Receita bruta"
           value={currFmt(summary.gross_revenue)}
-          variant="default"
+          variant="minimal"
+          iconClassName="bg-accent/10 text-accent"
+          size="compact"
           icon={<DollarSign className="w-4 h-4" />}
           subtitle="Últimos 60 dias"
         />
         <KPICard
           title="Receita líquida"
           value={currFmt(summary.net_revenue)}
-          variant="success"
+          variant="minimal"
+          iconClassName="bg-success/10 text-success"
+          size="compact"
           icon={<TrendingDown className="w-4 h-4" />}
           subtitle={`Margem média ${pctFmt(summary.net_margin_pct)}`}
         />
         <KPICard
           title="Ticket médio"
           value={currFmt(summary.avg_ticket)}
-          variant="neutral"
+          variant="minimal"
+          iconClassName="bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]"
+          size="compact"
           icon={<Package className="w-4 h-4" />}
           subtitle="Por pedido ativo"
         />
