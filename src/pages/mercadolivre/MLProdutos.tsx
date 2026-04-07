@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useMLInventory } from "@/contexts/MLInventoryContext";
 import { KPICard } from "@/components/dashboard/KPICard";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,10 @@ import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
+  PieChart, Pie, Cell,
+} from "recharts";
 
 import type { ProductVariation } from "@/contexts/MLInventoryContext";
 import { LISTING_TYPE_RATES } from "@/data/financialMockData";
