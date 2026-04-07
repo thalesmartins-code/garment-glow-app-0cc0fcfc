@@ -755,10 +755,7 @@ export default function MLProdutos() {
                             <TableCell className="text-right text-sm font-semibold">{r.sold}</TableCell>
                             <TableCell className="text-right text-sm font-semibold text-primary">{currencyFmt(r.revenue)}</TableCell>
                             <TableCell className="text-center">
-                              <div className="flex flex-col items-center gap-0.5">
-                                <span className={`text-sm font-semibold ${r.stock === 0 ? "text-destructive" : ""}`}>{r.stock}</span>
-                                {stockBadge(r.stock)}
-                              </div>
+                              <span className={`text-sm font-semibold ${r.stock === 0 ? "text-destructive" : ""}`}>{r.stock}</span>
                             </TableCell>
                             <TableCell className="text-right text-sm text-muted-foreground">{r.share.toFixed(1)}%</TableCell>
                           </TableRow>
