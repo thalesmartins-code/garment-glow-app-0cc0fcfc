@@ -466,11 +466,6 @@ export default function MLProdutos() {
                               );
                             })()}
 
-                            <TableCell onClick={(e) => e.stopPropagation()}>
-                              <a href={`https://produto.mercadolivre.com.br/${item.id.replace(/^(MLB)(\d+)$/, "$1-$2")}`} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors">
-                                <ExternalLink className="w-4 h-4" />
-                              </a>
-                            </TableCell>
                           </TableRow>
 
                           {/* Expanded variations sub-table */}
