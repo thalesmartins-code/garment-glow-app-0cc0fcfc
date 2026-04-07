@@ -284,6 +284,7 @@ export default function MLProdutos() {
                       <TableHead className="w-8"></TableHead>
                       <TableHead className="w-12"></TableHead>
                       <TableHead>Anúncio</TableHead>
+                      <TableHead className="text-left w-24">Marca</TableHead>
                       <TableHead className="text-left w-20">SKU</TableHead>
                       <TableHead className="text-right w-24">Preço</TableHead>
                       {columnView === "estoque" ? (
@@ -349,6 +350,7 @@ export default function MLProdutos() {
                               </div>
                             </TableCell>
 
+                            <TableCell className="text-left text-xs text-muted-foreground">{item.brand || "—"}</TableCell>
                             <TableCell className="text-left text-xs text-muted-foreground font-mono">{sku}</TableCell>
                             <TableCell className="text-right text-sm font-medium">{currencyFmt(item.price)}</TableCell>
 
@@ -397,7 +399,7 @@ export default function MLProdutos() {
                           {/* Expanded variations sub-table */}
                           {item.has_variations && isExpanded && (
                             <TableRow key={`${item.id}-variations`}>
-                              <TableCell colSpan={columnView === "estoque" ? 9 : 12} className="p-0 bg-muted/20 border-b">
+                              <TableCell colSpan={columnView === "estoque" ? 10 : 13} className="p-0 bg-muted/20 border-b">
                                 <div className="px-10 py-3">
                                   <Table>
                                     <TableHeader>
