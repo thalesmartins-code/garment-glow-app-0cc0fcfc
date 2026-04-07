@@ -266,7 +266,7 @@ export default function MLReputacao() {
               <RechartsTooltip
                 contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
               />
-              <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
+              
               <Bar dataKey="Positivo" fill="hsl(var(--success))" radius={[2, 2, 0, 0]} />
               <Bar dataKey="Neutro" fill="hsl(var(--muted-foreground))" radius={[2, 2, 0, 0]} />
               <Bar dataKey="Negativo" fill="hsl(var(--destructive))" radius={[2, 2, 0, 0]} />
