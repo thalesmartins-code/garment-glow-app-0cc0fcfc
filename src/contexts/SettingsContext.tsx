@@ -157,9 +157,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const target = prev.find((t) => t.id === targetId);
       if (target && user) {
         const row = targetToRow(user.id, { ...target, pmtDistribution: distribution });
-        supabase.from("ml_targets")
-          .upsert(row, { onConflict: "user_id,seller_id,marketplace_id,year,month" })
-          .then(({ error }) => {
+        (supabase.from("ml_targets" as any)
+          .upsert(row as any, { onConflict: "user_id,seller_id,marketplace_id,year,month" }) as any)
+          .then(({ error }: any) => {
             if (error) console.error("updatePMTDistribution supabase error:", error.message);
           });
       }
