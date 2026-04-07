@@ -177,9 +177,9 @@ export default function MLDevolucoes() {
 
         {/* Reason breakdown */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Motivos</CardTitle>
-          </CardHeader>
+          <div className="px-4 pt-4 pb-3">
+            <span className="text-sm font-medium text-foreground">Motivos</span>
+          </div>
           <CardContent className="space-y-3">
             {reasonCounts.map(({ label, count }) => {
               const pct = Math.round((count / claims.length) * 100);
