@@ -194,28 +194,36 @@ export default function MLReputacao() {
         <KPICard
           title="Avaliações positivas"
           value={pctFmt(reputation.positive_rating)}
-          variant="success"
+          variant="minimal"
+          iconClassName="bg-success/10 text-success"
+          size="compact"
           icon={<ThumbsUp className="w-4 h-4" />}
           subtitle={`${reputation.transactions_completed.toLocaleString("pt-BR")} transações`}
         />
         <KPICard
           title="Avaliações negativas"
           value={pctFmt(reputation.negative_rating)}
-          variant={reputation.negative_rating < 2 ? "warning" : "danger"}
+          variant="minimal"
+          iconClassName={reputation.negative_rating < 2 ? "bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]" : "bg-destructive/10 text-destructive"}
+          size="compact"
           icon={<ThumbsDown className="w-4 h-4" />}
           subtitle="Últimas transações"
         />
         <KPICard
           title="Taxa de reclamações"
           value={pctFmt(reputation.claims_rate)}
-          variant={reputation.claims_rate < 1 ? "success" : reputation.claims_rate < 3 ? "warning" : "danger"}
+          variant="minimal"
+          iconClassName={reputation.claims_rate < 1 ? "bg-success/10 text-success" : "bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]"}
+          size="compact"
           icon={<MessageSquare className="w-4 h-4" />}
           subtitle="Meta ML: abaixo de 1%"
         />
         <KPICard
           title="Tempo de resposta"
           value={`${reputation.response_time_hours}h`}
-          variant={reputation.response_time_hours <= 12 ? "success" : "warning"}
+          variant="minimal"
+          iconClassName={reputation.response_time_hours <= 12 ? "bg-success/10 text-success" : "bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]"}
+          size="compact"
           icon={<Clock className="w-4 h-4" />}
           subtitle="Tempo médio"
         />
@@ -246,10 +254,10 @@ export default function MLReputacao() {
 
       {/* Chart */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Avaliações — últimos 30 dias</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Avaliações — últimos 30 dias</span>
+        </div>
+        <CardContent className="px-4 pb-2 pt-0">
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={chartData} barSize={8}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -258,7 +266,7 @@ export default function MLReputacao() {
               <RechartsTooltip
                 contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
               />
-              <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
+              
               <Bar dataKey="Positivo" fill="hsl(var(--success))" radius={[2, 2, 0, 0]} />
               <Bar dataKey="Neutro" fill="hsl(var(--muted-foreground))" radius={[2, 2, 0, 0]} />
               <Bar dataKey="Negativo" fill="hsl(var(--destructive))" radius={[2, 2, 0, 0]} />
@@ -269,9 +277,9 @@ export default function MLReputacao() {
 
       {/* Feedback list */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Últimas avaliações</CardTitle>
-        </CardHeader>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Últimas avaliações</span>
+        </div>
         <CardContent className="p-0">
           <div className="divide-y divide-border">
             {feedbackEntries.slice(0, 10).map((entry) => (

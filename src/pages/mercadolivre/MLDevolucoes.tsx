@@ -115,28 +115,36 @@ export default function MLDevolucoes() {
         <KPICard
           title="Reclamações abertas"
           value={String(summary.open_claims)}
-          variant={summary.open_claims === 0 ? "success" : summary.open_claims <= 5 ? "warning" : "danger"}
+          variant="minimal"
+          iconClassName={summary.open_claims === 0 ? "bg-success/10 text-success" : summary.open_claims <= 5 ? "bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]" : "bg-destructive/10 text-destructive"}
+          size="compact"
           icon={<AlertCircle className="w-4 h-4" />}
           subtitle={`${summary.total_claims} total (últimos 60 dias)`}
         />
         <KPICard
           title="Taxa de resolução"
           value={`${summary.resolution_rate.toFixed(1)}%`}
-          variant={summary.resolution_rate >= 90 ? "success" : summary.resolution_rate >= 75 ? "warning" : "danger"}
+          variant="minimal"
+          iconClassName={summary.resolution_rate >= 90 ? "bg-success/10 text-success" : "bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]"}
+          size="compact"
           icon={<CheckCircle2 className="w-4 h-4" />}
           subtitle="Reclamações resolvidas"
         />
         <KPICard
           title="Tempo médio resolução"
           value={`${summary.avg_resolution_days}d`}
-          variant={summary.avg_resolution_days <= 5 ? "success" : summary.avg_resolution_days <= 10 ? "warning" : "danger"}
+          variant="minimal"
+          iconClassName={summary.avg_resolution_days <= 5 ? "bg-success/10 text-success" : "bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]"}
+          size="compact"
           icon={<Clock className="w-4 h-4" />}
           subtitle="Em dias úteis"
         />
         <KPICard
           title="Taxa de reclamações"
           value={`${summary.claims_rate_pct.toFixed(1)}%`}
-          variant={summary.claims_rate_pct < 1 ? "success" : summary.claims_rate_pct < 3 ? "warning" : "danger"}
+          variant="minimal"
+          iconClassName={summary.claims_rate_pct < 1 ? "bg-success/10 text-success" : "bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]"}
+          size="compact"
           icon={<ShieldAlert className="w-4 h-4" />}
           subtitle="Meta ML: abaixo de 1%"
         />
@@ -146,10 +154,10 @@ export default function MLDevolucoes() {
         {/* Chart */}
         <div className="lg:col-span-2">
           <Card className="h-full">
-            <CardHeader>
-              <CardTitle className="text-base">Reclamações — últimos 30 dias</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <div className="px-4 pt-4 pb-3">
+              <span className="text-sm font-medium text-foreground">Reclamações — últimos 30 dias</span>
+            </div>
+            <CardContent className="px-4 pb-2 pt-0">
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={chartData} barSize={10}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -158,7 +166,7 @@ export default function MLDevolucoes() {
                   <RechartsTooltip
                     contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
                   />
-                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
+                  
                   <Bar dataKey="Abertas" fill="hsl(var(--destructive))" radius={[2, 2, 0, 0]} />
                   <Bar dataKey="Resolvidas" fill="hsl(var(--success))" radius={[2, 2, 0, 0]} />
                 </BarChart>
@@ -169,9 +177,9 @@ export default function MLDevolucoes() {
 
         {/* Reason breakdown */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Motivos</CardTitle>
-          </CardHeader>
+          <div className="px-4 pt-4 pb-3">
+            <span className="text-sm font-medium text-foreground">Motivos</span>
+          </div>
           <CardContent className="space-y-3">
             {reasonCounts.map(({ label, count }) => {
               const pct = Math.round((count / claims.length) * 100);
@@ -193,9 +201,9 @@ export default function MLDevolucoes() {
 
       {/* Claims table */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Reclamações recentes</CardTitle>
-        </CardHeader>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Reclamações recentes</span>
+        </div>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

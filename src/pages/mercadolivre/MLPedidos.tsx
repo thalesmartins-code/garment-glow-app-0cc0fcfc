@@ -177,28 +177,36 @@ export default function MLPedidos() {
         <KPICard
           title="Pedidos ativos"
           value={String(summary.total_orders)}
-          variant="info"
+          variant="minimal"
+          iconClassName="bg-primary/10 text-primary"
+          size="compact"
           icon={<ClipboardList className="w-4 h-4" />}
           subtitle={`${summary.cancelled_orders} cancelados/devolvidos`}
         />
         <KPICard
           title="Receita bruta"
           value={currFmt(summary.gross_revenue)}
-          variant="default"
+          variant="minimal"
+          iconClassName="bg-accent/10 text-accent"
+          size="compact"
           icon={<DollarSign className="w-4 h-4" />}
           subtitle="Últimos 60 dias"
         />
         <KPICard
           title="Receita líquida"
           value={currFmt(summary.net_revenue)}
-          variant="success"
+          variant="minimal"
+          iconClassName="bg-success/10 text-success"
+          size="compact"
           icon={<TrendingDown className="w-4 h-4" />}
           subtitle={`Margem média ${pctFmt(summary.net_margin_pct)}`}
         />
         <KPICard
           title="Ticket médio"
           value={currFmt(summary.avg_ticket)}
-          variant="neutral"
+          variant="minimal"
+          iconClassName="bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]"
+          size="compact"
           icon={<Package className="w-4 h-4" />}
           subtitle="Por pedido ativo"
         />
@@ -237,10 +245,10 @@ export default function MLPedidos() {
 
       {/* Chart */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Receita — últimos 30 dias</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Receita — últimos 30 dias</span>
+        </div>
+        <CardContent className="px-4 pb-2 pt-0">
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={chartData}>
               <defs>
@@ -269,9 +277,9 @@ export default function MLPedidos() {
 
       {/* Orders table */}
       <Card>
-        <CardHeader className="pb-3">
+        <div className="px-4 pt-4 pb-3">
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <CardTitle className="text-base">Pedidos ({filtered.length})</CardTitle>
+            <span className="text-sm font-medium text-foreground">Pedidos ({filtered.length})</span>
             <div className="flex items-center gap-2 flex-wrap">
               <div className="relative w-52">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -293,7 +301,7 @@ export default function MLPedidos() {
               </Select>
             </div>
           </div>
-        </CardHeader>
+        </div>
         <CardContent className="p-0">
           <div className="overflow-x-auto max-h-[560px] overflow-y-auto">
             <table className="w-full text-sm">

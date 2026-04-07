@@ -97,28 +97,36 @@ export default function MLPerguntas() {
         <KPICard
           title="Perguntas pendentes"
           value={String(summary.pending)}
-          variant={summary.pending === 0 ? "success" : summary.pending <= 5 ? "warning" : "danger"}
+          variant="minimal"
+          iconClassName={summary.pending === 0 ? "bg-success/10 text-success" : summary.pending <= 5 ? "bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]" : "bg-destructive/10 text-destructive"}
+          size="compact"
           icon={<MessageCircleQuestion className="w-4 h-4" />}
           subtitle="Aguardando resposta"
         />
         <KPICard
           title="Taxa de resposta"
           value={`${summary.answer_rate.toFixed(1)}%`}
-          variant={summary.answer_rate >= 95 ? "success" : summary.answer_rate >= 80 ? "warning" : "danger"}
+          variant="minimal"
+          iconClassName={summary.answer_rate >= 95 ? "bg-success/10 text-success" : "bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]"}
+          size="compact"
           icon={<CheckCircle2 className="w-4 h-4" />}
           subtitle="Últimos 30 dias"
         />
         <KPICard
           title="Tempo médio resposta"
           value={`${summary.avg_response_hours}h`}
-          variant={summary.avg_response_hours <= 6 ? "success" : summary.avg_response_hours <= 12 ? "warning" : "danger"}
+          variant="minimal"
+          iconClassName={summary.avg_response_hours <= 6 ? "bg-success/10 text-success" : "bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]"}
+          size="compact"
           icon={<Clock className="w-4 h-4" />}
           subtitle="Horas para responder"
         />
         <KPICard
           title="Total de perguntas"
           value={String(summary.total_30d)}
-          variant="info"
+          variant="minimal"
+          iconClassName="bg-primary/10 text-primary"
+          size="compact"
           icon={<MessageSquare className="w-4 h-4" />}
           subtitle="Últimos 30 dias"
         />
@@ -143,11 +151,11 @@ export default function MLPerguntas() {
 
       {/* Chart */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Volume de perguntas — últimos 30 dias</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={200}>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Volume de perguntas — últimos 30 dias</span>
+        </div>
+        <CardContent className="px-4 pb-2 pt-0">
+          <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="gradTotal" x1="0" y1="0" x2="0" y2="1">
@@ -174,9 +182,9 @@ export default function MLPerguntas() {
 
       {/* Questions list */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Perguntas</CardTitle>
-        </CardHeader>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Perguntas</span>
+        </div>
         <CardContent className="p-0">
           <Tabs defaultValue="pending">
             <div className="px-6 pt-2 pb-0 border-b border-border">
