@@ -185,47 +185,47 @@ export default function MLAnuncios() {
         <KPICard
           title="Gasto Total"
           value={currFmt(summary.total_spend)}
-          icon={<DollarSign className="h-4 w-4" />}
+          icon={<DollarSign className="w-4 h-4" />}
           delta={delta(summary.total_spend, prevSummary?.spend)}
-          deltaLabel="vs período anterior"
-          className="col-span-1"
-          variant="danger"
+          variant="minimal"
+          iconClassName="bg-destructive/10 text-destructive"
+          size="compact"
         />
         <KPICard
           title="Receita Atribuída"
           value={currFmt(summary.total_attributed_revenue)}
-          icon={<TrendingUp className="h-4 w-4" />}
+          icon={<TrendingUp className="w-4 h-4" />}
           delta={delta(summary.total_attributed_revenue, prevSummary ? prevSummary.spend * summary.avg_roas : 0)}
-          deltaLabel="vs período anterior"
-          className="col-span-1"
-          variant="success"
+          variant="minimal"
+          iconClassName="bg-success/10 text-success"
+          size="compact"
         />
         <KPICard
           title="ROAS"
           value={`${summary.avg_roas.toFixed(2)}x`}
-          icon={<Zap className="h-4 w-4" />}
+          icon={<Zap className="w-4 h-4" />}
           delta={delta(summary.avg_roas, prevSummary?.roas)}
-          deltaLabel="vs período anterior"
-          className="col-span-1"
-          variant={summary.avg_roas >= 3 ? "success" : summary.avg_roas >= 1.5 ? "warning" : "danger"}
+          variant="minimal"
+          iconClassName="bg-accent/10 text-accent"
+          size="compact"
         />
         <KPICard
           title="CPC Médio"
           value={currFmt(summary.avg_cpc)}
-          icon={<MousePointerClick className="h-4 w-4" />}
+          icon={<MousePointerClick className="w-4 h-4" />}
           delta={-delta(summary.avg_cpc, prevSummary?.cpc)}
-          deltaLabel="vs período anterior"
-          className="col-span-1"
-          variant="info"
+          variant="minimal"
+          iconClassName="bg-primary/10 text-primary"
+          size="compact"
         />
         <KPICard
           title="Pedidos via ADS"
           value={numFmt(summary.total_attributed_orders)}
-          icon={<ShoppingCart className="h-4 w-4" />}
+          icon={<ShoppingCart className="w-4 h-4" />}
           delta={delta(summary.total_attributed_orders, prevSummary?.orders)}
-          deltaLabel="vs período anterior"
-          className="col-span-2 md:col-span-1"
-          variant="purple"
+          variant="minimal"
+          iconClassName="bg-[hsl(270,70%,50%)]/10 text-[hsl(270,70%,50%)]"
+          size="compact"
         />
       </div>
 
@@ -233,14 +233,12 @@ export default function MLAnuncios() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Main chart — 2/3 width */}
         <Card className="lg:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              Gasto vs Receita Atribuída
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
+          <div className="px-4 pt-4 pb-3">
+            <span className="text-sm font-medium text-foreground">Gasto vs Receita Atribuída</span>
+          </div>
+          
+          <CardContent className="px-4 pb-2 pt-0">
+            <ResponsiveContainer width="100%" height={220}>
               <ComposedChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
                 <XAxis
@@ -274,7 +272,7 @@ export default function MLAnuncios() {
                     return [currFmt(value as number), name];
                   }}
                 />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
+                
                 <Bar yAxisId="brl" dataKey="Gasto" fill="hsl(var(--destructive))" fillOpacity={0.7} radius={[3, 3, 0, 0]} maxBarSize={24} />
                 <Area yAxisId="brl" type="monotone" dataKey="Receita Atribuída" fill="hsl(var(--primary))" fillOpacity={0.12} stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
                 <Line yAxisId="roas" type="monotone" dataKey="ROAS" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="4 2" />
@@ -285,12 +283,10 @@ export default function MLAnuncios() {
 
         {/* Funnel — 1/3 width */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <Eye className="h-4 w-4 text-primary" />
-              Funil de Conversão
-            </CardTitle>
-          </CardHeader>
+          <div className="px-4 pt-4 pb-3">
+            <span className="text-sm font-medium text-foreground">Funil de Conversão</span>
+          </div>
+          
           <CardContent className="space-y-3">
             <ResponsiveContainer width="100%" height={160}>
               <FunnelChart>
@@ -336,12 +332,10 @@ export default function MLAnuncios() {
 
       {/* ── Campaigns Table ── */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Megaphone className="h-4 w-4 text-primary" />
-            Campanhas
-          </CardTitle>
-        </CardHeader>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Campanhas</span>
+        </div>
+        
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -387,12 +381,9 @@ export default function MLAnuncios() {
 
       {/* ── Top Products ── */}
       <Card>
-        <CardHeader className="pb-3">
+        <div className="px-4 pt-4 pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <ListFilter className="h-4 w-4 text-primary" />
-              Top Produtos Patrocinados
-            </CardTitle>
+            <span className="text-sm font-medium text-foreground">Top Produtos Patrocinados</span>
             <Tabs value={productTab} onValueChange={(v) => setProductTab(v as "spend" | "roas")}>
               <TabsList className="h-7">
                 <TabsTrigger value="spend" className="text-xs px-2.5 h-6">Maior Gasto</TabsTrigger>
@@ -400,7 +391,7 @@ export default function MLAnuncios() {
               </TabsList>
             </Tabs>
           </div>
-        </CardHeader>
+        </div>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
