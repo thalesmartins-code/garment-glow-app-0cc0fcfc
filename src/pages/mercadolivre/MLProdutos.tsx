@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ShoppingBag, RefreshCw, Search, ExternalLink, Plug, DollarSign, Tag, TrendingUp, Package,
   ChevronDown, ChevronRight, Receipt, LayoutGrid, Truck, ArrowUpDown, ArrowUp, ArrowDown,
+  BookOpen,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -73,6 +74,40 @@ const stockBadge = (qty: number) => {
 
 const variationLabel = (v: ProductVariation) =>
   v.attribute_combinations.map((a) => a.value).join(" / ") || `Var. ${v.variation_id}`;
+
+/** Shown when the listing is linked to the ML product catalog */
+function CatalogBadge() {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex items-center gap-0.5 rounded-full border border-blue-500/30 bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 cursor-default leading-none">
+          <BookOpen className="w-2.5 h-2.5" />
+          Catálogo
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="text-xs max-w-[180px]">
+        Anúncio vinculado ao catálogo de produtos do Mercado Livre
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+/** Shown when the listing participates in one or more active ML promotions */
+function PromoBadge({ count }: { count: number }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex items-center gap-0.5 rounded-full border border-orange-500/30 bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-medium text-orange-600 cursor-default leading-none">
+          <Tag className="w-2.5 h-2.5" />
+          {count > 1 ? `${count} promoções` : "Em promoção"}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="text-xs max-w-[180px]">
+        Anúncio participando de {count > 1 ? `${count} promoções` : "uma promoção"} ativa no Mercado Livre
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 // ─── Sortable header helper ──────────────────────────────────────────────────
 function SortableHead({ label, field, current, onSort, className = "" }: {
@@ -484,6 +519,8 @@ export default function MLProdutos() {
                                     {item.variations.length} variações
                                   </Badge>
                                 )}
+                                {item.catalog_product_id && <CatalogBadge />}
+                                {item.deal_ids.length > 0 && <PromoBadge count={item.deal_ids.length} />}
                               </div>
                             </TableCell>
 
