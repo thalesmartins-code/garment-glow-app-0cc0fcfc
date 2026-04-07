@@ -52,7 +52,7 @@ const healthBadge = (health: number | null) => {
 };
 
 const stockBadge = (qty: number) => {
-  if (qty === 0) return <Badge variant="destructive" className="text-xs">Sem estoque</Badge>;
+  if (qty === 0) return <Badge variant="outline" className="text-xs text-muted-foreground">Sem estoque</Badge>;
   if (qty <= 5) return <Badge variant="outline" className="text-xs border-amber-500 text-amber-600">Baixo</Badge>;
   return <Badge variant="outline" className="text-xs border-emerald-500 text-emerald-600">OK</Badge>;
 };
