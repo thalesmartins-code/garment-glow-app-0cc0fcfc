@@ -303,10 +303,9 @@ export default function MLFinanceiro() {
 
         {/* Listing type fees */}
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <Package className="h-4 w-4 text-primary" />
-              Comissão por Tipo de Anúncio
+          <div className="px-4 pt-4 pb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">Comissão por Tipo de Anúncio</span>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
@@ -316,8 +315,8 @@ export default function MLFinanceiro() {
                   Baseado na tabela oficial do Mercado Livre.
                 </TooltipContent>
               </Tooltip>
-            </CardTitle>
-          </CardHeader>
+            </div>
+          </div>
           <CardContent className="p-0">
             <table className="w-full text-sm">
               <thead>
