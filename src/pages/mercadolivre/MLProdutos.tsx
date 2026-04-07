@@ -110,6 +110,7 @@ export default function MLProdutos() {
   const [hideOutOfStock, setHideOutOfStock] = useState(true);
   const [logisticFilter, setLogisticFilter] = useState<LogisticFilter>("all");
   const [rankingBrandFilter, setRankingBrandFilter] = useState("all");
+  const [reportTab, setReportTab] = useState("ranking");
 
   const toggleSort = (field: string) => {
     const asc = `${field}_asc` as SortBy;
