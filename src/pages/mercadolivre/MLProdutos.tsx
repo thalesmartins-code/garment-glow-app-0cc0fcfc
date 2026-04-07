@@ -50,7 +50,8 @@ const listingBadge = (listingTypeId: string | null, commRate: number) => {
 
 type StatusFilter = "all" | "active" | "paused";
 type StockFilter = "all" | "in_stock" | "low" | "out";
-type SortBy = "sold" | "price_desc" | "price_asc" | "title";
+type SortBy = "title_asc" | "title_desc" | "price_desc" | "price_asc" | "stock_desc" | "stock_asc";
+type LogisticFilter = "all" | "fulfillment" | "cross_docking" | "self_service" | "drop_off";
 type ColumnView = "estoque" | "financeiro";
 
 const healthBadge = (health: number | null) => {
