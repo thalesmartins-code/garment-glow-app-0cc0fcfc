@@ -245,13 +245,15 @@ export default function MLProdutos() {
                   </SelectContent>
                 </Select>
 
-                {/* Sort */}
-                <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
+                {/* Logistic filter */}
+                <Select value={logisticFilter} onValueChange={(v) => setLogisticFilter(v as LogisticFilter)}>
                   <SelectTrigger className="w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="price_desc">Maior preço</SelectItem>
-                    <SelectItem value="price_asc">Menor preço</SelectItem>
-                    <SelectItem value="title">A–Z</SelectItem>
+                    <SelectItem value="all">Toda logística</SelectItem>
+                    <SelectItem value="fulfillment">Full</SelectItem>
+                    <SelectItem value="cross_docking">Coleta</SelectItem>
+                    <SelectItem value="self_service">Flex</SelectItem>
+                    <SelectItem value="drop_off">Drop Off</SelectItem>
                   </SelectContent>
                 </Select>
 
