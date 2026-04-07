@@ -881,7 +881,6 @@ export default function MLEstoque() {
                             <TableCell className={`text-xs text-right font-semibold ${item.available_quantity === 0 ? "text-red-500" : ""}`}>
                               {numFmt(item.available_quantity)}
                             </TableCell>
-                            <TableCell className="text-xs text-right">{numFmt(item.visits)}</TableCell>
                             <TableCell className="text-xs text-right">{numFmt(item.sold_quantity)}</TableCell>
                             <TableCell>{cd ? <CoverageBadge cls={cd.coverage_class} /> : <span className="text-xs text-muted-foreground">—</span>}</TableCell>
                             <TableCell><HealthBar health={item.health} /></TableCell>
