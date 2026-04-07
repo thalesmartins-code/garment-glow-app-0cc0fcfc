@@ -236,6 +236,45 @@ export default function MLProdutos() {
     return top8;
   }, [brandData]);
 
+  // ─── ABC Curve data ──────────────────────────────────────────────────────────
+  const abcData = useMemo(() => {
+    const sorted = [...items]
+      .map((i) => ({ id: i.id, title: i.title, thumbnail: i.thumbnail, price: i.price, sold: i.sold_quantity, revenue: i.sold_quantity * i.price, stock: i.available_quantity, brand: i.brand || "Sem marca" }))
+      .sort((a, b) => b.revenue - a.revenue);
+    const totalRev = sorted.reduce((s, r) => s + r.revenue, 0);
+    let cumPct = 0;
+    return sorted.map((r, idx) => {
+      cumPct += totalRev > 0 ? (r.revenue / totalRev) * 100 : 0;
+      const curve = cumPct <= 80 ? "A" : cumPct <= 95 ? "B" : "C";
+      return { ...r, cumPct: Math.min(cumPct, 100), pct: totalRev > 0 ? (r.revenue / totalRev) * 100 : 0, curve, rank: idx + 1 };
+    });
+  }, [items]);
+
+  const abcSummary = useMemo(() => {
+    const a = abcData.filter((d) => d.curve === "A");
+    const b = abcData.filter((d) => d.curve === "B");
+    const c = abcData.filter((d) => d.curve === "C");
+    const totalRev = abcData.reduce((s, d) => s + d.revenue, 0);
+    return {
+      A: { count: a.length, revenue: a.reduce((s, d) => s + d.revenue, 0), pct: totalRev > 0 ? (a.reduce((s, d) => s + d.revenue, 0) / totalRev) * 100 : 0 },
+      B: { count: b.length, revenue: b.reduce((s, d) => s + d.revenue, 0), pct: totalRev > 0 ? (b.reduce((s, d) => s + d.revenue, 0) / totalRev) * 100 : 0 },
+      C: { count: c.length, revenue: c.reduce((s, d) => s + d.revenue, 0), pct: totalRev > 0 ? (c.reduce((s, d) => s + d.revenue, 0) / totalRev) * 100 : 0 },
+      total: abcData.length,
+    };
+  }, [abcData]);
+
+  const abcChartData = useMemo(() => {
+    if (abcData.length === 0) return [];
+    const step = Math.max(1, Math.floor(abcData.length / 50));
+    return abcData.filter((_, idx) => idx % step === 0 || idx === abcData.length - 1).map((d) => ({
+      rank: d.rank,
+      pct: Number(d.pct.toFixed(2)),
+      cumPct: Number(d.cumPct.toFixed(2)),
+      title: d.title,
+      curve: d.curve,
+    }));
+  }, [abcData]);
+
   if (hasToken === false) {
     return (
       <div className="space-y-6">
