@@ -185,47 +185,47 @@ export default function MLAnuncios() {
         <KPICard
           title="Gasto Total"
           value={currFmt(summary.total_spend)}
-          icon={<DollarSign className="h-4 w-4" />}
+          icon={<DollarSign className="w-4 h-4" />}
           delta={delta(summary.total_spend, prevSummary?.spend)}
-          deltaLabel="vs período anterior"
-          className="col-span-1"
-          variant="danger"
+          variant="minimal"
+          iconClassName="bg-destructive/10 text-destructive"
+          size="compact"
         />
         <KPICard
           title="Receita Atribuída"
           value={currFmt(summary.total_attributed_revenue)}
-          icon={<TrendingUp className="h-4 w-4" />}
+          icon={<TrendingUp className="w-4 h-4" />}
           delta={delta(summary.total_attributed_revenue, prevSummary ? prevSummary.spend * summary.avg_roas : 0)}
-          deltaLabel="vs período anterior"
-          className="col-span-1"
-          variant="success"
+          variant="minimal"
+          iconClassName="bg-success/10 text-success"
+          size="compact"
         />
         <KPICard
           title="ROAS"
           value={`${summary.avg_roas.toFixed(2)}x`}
-          icon={<Zap className="h-4 w-4" />}
+          icon={<Zap className="w-4 h-4" />}
           delta={delta(summary.avg_roas, prevSummary?.roas)}
-          deltaLabel="vs período anterior"
-          className="col-span-1"
-          variant={summary.avg_roas >= 3 ? "success" : summary.avg_roas >= 1.5 ? "warning" : "danger"}
+          variant="minimal"
+          iconClassName="bg-accent/10 text-accent"
+          size="compact"
         />
         <KPICard
           title="CPC Médio"
           value={currFmt(summary.avg_cpc)}
-          icon={<MousePointerClick className="h-4 w-4" />}
+          icon={<MousePointerClick className="w-4 h-4" />}
           delta={-delta(summary.avg_cpc, prevSummary?.cpc)}
-          deltaLabel="vs período anterior"
-          className="col-span-1"
-          variant="info"
+          variant="minimal"
+          iconClassName="bg-primary/10 text-primary"
+          size="compact"
         />
         <KPICard
           title="Pedidos via ADS"
           value={numFmt(summary.total_attributed_orders)}
-          icon={<ShoppingCart className="h-4 w-4" />}
+          icon={<ShoppingCart className="w-4 h-4" />}
           delta={delta(summary.total_attributed_orders, prevSummary?.orders)}
-          deltaLabel="vs período anterior"
-          className="col-span-2 md:col-span-1"
-          variant="purple"
+          variant="minimal"
+          iconClassName="bg-[hsl(270,70%,50%)]/10 text-[hsl(270,70%,50%)]"
+          size="compact"
         />
       </div>
 
