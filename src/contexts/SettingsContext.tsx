@@ -137,11 +137,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
     // 2. Delete from Supabase
     if (!user) return;
-    const { error } = await supabase
-      .from("ml_targets")
+    const { error } = await (supabase
+      .from("ml_targets" as any)
       .delete()
       .eq("user_id", user.id)
-      .eq("target_id", id);
+      .eq("target_id", id) as any);
 
     if (error) {
       console.error("SettingsContext: failed to delete target from Supabase", error.message);
