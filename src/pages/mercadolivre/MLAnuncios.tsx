@@ -332,11 +332,9 @@ export default function MLAnuncios() {
 
       {/* ── Campaigns Table ── */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <Megaphone className="h-4 w-4 text-primary" />
-            Campanhas
-          </CardTitle>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Campanhas</span>
+        </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
