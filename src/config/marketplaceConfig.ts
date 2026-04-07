@@ -19,7 +19,7 @@ export const MARKETPLACE_BRANDS: MarketplaceBrand[] = [
   {
     id: "mercado-livre",
     name: "Mercado Livre",
-    icon: Handshake,
+    icon: Gavel,
     gradient: "from-[#e6b422] to-[#c9981a]",
     badge: "bg-[#e6b422]/10 text-[#b8911a] border-[#e6b422]/30",
   },
