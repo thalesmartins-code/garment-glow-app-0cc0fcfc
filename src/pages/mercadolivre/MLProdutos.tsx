@@ -19,7 +19,7 @@ import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
-  PieChart, Pie, Cell,
+  PieChart, Pie, Cell, ComposedChart, Line, Area,
 } from "recharts";
 
 import type { ProductVariation } from "@/contexts/MLInventoryContext";
