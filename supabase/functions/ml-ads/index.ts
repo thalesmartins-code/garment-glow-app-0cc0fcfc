@@ -44,29 +44,81 @@ async function fetchCampaigns(userId: string, accessToken: string) {
   }
 }
 
+// Fetch ALL pages from a ML Ads metrics endpoint and aggregate by date
+async function fetchAllMetricPages(
+  baseUrl: string,
+  accessToken: string,
+  pageSize = 1000,
+): Promise<any[]> {
+  const allRows: any[] = [];
+  let offset = 0;
+  let total = Infinity;
+  while (offset < total) {
+    const sep = baseUrl.includes("?") ? "&" : "?";
+    const data: any = await mlFetch(`${baseUrl}${sep}limit=${pageSize}&offset=${offset}`, accessToken);
+    const rows: any[] = data.results ?? data.data ?? (Array.isArray(data) ? data : []);
+    allRows.push(...rows);
+    total = data.paging?.total ?? rows.length + offset; // stop if no paging info
+    offset += rows.length;
+    if (rows.length === 0) break; // safety
+    console.log(`[ml-ads] page offset=${offset - rows.length} rows=${rows.length} total=${total}`);
+  }
+  return allRows;
+}
+
+// Aggregate per-item-per-day rows into daily totals
+function aggregateByDate(rows: any[]): any[] {
+  const map = new Map<string, any>();
+  for (const m of rows) {
+    const date = (m.date || "").substring(0, 10);
+    if (!date) continue;
+    const existing = map.get(date);
+    const impressions        = m.print_count        ?? m.impressions     ?? 0;
+    const clicks             = m.click_count        ?? m.clicks          ?? 0;
+    const spend              = m.cost               ?? m.investment      ?? 0;
+    const attributed_orders  = m.converted_quantity ?? m.orders_quantity ?? 0;
+    const attributed_revenue = m.converted_amount   ?? m.orders_amount   ?? 0;
+    if (existing) {
+      existing.impressions        += impressions;
+      existing.clicks             += clicks;
+      existing.spend              += spend;
+      existing.attributed_orders  += attributed_orders;
+      existing.attributed_revenue += attributed_revenue;
+    } else {
+      map.set(date, { date, impressions, clicks, spend, attributed_orders, attributed_revenue });
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
 async function fetchDailyMetrics(userId: string, dateFrom: string, dateTo: string, accessToken: string) {
+  // Try seller_id param first (paginated)
   try {
-    const data: any = await mlFetch(
+    const rows = await fetchAllMetricPages(
       `/advertising/product_ads/metrics?seller_id=${userId}&date_from=${dateFrom}&date_to=${dateTo}&granularity=DAY`,
       accessToken,
     );
-    const r = data.results ?? data.data ?? (Array.isArray(data) ? data : []);
-    if (r.length > 0) return r;
+    console.log(`[ml-ads] primary (seller_id) total rows fetched: ${rows.length}`);
+    if (rows.length > 0) return aggregateByDate(rows);
   } catch (e) { console.warn("[ml-ads] primary failed:", String(e)); }
+
+  // Fallback: user_id param
   try {
-    const data: any = await mlFetch(
+    const rows = await fetchAllMetricPages(
       `/advertising/product_ads/metrics?user_id=${userId}&date_from=${dateFrom}&date_to=${dateTo}&granularity=DAY`,
       accessToken,
     );
-    const r = data.results ?? data.data ?? (Array.isArray(data) ? data : []);
-    if (r.length > 0) return r;
+    console.log(`[ml-ads] fb1 (user_id) total rows fetched: ${rows.length}`);
+    if (rows.length > 0) return aggregateByDate(rows);
   } catch (e) { console.warn("[ml-ads] fb1 failed:", String(e)); }
+
+  // Fallback: campaigns/metrics
   try {
-    const data: any = await mlFetch(
+    const rows = await fetchAllMetricPages(
       `/advertising/campaigns/metrics?seller_id=${userId}&date_from=${dateFrom}&date_to=${dateTo}&granularity=DAY`,
       accessToken,
     );
-    return data.results ?? data.data ?? (Array.isArray(data) ? data : []);
+    return aggregateByDate(rows);
   } catch (e) { return []; }
 }
 
@@ -92,13 +144,14 @@ function calcMetrics(impressions: number, clicks: number, spend: number, orders:
   return { cpc, ctr, roas };
 }
 
+// transformDaily receives already-aggregated rows from aggregateByDate
 function transformDaily(metrics: any[]) {
   return metrics.map((m: any) => {
-    const impressions        = m.print_count        ?? m.impressions     ?? 0;
-    const clicks             = m.click_count        ?? m.clicks          ?? 0;
-    const spend              = m.cost               ?? m.investment      ?? 0;
-    const attributed_orders  = m.converted_quantity ?? m.orders_quantity ?? 0;
-    const attributed_revenue = m.converted_amount   ?? m.orders_amount   ?? 0;
+    const impressions        = m.impressions        ?? 0;
+    const clicks             = m.clicks             ?? 0;
+    const spend              = m.spend              ?? 0;
+    const attributed_orders  = m.attributed_orders  ?? 0;
+    const attributed_revenue = m.attributed_revenue ?? 0;
     const { cpc, ctr, roas } = calcMetrics(impressions, clicks, spend, attributed_orders, attributed_revenue);
     return {
       date: (m.date || "").substring(0, 10),
