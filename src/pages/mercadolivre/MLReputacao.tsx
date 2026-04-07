@@ -254,10 +254,10 @@ export default function MLReputacao() {
 
       {/* Chart */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Avaliações — últimos 30 dias</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Avaliações — últimos 30 dias</span>
+        </div>
+        <CardContent className="px-4 pb-2 pt-0">
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={chartData} barSize={8}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
