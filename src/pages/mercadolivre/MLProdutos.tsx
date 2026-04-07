@@ -111,6 +111,7 @@ export default function MLProdutos() {
         if (stockFilter === "out" && item.available_quantity !== 0) return false;
         if (stockFilter === "low" && !(item.available_quantity > 0 && item.available_quantity <= 5)) return false;
         if (stockFilter === "in_stock" && item.available_quantity === 0) return false;
+        if (brandFilter !== "all" && (item.brand || "") !== brandFilter) return false;
         return true;
       })
       .sort((a, b) => {
@@ -119,7 +120,7 @@ export default function MLProdutos() {
         if (sortBy === "sold") return b.sold_quantity - a.sold_quantity;
         return a.title.localeCompare(b.title);
       });
-  }, [items, search, statusFilter, stockFilter, sortBy]);
+  }, [items, search, statusFilter, stockFilter, sortBy, brandFilter]);
 
   // ─── Reports data ───────────────────────────────────────────────────────────
   const rankingProducts: ProductSalesRow[] = useMemo(
