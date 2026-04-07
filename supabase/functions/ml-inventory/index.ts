@@ -79,7 +79,7 @@ serve(async (req) => {
       const batch = allItemIds.slice(i, i + 20);
       const idsParam = batch.join(",");
       const multiGet = await mlFetch(
-        `/items?ids=${idsParam}&attributes=id,title,available_quantity,sold_quantity,price,currency_id,thumbnail,status,category_id,listing_type_id,health,variations,attributes`,
+        `/items?ids=${idsParam}&attributes=id,title,available_quantity,sold_quantity,price,currency_id,thumbnail,status,category_id,listing_type_id,health,variations,attributes,seller_custom_field`,
         access_token,
       );
       for (const entry of multiGet) {
@@ -97,6 +97,7 @@ serve(async (req) => {
             sold_quantity: v.sold_quantity ?? 0,
             price: v.price ?? b.price ?? 0,
             picture_id: v.picture_ids?.[0] ?? null,
+            seller_custom_field: v.seller_custom_field ?? null,
           }));
           const brandAttr = (b.attributes || []).find((a: any) => a.id === "BRAND");
           const brand = brandAttr?.value_name || null;
@@ -114,6 +115,7 @@ serve(async (req) => {
             health: b.health ?? null,
             visits: 0,
             brand,
+            seller_custom_field: b.seller_custom_field ?? null,
             has_variations: variations.length > 1,
             variations,
           });

@@ -11,6 +11,7 @@ export interface ProductVariation {
   sold_quantity: number;
   price: number;
   picture_id: string | null;
+  seller_custom_field: string | null;
 }
 
 export interface ProductItem {
@@ -27,6 +28,7 @@ export interface ProductItem {
   health: number | null;
   visits: number;
   brand: string | null;
+  seller_custom_field: string | null;
   has_variations: boolean;
   variations: ProductVariation[];
 }

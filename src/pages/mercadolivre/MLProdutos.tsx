@@ -304,7 +304,7 @@ export default function MLProdutos() {
                       <TableHead className="w-12"></TableHead>
                       <TableHead>Anúncio</TableHead>
                       <TableHead className="text-left w-24">Marca</TableHead>
-                      <TableHead className="text-left w-20">SKU</TableHead>
+                      
                       <TableHead className="text-right w-24">Preço</TableHead>
                       {columnView === "estoque" ? (
                         <>
@@ -327,7 +327,7 @@ export default function MLProdutos() {
                     {filtered.map((item) => {
                       const soldRevenue = item.sold_quantity * item.price;
                       const isExpanded = expandedRows.has(item.id);
-                      const sku = (item as any).seller_custom_field || "—";
+                      const sku = item.seller_custom_field || null;
 
                       return (
                         <>
@@ -356,8 +356,13 @@ export default function MLProdutos() {
 
                             <TableCell>
                               <p className="text-sm font-medium line-clamp-2 leading-tight">{item.title}</p>
-                              <div className="flex items-center gap-2 mt-0.5">
+                              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                 <p className="text-xs text-muted-foreground">{item.id}</p>
+                                {sku && (
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">
+                                    {sku}
+                                  </Badge>
+                                )}
                                 {item.has_variations && (
                                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                                     {item.variations.length} variações
@@ -367,7 +372,7 @@ export default function MLProdutos() {
                             </TableCell>
 
                             <TableCell className="text-left text-xs text-muted-foreground">{item.brand || "—"}</TableCell>
-                            <TableCell className="text-left text-xs text-muted-foreground font-mono">{sku}</TableCell>
+                            
                             <TableCell className="text-right text-sm font-medium">{currencyFmt(item.price)}</TableCell>
 
                             {columnView === "estoque" ? (
@@ -440,7 +445,7 @@ export default function MLProdutos() {
                                     </TableHeader>
                                     <TableBody>
                                       {item.variations.map((v) => {
-                                        const vSku = (v as any).seller_custom_field || "—";
+                                        const vSku = v.seller_custom_field || null;
                                         return (
                                           <TableRow key={v.variation_id} className="border-b border-border/30 last:border-0">
                                             <TableCell className="py-2 text-xs font-medium">{variationLabel(v)}</TableCell>
