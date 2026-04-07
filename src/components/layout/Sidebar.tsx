@@ -43,9 +43,9 @@ const baseNavItems = [
 const mlSubItems = [
   { icon: TrendingUp, label: "Vendas", path: "/api" },
   { icon: Package, label: "Estoque", path: "/api/estoque" },
-  { icon: ShoppingBag, label: "Anúncios", path: "/api/produtos" },
+  { icon: ShoppingBag, label: "Anúncios", path: "/api/anuncios" },
   { icon: ClipboardList, label: "Pedidos",     path: "/api/pedidos" },
-  { icon: Megaphone,    label: "Publicidade", path: "/api/anuncios" },
+  { icon: Megaphone,    label: "Publicidade", path: "/api/publicidade" },
   { icon: Receipt,      label: "Financeiro",  path: "/api/financeiro" },
 ];
 

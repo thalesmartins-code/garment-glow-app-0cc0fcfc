@@ -30,7 +30,7 @@ const apiSections: SidebarNavSection[] = [
         noSelfLink: true,
         children: [
           { icon: TrendingUp,  label: "Vendas",      path: "/api"            },
-          { icon: Megaphone,   label: "Publicidade", path: "/api/anuncios"   },
+          { icon: Megaphone,   label: "Publicidade", path: "/api/publicidade" },
           { icon: Receipt,     label: "Margem",      path: "/api/financeiro" },
         ],
       },
@@ -40,7 +40,7 @@ const apiSections: SidebarNavSection[] = [
         path: "/api/estoque",
         noSelfLink: true,
         children: [
-          { icon: ShoppingBag,   label: "Anúncios", path: "/api/produtos" },
+          { icon: ShoppingBag,   label: "Anúncios", path: "/api/anuncios" },
           { icon: Package,       label: "Estoque",  path: "/api/estoque"  },
           { icon: ClipboardList, label: "Pedidos",  path: "/api/pedidos"  },
         ],
