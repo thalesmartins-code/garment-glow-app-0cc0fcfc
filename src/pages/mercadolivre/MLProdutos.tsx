@@ -643,6 +643,7 @@ export default function MLProdutos() {
           <TabsList className="h-8">
             <TabsTrigger value="ranking" className="text-xs px-3 h-7">Ranking de Anúncios</TabsTrigger>
             <TabsTrigger value="marca" className="text-xs px-3 h-7">Análise por Marca</TabsTrigger>
+            <TabsTrigger value="abc" className="text-xs px-3 h-7">Curva ABC</TabsTrigger>
           </TabsList>
 
           {/* ── Sub-aba Ranking ── */}
