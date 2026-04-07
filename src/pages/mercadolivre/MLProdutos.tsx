@@ -463,7 +463,7 @@ export default function MLProdutos() {
                                                   <TableCell className="py-2 text-right">
                                                     <span className={`text-xs font-bold ${marginColor}`}>{marginPct.toFixed(1)}%</span>
                                                   </TableCell>
-                                                  <TableCell className="py-2 text-xs text-right font-mono">{currencyFmt(totalNet)}</TableCell>
+                                                  
                                                 </>
                                               );
                                             })()}
