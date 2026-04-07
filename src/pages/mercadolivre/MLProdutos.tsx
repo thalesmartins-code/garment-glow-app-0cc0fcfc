@@ -60,8 +60,6 @@ const stockBadge = (qty: number) => {
 const variationLabel = (v: ProductVariation) =>
   v.attribute_combinations.map((a) => a.value).join(" / ") || `Var. ${v.variation_id}`;
 
-const MAX_PILLS = 5;
-
 // ─── Brand extraction from title ──────────────────────────────────────────────
 function extractBrand(title: string): string {
   const words = title.trim().split(/\s+/);
@@ -312,8 +310,6 @@ export default function MLProdutos() {
                     {filtered.map((item) => {
                       const soldRevenue = item.sold_quantity * item.price;
                       const isExpanded = expandedRows.has(item.id);
-                      const visiblePills = item.has_variations ? item.variations.slice(0, MAX_PILLS) : [];
-                      const extraPills = item.has_variations ? item.variations.length - MAX_PILLS : 0;
                       const sku = (item as any).seller_custom_field || "—";
 
                       return (
@@ -343,20 +339,12 @@ export default function MLProdutos() {
 
                             <TableCell>
                               <p className="text-sm font-medium line-clamp-2 leading-tight">{item.title}</p>
-                              <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                              <div className="flex items-center gap-2 mt-0.5">
                                 <p className="text-xs text-muted-foreground">{item.id}</p>
                                 {item.has_variations && (
-                                  <>
-                                    <span className="text-muted-foreground/40 text-xs">·</span>
-                                    {visiblePills.map((v) => (
-                                      <span key={v.variation_id} className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-medium">
-                                        {variationLabel(v)}
-                                      </span>
-                                    ))}
-                                    {extraPills > 0 && (
-                                      <span className="text-[10px] text-muted-foreground">+{extraPills}</span>
-                                    )}
-                                  </>
+                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                                    {item.variations.length} variações
+                                  </Badge>
                                 )}
                               </div>
                             </TableCell>
