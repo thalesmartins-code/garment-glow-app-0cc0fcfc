@@ -125,15 +125,18 @@ export default function MLProdutos() {
         if (stockFilter === "in_stock" && item.available_quantity === 0) return false;
         if (brandFilter !== "all" && (item.brand || "") !== brandFilter) return false;
         if (hideOutOfStock && item.available_quantity === 0) return false;
+        if (logisticFilter !== "all" && (item.logistic_type || "") !== logisticFilter) return false;
         return true;
       })
       .sort((a, b) => {
         if (sortBy === "price_desc") return b.price - a.price;
         if (sortBy === "price_asc") return a.price - b.price;
-        if (sortBy === "sold") return b.sold_quantity - a.sold_quantity;
+        if (sortBy === "stock_desc") return b.available_quantity - a.available_quantity;
+        if (sortBy === "stock_asc") return a.available_quantity - b.available_quantity;
+        if (sortBy === "title_desc") return b.title.localeCompare(a.title);
         return a.title.localeCompare(b.title);
       });
-  }, [items, search, statusFilter, stockFilter, sortBy, brandFilter, hideOutOfStock]);
+  }, [items, search, statusFilter, stockFilter, sortBy, brandFilter, hideOutOfStock, logisticFilter]);
 
   // ─── Reports data ───────────────────────────────────────────────────────────
   const rankingProducts: ProductSalesRow[] = useMemo(
