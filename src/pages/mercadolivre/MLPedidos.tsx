@@ -277,9 +277,9 @@ export default function MLPedidos() {
 
       {/* Orders table */}
       <Card>
-        <CardHeader className="pb-3">
+        <div className="px-4 pt-4 pb-3">
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <CardTitle className="text-base">Pedidos ({filtered.length})</CardTitle>
+            <span className="text-sm font-medium text-foreground">Pedidos ({filtered.length})</span>
             <div className="flex items-center gap-2 flex-wrap">
               <div className="relative w-52">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
