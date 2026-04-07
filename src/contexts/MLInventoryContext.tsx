@@ -31,6 +31,8 @@ export interface ProductItem {
   seller_custom_field: string | null;
   has_variations: boolean;
   variations: ProductVariation[];
+  logistic_type: string | null;
+  free_shipping: boolean;
 }
 
 interface InventorySummary {

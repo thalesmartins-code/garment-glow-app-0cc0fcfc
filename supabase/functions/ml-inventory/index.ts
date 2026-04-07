@@ -118,6 +118,8 @@ serve(async (req) => {
             seller_custom_field: b.seller_custom_field ?? null,
             has_variations: variations.length > 1,
             variations,
+            logistic_type: b.shipping?.logistic_type ?? null,
+            free_shipping: b.shipping?.free_shipping ?? false,
           });
         }
       }
