@@ -151,11 +151,11 @@ export default function MLPerguntas() {
 
       {/* Chart */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Volume de perguntas — últimos 30 dias</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={200}>
+        <div className="px-4 pt-4 pb-3">
+          <span className="text-sm font-medium text-foreground">Volume de perguntas — últimos 30 dias</span>
+        </div>
+        <CardContent className="px-4 pb-2 pt-0">
+          <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="gradTotal" x1="0" y1="0" x2="0" y2="1">
