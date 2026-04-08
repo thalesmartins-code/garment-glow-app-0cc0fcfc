@@ -976,13 +976,13 @@ export default function MLEstoque() {
                     <TableRow>
                       <TableHead className="w-8" />
                       <TableHead className="w-10" />
-                      <TableHead className="text-xs">Produto</TableHead>
+                      <SortableHead label="Produto" sortAsc="title" sortDesc="title_desc" current={sortBy} onSort={setSortBy} />
                       <SortableHead label="Preço" sortAsc="price_asc" sortDesc="price_desc" current={sortBy} onSort={setSortBy} className="text-right" />
                       <SortableHead label="Estoque" sortAsc="qty_asc" sortDesc="qty_desc" current={sortBy} onSort={setSortBy} className="text-right" />
-                      <TableHead className="text-xs text-right">Vendidos</TableHead>
+                      <SortableHead label="Vendidos" sortAsc="sold_asc" sortDesc="sold_desc" current={sortBy} onSort={setSortBy} className="text-right" />
                       <TableHead className="text-xs text-right">Unid/dia</TableHead>
                       <TableHead className="text-xs">Cobertura</TableHead>
-                      <TableHead className="text-xs">Saúde</TableHead>
+                      <SortableHead label="Saúde" sortAsc="health_asc" sortDesc="health_desc" current={sortBy} onSort={setSortBy} />
                       <TableHead className="w-8" />
                     </TableRow>
                   </TableHeader>
