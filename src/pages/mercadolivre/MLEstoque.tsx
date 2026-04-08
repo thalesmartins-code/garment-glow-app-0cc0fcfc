@@ -81,7 +81,7 @@ interface RelatoriosProps {
   coveragePeriod: CoveragePeriod;
 }
 
-function SubTabCobertura({ items, coverageMap }: Pick<RelatoriosProps, "items" | "coverageMap">) {
+function SubTabCobertura({ items, coverageMap, coveragePeriod }: Pick<RelatoriosProps, "items" | "coverageMap" | "coveragePeriod">) {
   const pieData = useMemo(() => {
     const counts: Record<CoverageClass, number> = { ruptura: 0, critico: 0, alerta: 0, ok: 0, sem_giro: 0 };
     items.forEach((item) => {
@@ -116,10 +116,11 @@ function SubTabCobertura({ items, coverageMap }: Pick<RelatoriosProps, "items" |
       }));
   }, [items, coverageMap]);
 
-  const need7 = useMemo(() =>
+  // Items that won't cover the chosen horizon
+  const needRestock = useMemo(() =>
     items.filter((item) => {
       const cd = coverageMap.get(item.id);
-      return cd && (cd.coverage_days === null || cd.coverage_days <= 7);
+      return cd && cd.coverage_class !== "ok" && cd.coverage_class !== "sem_giro";
     }).length,
     [items, coverageMap]
   );
@@ -181,10 +182,10 @@ function SubTabCobertura({ items, coverageMap }: Pick<RelatoriosProps, "items" |
           </CardContent>
         </Card>
       </div>
-      {need7 > 0 && (
+      {needRestock > 0 && (
         <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-300">
           <AlertTriangle className="w-4 h-4 shrink-0" />
-          <span><strong>{need7} produtos</strong> precisam de reposição nos próximos 7 dias.</span>
+          <span><strong>{needRestock} produtos</strong> não cobrem o horizonte de {coveragePeriod} dias no ritmo atual de vendas.</span>
         </div>
       )}
     </div>
@@ -604,7 +605,7 @@ function EstoqueRelatorios({ items, coverageMap, coveragePeriod }: RelatoriosPro
         <TabsTrigger value="saude" className="text-xs gap-1.5"><Activity className="w-3.5 h-3.5" />Saúde</TabsTrigger>
         <TabsTrigger value="logistica" className="text-xs gap-1.5"><Truck className="w-3.5 h-3.5" />Logística</TabsTrigger>
       </TabsList>
-      <TabsContent value="cobertura"><SubTabCobertura items={items} coverageMap={coverageMap} /></TabsContent>
+      <TabsContent value="cobertura"><SubTabCobertura items={items} coverageMap={coverageMap} coveragePeriod={coveragePeriod} /></TabsContent>
       <TabsContent value="valor"><SubTabValorRisco items={items} coverageMap={coverageMap} /></TabsContent>
       <TabsContent value="abc"><SubTabCurvaABC items={items} /></TabsContent>
       <TabsContent value="saude"><SubTabSaude items={items} /></TabsContent>
@@ -619,7 +620,7 @@ export default function MLEstoque() {
   const { items, loading: isLoading, hasToken, lastUpdated, refresh } = useMLInventory();
   // hasToken: null = ainda carregando, false = sem token, true = conectado
   const isConnected = hasToken !== false;
-  const [coveragePeriod, setCoveragePeriod] = useState<CoveragePeriod>("weekly");
+  const [coveragePeriod, setCoveragePeriod] = useState<CoveragePeriod>(30);
   const { coverageMap, stats } = useMLCoverage(items, coveragePeriod);
 
   // Filter / sort state
@@ -710,12 +711,12 @@ export default function MLEstoque() {
           <div className="flex items-center gap-3">
             {/* Coverage period selector */}
             <div className="flex gap-1">
-              {(Object.entries(COVERAGE_PERIODS) as [CoveragePeriod, { label: string }][]).map(([key, { label }]) => (
+              {COVERAGE_PERIODS.map(({ label, value }) => (
                 <button
-                  key={key}
-                  onClick={() => setCoveragePeriod(key)}
+                  key={value}
+                  onClick={() => setCoveragePeriod(value)}
                   className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors border ${
-                    coveragePeriod === key
+                    coveragePeriod === value
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-background border-border text-muted-foreground hover:bg-muted"
                   }`}
@@ -742,7 +743,7 @@ export default function MLEstoque() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <KPICard title="Valor em Estoque" value={currencyFmtShort(totalStockValue)} icon={<DollarSign className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-accent/10 text-accent" />
           <KPICard
-            title="Cobertura Média"
+            title={`Cobertura · ${coveragePeriod}d`}
             value={stats.avg_coverage != null ? `${stats.avg_coverage} dias` : "—"}
             icon={<Clock className="w-4 h-4" />}
             variant="minimal" size="compact" iconClassName="bg-success/10 text-success"
@@ -772,7 +773,12 @@ export default function MLEstoque() {
         <Card>
           <div className="px-4 pt-4 pb-3">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <span className="text-sm font-medium text-foreground">Inventário</span>
+              <div>
+                <span className="text-sm font-medium text-foreground">Inventário</span>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Cobertura calculada com base nas vendas dos últimos {coveragePeriod} dias — horizonte de {coveragePeriod} dias
+                </p>
+              </div>
               <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
                 <div className="relative flex-1 sm:w-52">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
