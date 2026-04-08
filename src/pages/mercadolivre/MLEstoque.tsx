@@ -791,8 +791,10 @@ export default function MLEstoque() {
         case "qty_desc": return b.available_quantity - a.available_quantity;
         case "qty_asc": return a.available_quantity - b.available_quantity;
         case "sold_desc": return b.sold_quantity - a.sold_quantity;
-        case "visits_desc": return b.visits - a.visits;
+        case "sold_asc": return a.sold_quantity - b.sold_quantity;
         case "health_asc": return (a.health ?? 1) - (b.health ?? 1);
+        case "health_desc": return (b.health ?? 0) - (a.health ?? 0);
+        case "title_desc": return b.title.localeCompare(a.title);
         default: return a.title.localeCompare(b.title);
       }
     });
@@ -955,15 +957,6 @@ export default function MLEstoque() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="title">Nome A-Z</SelectItem>
-                    <SelectItem value="sold_desc">Mais Vendidos</SelectItem>
-                    <SelectItem value="visits_desc">Maior Visitas</SelectItem>
-                    <SelectItem value="health_asc">Menor Saúde</SelectItem>
-                  </SelectContent>
-                </Select>
                 <label className="flex items-center gap-1.5 cursor-pointer opacity-60 hover:opacity-100 transition-opacity">
                   <Checkbox checked={hideOutOfStock} onCheckedChange={(v) => setHideOutOfStock(!!v)} className="h-3.5 w-3.5" />
                   <span className="text-xs text-muted-foreground whitespace-nowrap">Ocultar sem estoque</span>
@@ -985,13 +978,13 @@ export default function MLEstoque() {
                     <TableRow>
                       <TableHead className="w-8" />
                       <TableHead className="w-10" />
-                      <TableHead className="text-xs">Produto</TableHead>
+                      <SortableHead label="Produto" sortAsc="title" sortDesc="title_desc" current={sortBy} onSort={setSortBy} />
                       <SortableHead label="Preço" sortAsc="price_asc" sortDesc="price_desc" current={sortBy} onSort={setSortBy} className="text-right" />
                       <SortableHead label="Estoque" sortAsc="qty_asc" sortDesc="qty_desc" current={sortBy} onSort={setSortBy} className="text-right" />
-                      <TableHead className="text-xs text-right">Vendidos</TableHead>
+                      <SortableHead label="Vendidos" sortAsc="sold_asc" sortDesc="sold_desc" current={sortBy} onSort={setSortBy} className="text-right" />
                       <TableHead className="text-xs text-right">Unid/dia</TableHead>
                       <TableHead className="text-xs">Cobertura</TableHead>
-                      <TableHead className="text-xs">Saúde</TableHead>
+                      <SortableHead label="Saúde" sortAsc="health_asc" sortDesc="health_desc" current={sortBy} onSort={setSortBy} />
                       <TableHead className="w-8" />
                     </TableRow>
                   </TableHeader>
