@@ -360,7 +360,7 @@ export default function MLProdutos() {
               <KPICard title="Total de Anúncios" value={String(filtered.length)} icon={<ShoppingBag className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-accent/10 text-accent" />
               <KPICard title="Ticket Médio" value={currencyFmt(filteredKPIs.avgPrice)} icon={<Tag className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]" />
               <KPICard title="Unidades Vendidas" value={String(filteredKPIs.totalSold)} icon={<TrendingUp className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-[hsl(270,70%,50%)]/10 text-[hsl(270,70%,50%)]" />
-              <KPICard title="Receita Potencial" value={currencyFmt(filteredKPIs.totalRevenuePotential)} icon={<DollarSign className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-success/10 text-success" />
+              <KPICard title="Receita Potencial" value={filteredKPIs.totalRevenuePotential.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 })} icon={<DollarSign className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-success/10 text-success" />
             </>
           )}
         </div>
