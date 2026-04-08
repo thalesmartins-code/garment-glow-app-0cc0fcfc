@@ -958,9 +958,9 @@ export default function MLEstoque() {
                   </SelectContent>
                 </Select>
                 <div className="flex items-center gap-1.5 cursor-pointer opacity-60 hover:opacity-100 transition-opacity"
-                  onClick={() => setHideOutOfStock((v) => !v)}
+                  onClick={(e) => { e.preventDefault(); setHideOutOfStock((v) => !v); }}
                 >
-                  <Checkbox checked={hideOutOfStock} onCheckedChange={(v) => setHideOutOfStock(!!v)} className="h-3.5 w-3.5" />
+                  <Checkbox checked={hideOutOfStock} className="h-3.5 w-3.5 pointer-events-none" />
                   <span className="text-xs text-muted-foreground whitespace-nowrap">Ocultar sem estoque</span>
                 </div>
               </div>
