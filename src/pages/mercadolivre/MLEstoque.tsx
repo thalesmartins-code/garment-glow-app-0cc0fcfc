@@ -931,18 +931,18 @@ export default function MLEstoque() {
                   Cobertura calculada com base nas vendas dos últimos {coveragePeriod} dias — horizonte de {coveragePeriod} dias
                 </p>
               </div>
-              <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-                <div className="relative flex-1 sm:w-52">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <div className="flex items-center gap-1.5 w-full sm:w-auto flex-wrap">
+                <div className="relative flex-1 sm:w-44">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                   <Input
                     placeholder="Buscar produto..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-9 h-9 text-sm"
+                    className="pl-8 h-8 text-xs"
                   />
                 </div>
                 <Select value={stockFilter} onValueChange={setStockFilter}>
-                  <SelectTrigger className="w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-32 h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="in_stock">Em Estoque</SelectItem>
@@ -950,7 +950,7 @@ export default function MLEstoque() {
                   </SelectContent>
                 </Select>
                 <Select value={coverageFilter} onValueChange={setCoverageFilter}>
-                  <SelectTrigger className="w-40 h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas coberturas</SelectItem>
                     {(Object.keys(COVERAGE_CLASS_LABELS) as CoverageClass[]).map((cls) => (
@@ -959,7 +959,7 @@ export default function MLEstoque() {
                   </SelectContent>
                 </Select>
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-40 h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="title">Nome A-Z</SelectItem>
                     <SelectItem value="price_desc">Maior Preço</SelectItem>

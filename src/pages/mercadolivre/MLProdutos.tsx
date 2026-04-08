@@ -370,16 +370,16 @@ export default function MLProdutos() {
           <div className="px-4 pt-4 pb-3">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <span className="text-sm font-medium text-foreground">Catálogo de Anúncios</span>
-              <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+              <div className="flex items-center gap-1.5 w-full sm:w-auto flex-wrap">
                 {/* Search */}
-                <div className="relative flex-1 sm:w-52">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
+                <div className="relative flex-1 sm:w-44">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8 h-8 text-xs" />
                 </div>
 
                 {/* Brand filter */}
                 <Select value={brandFilter} onValueChange={setBrandFilter}>
-                  <SelectTrigger className="w-40 h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas as marcas</SelectItem>
                     {brands.map((b) => (
@@ -390,7 +390,7 @@ export default function MLProdutos() {
 
                 {/* Logistic filter */}
                 <Select value={logisticFilter} onValueChange={(v) => setLogisticFilter(v as LogisticFilter)}>
-                  <SelectTrigger className="w-36 h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-32 h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Toda logística</SelectItem>
                     <SelectItem value="fulfillment">Full</SelectItem>
@@ -416,15 +416,15 @@ export default function MLProdutos() {
                     <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
                       <button
                         onClick={() => setColumnView("estoque")}
-                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${columnView === "estoque" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${columnView === "estoque" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                       >
-                        <LayoutGrid className="w-3.5 h-3.5" /> Estoque
+                        <LayoutGrid className="w-3 h-3" /> Estoque
                       </button>
                       <button
                         onClick={() => setColumnView("financeiro")}
-                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${columnView === "financeiro" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${columnView === "financeiro" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                       >
-                        <Receipt className="w-3.5 h-3.5" /> Margem
+                        <Receipt className="w-3 h-3" /> Margem
                       </button>
                     </div>
                   </TooltipTrigger>
@@ -506,7 +506,7 @@ export default function MLProdutos() {
                             </TableCell>
 
                             <TableCell>
-                              <a href={`https://produto.mercadolivre.com.br/${item.id.replace(/^(MLB)(\d+)$/, "$1-$2")}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-sm font-medium line-clamp-2 leading-tight hover:underline hover:text-primary transition-colors">
+                              <a href={`https://produto.mercadolivre.com.br/${item.id.replace(/^(MLB)(\d+)$/, "$1-$2")}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs font-medium line-clamp-2 leading-tight hover:underline hover:text-primary transition-colors">
                                 {item.title} <ExternalLink className="w-3 h-3 inline mb-0.5 ml-0.5" />
                               </a>
                               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
@@ -528,12 +528,12 @@ export default function MLProdutos() {
 
                             <TableCell className="text-left text-xs text-muted-foreground">{item.brand || "—"}</TableCell>
                             
-                            <TableCell className="text-right text-sm font-medium">{currencyFmt(item.price)}</TableCell>
+                            <TableCell className="text-right text-xs font-medium">{currencyFmt(item.price)}</TableCell>
 
                             {columnView === "estoque" ? (
                               <>
                                 <TableCell className="text-center">
-                                  <span className={`text-sm font-semibold ${item.available_quantity === 0 ? "text-destructive" : "text-foreground"}`}>
+                                  <span className={`text-xs font-semibold ${item.available_quantity === 0 ? "text-destructive" : "text-foreground"}`}>
                                     {item.available_quantity}
                                   </span>
                                 </TableCell>
@@ -572,9 +572,9 @@ export default function MLProdutos() {
                                   <TableCell className="text-left">
                                     {listingBadge(item.listing_type_id, commRate)}
                                   </TableCell>
-                                  <TableCell className="text-right text-sm text-destructive font-mono">−{currencyFmt(commPerUnit)}</TableCell>
+                                  <TableCell className="text-right text-xs text-destructive font-mono">−{currencyFmt(commPerUnit)}</TableCell>
                                   <TableCell className="text-right">
-                                    <span className={`text-sm font-bold ${marginColor}`}>{marginPct.toFixed(1)}%</span>
+                                    <span className={`text-xs font-bold ${marginColor}`}>{marginPct.toFixed(1)}%</span>
                                   </TableCell>
                                 </>
                               );
