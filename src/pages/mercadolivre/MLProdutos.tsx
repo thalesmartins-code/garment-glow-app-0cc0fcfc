@@ -515,9 +515,9 @@ export default function MLProdutos() {
                                     {sku}
                                   </Badge>
                                 )}
-                                {item.has_variations && (
-                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                                    {item.variations.length} variações
+                                {item.has_variations && item.variations.length > 0 && (
+                                  <Badge variant="outline" className="text-[10px] h-4 px-1">
+                                    {item.variations.length} var.
                                   </Badge>
                                 )}
                                 {item.catalog_product_id && <CatalogBadge />}
