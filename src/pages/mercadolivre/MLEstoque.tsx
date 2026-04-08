@@ -219,24 +219,9 @@ function SubTabValorRisco({ items, coverageMap }: Pick<RelatoriosProps, "items" 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Card className="border-red-200 dark:border-red-800">
-          <CardContent className="pt-4 pb-3">
-            <p className="text-xs text-muted-foreground">Capital em Ruptura/Crítico</p>
-            <p className="text-lg font-bold text-red-500">{currencyFmt(capitalCards.risco)}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 dark:border-slate-700">
-          <CardContent className="pt-4 pb-3">
-            <p className="text-xs text-muted-foreground">Capital Parado (Sem Giro)</p>
-            <p className="text-lg font-bold text-slate-500">{currencyFmt(capitalCards.parado)}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-green-200 dark:border-green-800">
-          <CardContent className="pt-4 pb-3">
-            <p className="text-xs text-muted-foreground">Capital Saudável</p>
-            <p className="text-lg font-bold text-green-500">{currencyFmt(capitalCards.saudavel)}</p>
-          </CardContent>
-        </Card>
+        <KPICard title="Capital em Ruptura/Crítico" value={currencyFmt(capitalCards.risco)} variant="danger" size="compact" />
+        <KPICard title="Capital Parado (Sem Giro)" value={currencyFmt(capitalCards.parado)} variant="neutral" size="compact" />
+        <KPICard title="Capital Saudável" value={currencyFmt(capitalCards.saudavel)} variant="success" size="compact" />
       </div>
 
       <Card>
