@@ -1024,8 +1024,8 @@ export default function MLEstoque() {
                                 <span>{item.id}</span>
                                 {item.seller_custom_field && <Badge variant="outline" className="text-[10px] h-4 px-1">{item.seller_custom_field}</Badge>}
                                 {item.free_shipping && <Badge className="text-[10px] h-4 px-1 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 border-0">Frete grátis</Badge>}
-                                {hasVisibleVariations && (
-                                  <Badge variant="outline" className="text-[10px] h-4 px-1">{visibleVariations.length} var.</Badge>
+                                {item.has_variations && item.variations.length > 0 && (
+                                  <Badge variant="outline" className="text-[10px] h-4 px-1">{item.variations.length} var.</Badge>
                                 )}
                               </div>
                             </TableCell>
