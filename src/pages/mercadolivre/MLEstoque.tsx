@@ -19,11 +19,11 @@ import { Progress } from "@/components/ui/progress";
 import {
   Package, PackageX, AlertTriangle, Boxes, RefreshCw, Search, ExternalLink, Plug,
   ChevronDown, ChevronRight, Clock, DollarSign, TrendingUp, Activity, Truck, BarChart3,
-  ShieldAlert, Eye, Tag, ArrowUp, ArrowDown, ArrowUpDown,
+  ShieldAlert, Eye, Tag, ArrowUp, ArrowDown, ArrowUpDown, CheckCircle2,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, ComposedChart, Area,
+  LineChart, Line, PieChart, Pie, Cell, ComposedChart, Area, ReferenceLine,
 } from "recharts";
 import { Link } from "react-router-dom";
 
@@ -82,72 +82,128 @@ interface RelatoriosProps {
 }
 
 function SubTabCobertura({ items, coverageMap, coveragePeriod }: Pick<RelatoriosProps, "items" | "coverageMap" | "coveragePeriod">) {
-  const pieData = useMemo(() => {
-    const counts: Record<CoverageClass, number> = { ruptura: 0, critico: 0, alerta: 0, ok: 0, sem_giro: 0 };
-    items.forEach((item) => {
-      const cd = coverageMap.get(item.id);
-      if (cd) counts[cd.coverage_class]++;
-    });
-    return (Object.keys(counts) as CoverageClass[]).map((cls) => ({
-      name: COVERAGE_CLASS_LABELS[cls] ?? cls,
-      value: counts[cls],
-      color: COVERAGE_COLORS[cls],
-      cls,
-    })).filter((d) => d.value > 0);
+
+  // ── KPI summary ──────────────────────────────────────────────────────────
+  const kpis = useMemo(() => {
+    const withData = items.map(i => ({ item: i, cd: coverageMap.get(i.id) })).filter(({ cd }) => cd);
+    const ruptura  = withData.filter(({ cd }) => cd!.coverage_class === "ruptura").length;
+    const critico  = withData.filter(({ cd }) => cd!.coverage_class === "critico").length;
+    const alerta   = withData.filter(({ cd }) => cd!.coverage_class === "alerta").length;
+    const ok       = withData.filter(({ cd }) => cd!.coverage_class === "ok").length;
+    const semGiro  = withData.filter(({ cd }) => cd!.coverage_class === "sem_giro").length;
+    const withDays = withData.filter(({ cd }) => cd!.coverage_days !== null && cd!.coverage_days > 0);
+    const avgDays  = withDays.length > 0
+      ? Math.round(withDays.reduce((s, { cd }) => s + cd!.coverage_days!, 0) / withDays.length)
+      : null;
+    const okPct = withData.length > 0 ? Math.round((ok / withData.length) * 100) : 0;
+    return { total: withData.length, ruptura, critico, alerta, ok, semGiro, avgDays, okPct };
   }, [items, coverageMap]);
 
-  const riskItems = useMemo(() => {
+  // ── Donut distribution ───────────────────────────────────────────────────
+  const pieData = useMemo(() => {
+    const counts: Record<CoverageClass, number> = { ruptura: 0, critico: 0, alerta: 0, ok: 0, sem_giro: 0 };
+    items.forEach(item => { const cd = coverageMap.get(item.id); if (cd) counts[cd.coverage_class]++; });
+    return (Object.keys(counts) as CoverageClass[])
+      .map(cls => ({ name: COVERAGE_CLASS_LABELS[cls], value: counts[cls], color: COVERAGE_COLORS[cls] }))
+      .filter(d => d.value > 0);
+  }, [items, coverageMap]);
+
+  // ── Day-range buckets ────────────────────────────────────────────────────
+  const bucketData = useMemo(() => {
+    const t = coveragePeriod;
+    const raw = [
+      { name: "Ruptura",          color: "#ef4444", test: (cd: CoverageData) => cd.coverage_class === "ruptura" },
+      { name: `1–${Math.ceil(t*0.25)-1}d`,  color: "#f97316", test: (cd: CoverageData) => { const d = cd.coverage_days ?? -1; return d >= 1 && d < Math.ceil(t*0.25); } },
+      { name: `${Math.ceil(t*0.25)}–${t-1}d`, color: "#f59e0b", test: (cd: CoverageData) => { const d = cd.coverage_days ?? -1; return d >= Math.ceil(t*0.25) && d < t; } },
+      { name: `${t}–${t*2}d`,    color: "#84cc16", test: (cd: CoverageData) => { const d = cd.coverage_days ?? -1; return d >= t && d <= t*2; } },
+      { name: `>${t*2}d`,        color: "#22c55e", test: (cd: CoverageData) => (cd.coverage_days ?? -1) > t*2 },
+      { name: "Sem giro",        color: "#94a3b8", test: (cd: CoverageData) => cd.coverage_class === "sem_giro" },
+    ];
+    return raw.map(b => ({
+      ...b,
+      count: items.filter(item => { const cd = coverageMap.get(item.id); return cd ? b.test(cd) : false; }).length,
+    })).filter(b => b.count > 0);
+  }, [items, coverageMap, coveragePeriod]);
+
+  // ── Coverage by brand ────────────────────────────────────────────────────
+  const brandCoverage = useMemo(() => {
+    const map = new Map<string, { days: number[]; ruptura: number }>();
+    items.forEach(item => {
+      const brand = item.brand || "Sem marca";
+      const cd = coverageMap.get(item.id);
+      if (!cd) return;
+      const prev = map.get(brand) ?? { days: [], ruptura: 0 };
+      map.set(brand, {
+        days: cd.coverage_days !== null ? [...prev.days, cd.coverage_days] : prev.days,
+        ruptura: prev.ruptura + (cd.coverage_class === "ruptura" ? 1 : 0),
+      });
+    });
+    return Array.from(map.entries())
+      .map(([brand, d]) => ({
+        brand: brand.length > 16 ? brand.slice(0, 16) + "…" : brand,
+        avgDays: d.days.length > 0 ? Math.round(d.days.reduce((s, v) => s + v, 0) / d.days.length) : 0,
+        ruptura: d.ruptura,
+        skus: (map.get(brand.replace("…", ""))?.days.length ?? 0) + d.ruptura,
+      }))
+      .sort((a, b) => a.avgDays - b.avgDays)
+      .slice(0, 8);
+  }, [items, coverageMap]);
+
+  // ── Urgency table ─────────────────────────────────────────────────────────
+  const urgencyItems = useMemo(() => {
     const order: CoverageClass[] = ["ruptura", "critico", "alerta"];
     return items
-      .map((item) => ({ item, cd: coverageMap.get(item.id) }))
+      .map(item => ({ item, cd: coverageMap.get(item.id) }))
       .filter(({ cd }) => cd && order.includes(cd.coverage_class))
       .sort((a, b) => {
         const oa = order.indexOf(a.cd!.coverage_class);
         const ob = order.indexOf(b.cd!.coverage_class);
         if (oa !== ob) return oa - ob;
         return (a.cd!.coverage_days ?? 0) - (b.cd!.coverage_days ?? 0);
-      })
-      .slice(0, 10)
-      .map(({ item, cd }) => ({
-        name: item.title.slice(0, 30),
-        days: cd!.coverage_days ?? 0,
-        cls: cd!.coverage_class,
-        color: COVERAGE_COLORS[cd!.coverage_class],
-      }));
+      });
   }, [items, coverageMap]);
-
-  // Items that won't cover the chosen horizon
-  const needRestock = useMemo(() =>
-    items.filter((item) => {
-      const cd = coverageMap.get(item.id);
-      return cd && cd.coverage_class !== "ok" && cd.coverage_class !== "sem_giro";
-    }).length,
-    [items, coverageMap]
-  );
 
   return (
     <div className="space-y-4">
+
+      {/* ── KPI row ── */}
+      <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
+        {[
+          { label: "SKUs analisados",   value: String(kpis.total),                          color: "text-foreground" },
+          { label: "Cobertos (OK)",     value: `${kpis.okPct}%`,                            color: "text-emerald-600" },
+          { label: "Média cobertura",   value: kpis.avgDays != null ? `${kpis.avgDays}d` : "—", color: "text-foreground" },
+          { label: "Ruptura",           value: String(kpis.ruptura),                         color: kpis.ruptura > 0 ? "text-red-500" : "text-foreground" },
+          { label: "Crítico + Alerta",  value: String(kpis.critico + kpis.alerta),           color: kpis.critico + kpis.alerta > 0 ? "text-amber-500" : "text-foreground" },
+          { label: "Sem giro",          value: String(kpis.semGiro),                         color: "text-slate-400" },
+        ].map(k => (
+          <Card key={k.label}>
+            <CardContent className="pt-3 pb-2 px-3">
+              <p className="text-[11px] text-muted-foreground leading-tight">{k.label}</p>
+              <p className={`text-xl font-bold tabular-nums mt-0.5 ${k.color}`}>{k.value}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* ── Distribution + Buckets ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Distribuição por Cobertura</CardTitle>
+            <CardTitle className="text-sm">Distribuição por Classe</CardTitle>
           </CardHeader>
           <CardContent>
             {pieData.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-xs">
-                <Package className="w-8 h-8 mb-2 opacity-40" />
-                Sem dados
+                <Package className="w-8 h-8 mb-2 opacity-40" />Sem dados
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={210}>
                 <PieChart>
-                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3}>
-                    {pieData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
+                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={52} outerRadius={80} paddingAngle={3}>
+                    {pieData.map((e, i) => <Cell key={i} fill={e.color} />)}
                   </Pie>
-                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number, name: string) => [`${v} SKUs`, name]} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -156,36 +212,133 @@ function SubTabCobertura({ items, coverageMap, coveragePeriod }: Pick<Relatorios
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Top 10 em Risco</CardTitle>
+            <CardTitle className="text-sm">SKUs por Faixa de Dias</CardTitle>
+            <CardDescription className="text-xs">Horizonte: {coveragePeriod} dias</CardDescription>
           </CardHeader>
           <CardContent>
-            {riskItems.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground text-xs">
-                <ShieldAlert className="w-8 h-8 mb-2 opacity-40" />
-                Nenhum item em risco
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={riskItems} layout="vertical" margin={{ left: 4, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 10 }} />
-                  <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10 }} />
-                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number) => [`${v} dias`, "Cobertura"]} />
-                  <Bar dataKey="days" radius={[0, 4, 4, 0]}>
-                    {riskItems.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
+            <ResponsiveContainer width="100%" height={210}>
+              <BarChart data={bucketData} margin={{ left: 4, right: 8, top: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number) => [`${v} SKUs`, "Quantidade"]} />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]} name="SKUs">
+                  {bucketData.map((e, i) => <Cell key={i} fill={e.color} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
-      {needRestock > 0 && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-300">
-          <AlertTriangle className="w-4 h-4 shrink-0" />
-          <span><strong>{needRestock} produtos</strong> não cobrem o horizonte de {coveragePeriod} dias no ritmo atual de vendas.</span>
+
+      {/* ── Coverage by brand ── */}
+      {brandCoverage.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Cobertura Média por Marca</CardTitle>
+            <CardDescription className="text-xs">
+              Ordenado do menor para maior — linha roxa = meta de {coveragePeriod} dias
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={brandCoverage} margin={{ left: 4, right: 20, top: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="brand" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} unit="d" />
+                <Tooltip
+                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                  formatter={(v: number, name: string) => name === "avgDays" ? [`${v} dias`, "Cobertura média"] : [v, name]}
+                />
+                <ReferenceLine y={coveragePeriod} stroke="#6366f1" strokeDasharray="5 3"
+                  label={{ value: `${coveragePeriod}d`, fontSize: 10, fill: "#6366f1", position: "right" }} />
+                <Bar dataKey="avgDays" radius={[4, 4, 0, 0]} name="avgDays">
+                  {brandCoverage.map((e, i) => (
+                    <Cell key={i} fill={
+                      e.avgDays >= coveragePeriod ? "#22c55e" :
+                      e.avgDays >= Math.ceil(coveragePeriod * 0.25) ? "#f59e0b" : "#ef4444"
+                    } />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Urgency table ── */}
+      {urgencyItems.length > 0 ? (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm">Reposição Urgente</CardTitle>
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                {urgencyItems.length} produto{urgencyItems.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <CardDescription className="text-xs">
+              Ruptura, Crítico e Alerta — ordenados por urgência crescente
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="max-h-80 overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs w-10 pl-3" />
+                    <TableHead className="text-xs">Produto</TableHead>
+                    <TableHead className="text-xs text-right">Estoque</TableHead>
+                    <TableHead className="text-xs text-right">Unid/dia</TableHead>
+                    <TableHead className="text-xs text-right">Dias restantes</TableHead>
+                    <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs w-8 pr-3" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {urgencyItems.map(({ item, cd }) => (
+                    <TableRow key={item.id} className="group">
+                      <TableCell className="p-1 pl-3">
+                        {item.thumbnail ? (
+                          <img src={item.thumbnail.replace("http://", "https://")} alt="" className="w-8 h-8 rounded object-cover" />
+                        ) : (
+                          <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
+                            <Package className="w-3.5 h-3.5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs max-w-[220px]">
+                        <p className="font-medium truncate">{item.title}</p>
+                        <p className="text-muted-foreground text-[10px] font-mono">{item.id}</p>
+                      </TableCell>
+                      <TableCell className="text-xs text-right tabular-nums font-semibold">
+                        {item.available_quantity}
+                      </TableCell>
+                      <TableCell className="text-xs text-right tabular-nums text-muted-foreground">
+                        {cd!.avg_daily_sales > 0 ? cd!.avg_daily_sales.toFixed(1) : "—"}
+                      </TableCell>
+                      <TableCell className="text-xs text-right tabular-nums font-bold"
+                        style={{ color: COVERAGE_COLORS[cd!.coverage_class] }}>
+                        {cd!.coverage_class === "ruptura" ? "Zerado" : `${cd!.coverage_days}d`}
+                      </TableCell>
+                      <TableCell><CoverageBadge cls={cd!.coverage_class} /></TableCell>
+                      <TableCell className="p-1 pr-3">
+                        <a href={`https://produto.mercadolivre.com.br/${item.id.replace(/^(MLB)(\d+)$/, "$1-$2")}`}
+                          target="_blank" rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>Todos os produtos com giro cobrem o horizonte de <strong>{coveragePeriod} dias</strong>.</span>
         </div>
       )}
     </div>
