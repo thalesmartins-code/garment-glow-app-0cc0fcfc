@@ -892,7 +892,29 @@ export default function MLEstoque() {
                             <TableCell className="text-xs text-right tabular-nums text-muted-foreground">
                               {cd && cd.avg_daily_sales > 0 ? cd.avg_daily_sales.toFixed(1) : "—"}
                             </TableCell>
-                            <TableCell>{cd ? <CoverageBadge cls={cd.coverage_class} /> : <span className="text-xs text-muted-foreground">—</span>}</TableCell>
+                            <TableCell>
+                              {cd ? (
+                                <div className="flex flex-col gap-0">
+                                  <span
+                                    className="text-xs font-semibold tabular-nums leading-tight"
+                                    style={{ color: COVERAGE_COLORS[cd.coverage_class] }}
+                                  >
+                                    {cd.coverage_class === "ruptura"
+                                      ? "Ruptura"
+                                      : cd.coverage_days === null
+                                        ? "Sem giro"
+                                        : `${cd.coverage_days} dias`}
+                                  </span>
+                                  {cd.coverage_class !== "ruptura" && cd.coverage_days !== null && (
+                                    <span className="text-[10px] text-muted-foreground leading-tight">
+                                      {COVERAGE_CLASS_LABELS[cd.coverage_class]}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
                             <TableCell><HealthBar health={item.health} /></TableCell>
                             <TableCell className="p-1">
                               <a
