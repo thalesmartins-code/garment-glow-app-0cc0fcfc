@@ -169,12 +169,6 @@ export default function MLProdutos() {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [items]);
 
-  // Derived stats
-  const totalRevenuePotential = items.reduce((s, i) => s + i.price * i.available_quantity, 0);
-  const avgPrice = items.length > 0 ? items.reduce((s, i) => s + i.price, 0) / items.length : 0;
-  const totalSold = items.reduce((s, i) => s + i.sold_quantity, 0);
-  const totalSoldRevenue = items.reduce((s, i) => s + i.sold_quantity * i.price, 0);
-
   // Filter + sort
   const filtered = useMemo(() => {
     return items
@@ -202,6 +196,14 @@ export default function MLProdutos() {
         return a.title.localeCompare(b.title);
       });
   }, [items, search, statusFilter, stockFilter, sortBy, brandFilter, hideOutOfStock, logisticFilter]);
+
+  // KPI stats derived from filtered items so cards react to active filters
+  const filteredKPIs = useMemo(() => {
+    const totalRevenuePotential = filtered.reduce((s, i) => s + i.price * i.available_quantity, 0);
+    const avgPrice = filtered.length > 0 ? filtered.reduce((s, i) => s + i.price, 0) / filtered.length : 0;
+    const totalSold = filtered.reduce((s, i) => s + i.sold_quantity, 0);
+    return { totalRevenuePotential, avgPrice, totalSold };
+  }, [filtered]);
 
   // ─── Reports data ───────────────────────────────────────────────────────────
   const rankingAll = useMemo(() => {
@@ -355,10 +357,10 @@ export default function MLProdutos() {
             ))
           ) : (
             <>
-              <KPICard title="Total de Anúncios" value={String(items.length)} icon={<ShoppingBag className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-accent/10 text-accent" />
-              <KPICard title="Ticket Médio" value={currencyFmt(avgPrice)} icon={<Tag className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]" />
-              <KPICard title="Unidades Vendidas" value={String(totalSold)} icon={<TrendingUp className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-[hsl(270,70%,50%)]/10 text-[hsl(270,70%,50%)]" />
-              <KPICard title="Receita Potencial" value={currencyFmt(totalRevenuePotential)} icon={<DollarSign className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-success/10 text-success" />
+              <KPICard title="Total de Anúncios" value={String(filtered.length)} icon={<ShoppingBag className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-accent/10 text-accent" />
+              <KPICard title="Ticket Médio" value={currencyFmt(filteredKPIs.avgPrice)} icon={<Tag className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]" />
+              <KPICard title="Unidades Vendidas" value={String(filteredKPIs.totalSold)} icon={<TrendingUp className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-[hsl(270,70%,50%)]/10 text-[hsl(270,70%,50%)]" />
+              <KPICard title="Receita Potencial" value={currencyFmt(filteredKPIs.totalRevenuePotential)} icon={<DollarSign className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-success/10 text-success" />
             </>
           )}
         </div>

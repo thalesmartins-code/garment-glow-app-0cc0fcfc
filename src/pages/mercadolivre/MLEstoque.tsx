@@ -595,17 +595,157 @@ function SubTabLogistica({ items }: Pick<RelatoriosProps, "items">) {
   );
 }
 
+function SubTabEstoqueMarca({ items }: Pick<RelatoriosProps, "items">) {
+  const brandData = useMemo(() => {
+    const map = new Map<string, { skus: number; units: number; value: number; sold: number }>();
+    for (const item of items) {
+      const brand = item.brand || "Sem marca";
+      const prev = map.get(brand) ?? { skus: 0, units: 0, value: 0, sold: 0 };
+      map.set(brand, {
+        skus: prev.skus + 1,
+        units: prev.units + item.available_quantity,
+        value: prev.value + item.price * item.available_quantity,
+        sold: prev.sold + item.sold_quantity,
+      });
+    }
+    return Array.from(map.entries())
+      .map(([brand, d]) => ({ brand, ...d }))
+      .sort((a, b) => b.units - a.units);
+  }, [items]);
+
+  const topUnits = brandData.slice(0, 10);
+  const topValue = [...brandData].sort((a, b) => b.value - a.value).slice(0, 10);
+
+  const totalUnits = brandData.reduce((s, b) => s + b.units, 0);
+  const totalValue = brandData.reduce((s, b) => s + b.value, 0);
+
+  const CHART_COLORS = [
+    "hsl(var(--primary))", "#6366f1", "#22c55e", "#f59e0b", "#f97316",
+    "#a855f7", "#14b8a6", "#ef4444", "#84cc16", "#0ea5e9",
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Card><CardContent className="pt-4 pb-3">
+          <p className="text-xs text-muted-foreground">Marcas</p>
+          <p className="text-2xl font-bold">{brandData.length}</p>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4 pb-3">
+          <p className="text-xs text-muted-foreground">Total de SKUs</p>
+          <p className="text-2xl font-bold">{numFmt(items.length)}</p>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4 pb-3">
+          <p className="text-xs text-muted-foreground">Unidades em Estoque</p>
+          <p className="text-2xl font-bold">{numFmt(totalUnits)}</p>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4 pb-3">
+          <p className="text-xs text-muted-foreground">Valor em Estoque</p>
+          <p className="text-lg font-bold">{currencyFmtShort(totalValue)}</p>
+        </CardContent></Card>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Top 10 por Unidades em Estoque</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={topUnits} layout="vertical" margin={{ left: 4, right: 16 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => numFmt(v)} />
+                <YAxis type="category" dataKey="brand" width={100} tick={{ fontSize: 10 }} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number) => [numFmt(v), "Unidades"]} />
+                <Bar dataKey="units" radius={[0, 4, 4, 0]}>
+                  {topUnits.map((_, i) => (
+                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Top 10 por Valor em Estoque</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={topValue} layout="vertical" margin={{ left: 4, right: 16 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
+                <YAxis type="category" dataKey="brand" width={100} tick={{ fontSize: 10 }} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number) => [currencyFmt(v), "Valor"]} />
+                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                  {topValue.map((_, i) => (
+                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Full table */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Estoque por Marca</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs pl-4">Marca</TableHead>
+                <TableHead className="text-xs text-right">SKUs</TableHead>
+                <TableHead className="text-xs text-right">Unidades</TableHead>
+                <TableHead className="text-xs text-right">% Estoque</TableHead>
+                <TableHead className="text-xs text-right">Valor</TableHead>
+                <TableHead className="text-xs text-right">% Valor</TableHead>
+                <TableHead className="text-xs text-right">Vendidos</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {brandData.map((b) => (
+                <TableRow key={b.brand}>
+                  <TableCell className="text-xs font-medium pl-4">{b.brand}</TableCell>
+                  <TableCell className="text-xs text-right tabular-nums">{numFmt(b.skus)}</TableCell>
+                  <TableCell className="text-xs text-right tabular-nums font-medium">{numFmt(b.units)}</TableCell>
+                  <TableCell className="text-xs text-right tabular-nums text-muted-foreground">
+                    {totalUnits > 0 ? ((b.units / totalUnits) * 100).toFixed(1) : "0.0"}%
+                  </TableCell>
+                  <TableCell className="text-xs text-right tabular-nums">{currencyFmt(b.value)}</TableCell>
+                  <TableCell className="text-xs text-right tabular-nums text-muted-foreground">
+                    {totalValue > 0 ? ((b.value / totalValue) * 100).toFixed(1) : "0.0"}%
+                  </TableCell>
+                  <TableCell className="text-xs text-right tabular-nums text-muted-foreground">{numFmt(b.sold)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function EstoqueRelatorios({ items, coverageMap, coveragePeriod }: RelatoriosProps) {
   return (
     <Tabs defaultValue="cobertura">
-      <TabsList className="mb-4 flex flex-wrap gap-1 h-auto">
-        <TabsTrigger value="cobertura" className="text-xs gap-1.5"><Clock className="w-3.5 h-3.5" />Cobertura</TabsTrigger>
-        <TabsTrigger value="valor" className="text-xs gap-1.5"><DollarSign className="w-3.5 h-3.5" />Valor em Risco</TabsTrigger>
-        <TabsTrigger value="abc" className="text-xs gap-1.5"><BarChart3 className="w-3.5 h-3.5" />Curva ABC</TabsTrigger>
-        <TabsTrigger value="saude" className="text-xs gap-1.5"><Activity className="w-3.5 h-3.5" />Saúde</TabsTrigger>
-        <TabsTrigger value="logistica" className="text-xs gap-1.5"><Truck className="w-3.5 h-3.5" />Logística</TabsTrigger>
+      <TabsList className="mb-4 h-8 w-auto">
+        <TabsTrigger value="cobertura" className="text-xs px-3 h-7 gap-1.5"><Clock className="w-3.5 h-3.5" />Cobertura</TabsTrigger>
+        <TabsTrigger value="marca" className="text-xs px-3 h-7 gap-1.5"><Tag className="w-3.5 h-3.5" />Por Marca</TabsTrigger>
+        <TabsTrigger value="valor" className="text-xs px-3 h-7 gap-1.5"><DollarSign className="w-3.5 h-3.5" />Valor em Risco</TabsTrigger>
+        <TabsTrigger value="abc" className="text-xs px-3 h-7 gap-1.5"><BarChart3 className="w-3.5 h-3.5" />Curva ABC</TabsTrigger>
+        <TabsTrigger value="saude" className="text-xs px-3 h-7 gap-1.5"><Activity className="w-3.5 h-3.5" />Saúde</TabsTrigger>
+        <TabsTrigger value="logistica" className="text-xs px-3 h-7 gap-1.5"><Truck className="w-3.5 h-3.5" />Logística</TabsTrigger>
       </TabsList>
       <TabsContent value="cobertura"><SubTabCobertura items={items} coverageMap={coverageMap} coveragePeriod={coveragePeriod} /></TabsContent>
+      <TabsContent value="marca"><SubTabEstoqueMarca items={items} /></TabsContent>
       <TabsContent value="valor"><SubTabValorRisco items={items} coverageMap={coverageMap} /></TabsContent>
       <TabsContent value="abc"><SubTabCurvaABC items={items} /></TabsContent>
       <TabsContent value="saude"><SubTabSaude items={items} /></TabsContent>
@@ -630,11 +770,6 @@ export default function MLEstoque() {
   const [sortBy, setSortBy] = useState("title");
   const [hideOutOfStock, setHideOutOfStock] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-
-  const totalStockValue = useMemo(
-    () => items.reduce((s, i) => s + i.price * i.available_quantity, 0),
-    [items]
-  );
 
   const filteredItems = useMemo(() => {
     let result = [...items];
@@ -667,6 +802,23 @@ export default function MLEstoque() {
     });
     return result;
   }, [items, search, stockFilter, coverageFilter, sortBy, hideOutOfStock, coverageMap]);
+
+  // KPI stats derived from filtered items so cards react to active filters
+  const filteredStats = useMemo(() => {
+    const totalStockValue = filteredItems.reduce((s, i) => s + i.price * i.available_quantity, 0);
+    const totalUnits = filteredItems.reduce((s, i) => s + i.available_quantity, 0);
+    let ruptura = 0, critico = 0, alerta = 0, sem_giro = 0, withDays = 0, sumDays = 0;
+    for (const item of filteredItems) {
+      const cd = coverageMap.get(item.id);
+      if (!cd) continue;
+      if (cd.coverage_class === "ruptura") ruptura++;
+      else if (cd.coverage_class === "critico") critico++;
+      else if (cd.coverage_class === "alerta") alerta++;
+      else if (cd.coverage_class === "sem_giro") sem_giro++;
+      if (cd.coverage_days !== null && cd.coverage_days > 0) { withDays++; sumDays += cd.coverage_days; }
+    }
+    return { totalStockValue, totalUnits, ruptura, critico, alerta, sem_giro };
+  }, [filteredItems, coverageMap]);
 
   const toggleExpand = (id: string) => {
     setExpanded((prev) => {
@@ -741,30 +893,30 @@ export default function MLEstoque() {
       <TabsContent value="estoque" className="space-y-5 mt-0">
         {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <KPICard title="Valor em Estoque" value={currencyFmtShort(totalStockValue)} icon={<DollarSign className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-accent/10 text-accent" />
+          <KPICard title="Valor em Estoque" value={currencyFmtShort(filteredStats.totalStockValue)} icon={<DollarSign className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-accent/10 text-accent" />
           <KPICard
-            title={`Cobertura · ${coveragePeriod}d`}
-            value={stats.avg_coverage != null ? `${stats.avg_coverage} dias` : "—"}
-            icon={<Clock className="w-4 h-4" />}
+            title="Qtd. em Estoque"
+            value={numFmt(filteredStats.totalUnits)}
+            icon={<Boxes className="w-4 h-4" />}
             variant="minimal" size="compact" iconClassName="bg-success/10 text-success"
           />
           <KPICard
             title="Em Ruptura"
-            value={numFmt(stats.ruptura)}
+            value={numFmt(filteredStats.ruptura)}
             icon={<PackageX className="w-4 h-4" />}
-            variant={stats.ruptura > 0 ? "danger" : "minimal"}
+            variant={filteredStats.ruptura > 0 ? "danger" : "minimal"}
             size="compact"
             iconClassName="bg-destructive/10 text-destructive"
           />
           <KPICard
             title="Crítico + Alerta"
-            value={numFmt(stats.critico + stats.alerta)}
+            value={numFmt(filteredStats.critico + filteredStats.alerta)}
             icon={<AlertTriangle className="w-4 h-4" />}
-            variant={stats.critico + stats.alerta > 0 ? "warning" : "minimal"}
+            variant={filteredStats.critico + filteredStats.alerta > 0 ? "warning" : "minimal"}
             size="compact"
             iconClassName="bg-warning/10 text-warning"
           />
-          <KPICard title="Sem Giro" value={numFmt(stats.sem_giro)} icon={<Activity className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-muted text-muted-foreground" />
+          <KPICard title="Sem Giro" value={numFmt(filteredStats.sem_giro)} icon={<Activity className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-muted text-muted-foreground" />
         </div>
 
         <CoverageAlerts coverageMap={coverageMap} items={items} />
@@ -842,7 +994,7 @@ export default function MLEstoque() {
                       <TableHead className="w-10" />
                       <TableHead className="text-xs">Produto</TableHead>
                       <TableHead className="text-xs text-right">Preço</TableHead>
-                      <TableHead className="text-xs text-right">Disp.</TableHead>
+                      <TableHead className="text-xs text-right">Estoque</TableHead>
                       <TableHead className="text-xs text-right">Vendidos</TableHead>
                       <TableHead className="text-xs text-right">Unid/dia</TableHead>
                       <TableHead className="text-xs">Cobertura</TableHead>
@@ -950,7 +1102,8 @@ export default function MLEstoque() {
             {/* Footer */}
             <div className="border-t border-border/60 bg-muted/20 px-6 py-2.5 flex items-center gap-8 text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">{filteredItems.length} de {items.length} produtos</span>
-              <span>Valor: <strong className="text-foreground">{currencyFmt(totalStockValue)}</strong></span>
+              <span>Estoque: <strong className="text-foreground">{numFmt(filteredStats.totalUnits)} unid.</strong></span>
+              <span>Valor: <strong className="text-foreground">{currencyFmt(filteredStats.totalStockValue)}</strong></span>
             </div>
           </CardContent>
         </Card>
