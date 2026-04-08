@@ -125,28 +125,25 @@ function SubTabCobertura({ items, coverageMap, coveragePeriod }: Pick<Relatorios
     })).filter(b => b.count > 0);
   }, [items, coverageMap, coveragePeriod]);
 
-  // ── Coverage by brand ────────────────────────────────────────────────────
+  // ── Coverage by brand (stacked class counts) ─────────────────────────────
   const brandCoverage = useMemo(() => {
-    const map = new Map<string, { days: number[]; ruptura: number }>();
+    const map = new Map<string, Record<CoverageClass, number>>();
     items.forEach(item => {
       const brand = item.brand || "Sem marca";
       const cd = coverageMap.get(item.id);
       if (!cd) return;
-      const prev = map.get(brand) ?? { days: [], ruptura: 0 };
-      map.set(brand, {
-        days: cd.coverage_days !== null ? [...prev.days, cd.coverage_days] : prev.days,
-        ruptura: prev.ruptura + (cd.coverage_class === "ruptura" ? 1 : 0),
-      });
+      if (!map.has(brand)) map.set(brand, { ruptura: 0, critico: 0, alerta: 0, ok: 0, sem_giro: 0 });
+      map.get(brand)![cd.coverage_class]++;
     });
     return Array.from(map.entries())
-      .map(([brand, d]) => ({
-        brand: brand.length > 16 ? brand.slice(0, 16) + "…" : brand,
-        avgDays: d.days.length > 0 ? Math.round(d.days.reduce((s, v) => s + v, 0) / d.days.length) : 0,
-        ruptura: d.ruptura,
-        skus: (map.get(brand.replace("…", ""))?.days.length ?? 0) + d.ruptura,
+      .map(([brand, c]) => ({
+        brand: brand.length > 14 ? brand.slice(0, 14) + "…" : brand,
+        ok: c.ok, alerta: c.alerta, critico: c.critico, ruptura: c.ruptura, sem_giro: c.sem_giro,
+        total: c.ok + c.alerta + c.critico + c.ruptura + c.sem_giro,
       }))
-      .sort((a, b) => a.avgDays - b.avgDays)
-      .slice(0, 8);
+      .filter(d => d.total > 0)
+      .sort((a, b) => (b.ruptura + b.critico) - (a.ruptura + a.critico))
+      .slice(0, 10);
   }, [items, coverageMap]);
 
   // ── Urgency table ─────────────────────────────────────────────────────────
@@ -235,31 +232,27 @@ function SubTabCobertura({ items, coverageMap, coveragePeriod }: Pick<Relatorios
       {brandCoverage.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Cobertura Média por Marca</CardTitle>
+            <CardTitle className="text-sm">Saúde do Estoque por Marca</CardTitle>
             <CardDescription className="text-xs">
-              Ordenado do menor para maior — linha roxa = meta de {coveragePeriod} dias
+              Distribuição de SKUs por classe de cobertura — ordenado pelos mais críticos
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={brandCoverage} margin={{ left: 4, right: 20, top: 4 }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={brandCoverage} margin={{ left: 4, right: 8, top: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="brand" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} unit="d" />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
                 <Tooltip
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                  formatter={(v: number, name: string) => name === "avgDays" ? [`${v} dias`, "Cobertura média"] : [v, name]}
+                  formatter={(v: number, name: string) => [`${v} SKUs`, name]}
                 />
-                <ReferenceLine y={coveragePeriod} stroke="#6366f1" strokeDasharray="5 3"
-                  label={{ value: `${coveragePeriod}d`, fontSize: 10, fill: "#6366f1", position: "right" }} />
-                <Bar dataKey="avgDays" radius={[4, 4, 0, 0]} name="avgDays">
-                  {brandCoverage.map((e, i) => (
-                    <Cell key={i} fill={
-                      e.avgDays >= coveragePeriod ? "#22c55e" :
-                      e.avgDays >= Math.ceil(coveragePeriod * 0.25) ? "#f59e0b" : "#ef4444"
-                    } />
-                  ))}
-                </Bar>
+                <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="ruptura"  stackId="s" fill={COVERAGE_COLORS.ruptura}  name="Ruptura" />
+                <Bar dataKey="critico"  stackId="s" fill={COVERAGE_COLORS.critico}  name="Crítico" />
+                <Bar dataKey="alerta"   stackId="s" fill={COVERAGE_COLORS.alerta}   name="Alerta" />
+                <Bar dataKey="ok"       stackId="s" fill={COVERAGE_COLORS.ok}       name="OK" />
+                <Bar dataKey="sem_giro" stackId="s" fill={COVERAGE_COLORS.sem_giro} name="Sem giro" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
