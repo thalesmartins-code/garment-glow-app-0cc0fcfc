@@ -118,7 +118,7 @@ function SortableHead({ label, field, current, onSort, className = "" }: {
   const isActive = current === asc || current === desc;
   const isAsc = current === asc;
   return (
-    <TableHead className={`${className} cursor-pointer select-none group`} onClick={() => onSort(field)}>
+    <TableHead className={`text-xs ${className} cursor-pointer select-none group`} onClick={() => onSort(field)}>
       <div className="inline-flex items-center gap-1">
         {label}
         {isActive ? (
@@ -372,8 +372,8 @@ export default function MLProdutos() {
               <span className="text-sm font-medium text-foreground">Catálogo de Anúncios</span>
               <div className="flex items-center gap-1.5 w-full sm:w-auto flex-wrap">
                 {/* Search */}
-                <div className="relative flex-1 sm:w-44">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <div className="relative w-44">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                   <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8 h-8 text-xs" />
                 </div>
 
@@ -453,21 +453,20 @@ export default function MLProdutos() {
                       <TableHead className="w-8"></TableHead>
                       <TableHead className="w-12"></TableHead>
                       <SortableHead label="Anúncio" field="title" current={sortBy} onSort={toggleSort} />
-                      <TableHead className="text-left w-24">Marca</TableHead>
-                      
+                      <TableHead className="text-xs text-left w-24">Marca</TableHead>
                       <SortableHead label="Preço" field="price" current={sortBy} onSort={toggleSort} className="text-right w-24" />
                       {columnView === "estoque" ? (
                         <>
                           <SortableHead label="Estoque" field="stock" current={sortBy} onSort={toggleSort} className="text-center w-20" />
-                          <TableHead className="text-center w-24">Logística</TableHead>
-                          <TableHead className="text-center w-20">Frete Grátis</TableHead>
+                          <TableHead className="text-xs text-center w-24">Logística</TableHead>
+                          <TableHead className="text-xs text-center w-20">Frete Grátis</TableHead>
                         </>
                       ) : (
                         <>
-                          <TableHead className="text-right w-24">Custo</TableHead>
-                          <TableHead className="text-left w-36">Tipo / Comissão</TableHead>
-                          <TableHead className="text-right w-32">Comissão/unid.</TableHead>
-                          <TableHead className="text-right w-28">Margem est.</TableHead>
+                          <TableHead className="text-xs text-right w-24">Custo</TableHead>
+                          <TableHead className="text-xs text-left w-36">Tipo / Comissão</TableHead>
+                          <TableHead className="text-xs text-right w-32">Comissão/unid.</TableHead>
+                          <TableHead className="text-xs text-right w-28">Margem est.</TableHead>
                           
                         </>
                       )}

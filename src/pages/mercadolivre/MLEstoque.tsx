@@ -19,7 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Package, PackageX, AlertTriangle, Boxes, RefreshCw, Search, ExternalLink, Plug,
   ChevronDown, ChevronRight, Clock, DollarSign, TrendingUp, Activity, Truck, BarChart3,
-  ShieldAlert, Eye, Tag,
+  ShieldAlert, Eye, Tag, ArrowUp, ArrowDown, ArrowUpDown,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -754,6 +754,29 @@ function EstoqueRelatorios({ items, coverageMap, coveragePeriod }: RelatoriosPro
   );
 }
 
+function SortableHead({ label, sortAsc, sortDesc, current, onSort, className = "" }: {
+  label: string; sortAsc: string; sortDesc: string; current: string;
+  onSort: (v: string) => void; className?: string;
+}) {
+  const isAsc = current === sortAsc;
+  const isDesc = current === sortDesc;
+  return (
+    <TableHead
+      className={`text-xs cursor-pointer select-none group ${className}`}
+      onClick={() => onSort(isAsc ? sortDesc : sortAsc)}
+    >
+      <div className="inline-flex items-center gap-1">
+        {label}
+        {(isAsc || isDesc) ? (
+          isAsc ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+        ) : (
+          <ArrowUpDown className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+        )}
+      </div>
+    </TableHead>
+  );
+}
+
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export default function MLEstoque() {
@@ -765,11 +788,17 @@ export default function MLEstoque() {
 
   // Filter / sort state
   const [search, setSearch] = useState("");
-  const [stockFilter, setStockFilter] = useState("all");
+  const [brandFilter, setBrandFilter] = useState("all");
   const [coverageFilter, setCoverageFilter] = useState("all");
   const [sortBy, setSortBy] = useState("title");
   const [hideOutOfStock, setHideOutOfStock] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const brands = useMemo(() => {
+    const set = new Set<string>();
+    items.forEach((i) => { if (i.brand) set.add(i.brand); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [items]);
 
   const filteredItems = useMemo(() => {
     let result = [...items];
@@ -780,8 +809,7 @@ export default function MLEstoque() {
         (i) => i.title.toLowerCase().includes(q) || i.id.includes(q) || (i.seller_custom_field ?? "").toLowerCase().includes(q)
       );
     }
-    if (stockFilter === "in_stock") result = result.filter((i) => i.available_quantity > 0);
-    if (stockFilter === "out_of_stock") result = result.filter((i) => i.available_quantity === 0);
+    if (brandFilter !== "all") result = result.filter((i) => (i.brand || "") === brandFilter);
     if (coverageFilter !== "all") {
       result = result.filter((i) => {
         const cd = coverageMap.get(i.id);
@@ -801,7 +829,7 @@ export default function MLEstoque() {
       }
     });
     return result;
-  }, [items, search, stockFilter, coverageFilter, sortBy, hideOutOfStock, coverageMap]);
+  }, [items, search, brandFilter, coverageFilter, sortBy, hideOutOfStock, coverageMap]);
 
   // KPI stats derived from filtered items so cards react to active filters
   const filteredStats = useMemo(() => {
@@ -932,8 +960,8 @@ export default function MLEstoque() {
                 </p>
               </div>
               <div className="flex items-center gap-1.5 w-full sm:w-auto flex-wrap">
-                <div className="relative flex-1 sm:w-44">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <div className="relative w-44">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                   <Input
                     placeholder="Buscar produto..."
                     value={search}
@@ -941,12 +969,13 @@ export default function MLEstoque() {
                     className="pl-8 h-8 text-xs"
                   />
                 </div>
-                <Select value={stockFilter} onValueChange={setStockFilter}>
-                  <SelectTrigger className="w-32 h-8 text-xs"><SelectValue /></SelectTrigger>
+                <Select value={brandFilter} onValueChange={setBrandFilter}>
+                  <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="in_stock">Em Estoque</SelectItem>
-                    <SelectItem value="out_of_stock">Sem Estoque</SelectItem>
+                    <SelectItem value="all">Todas as marcas</SelectItem>
+                    {brands.map((b) => (
+                      <SelectItem key={b} value={b}>{b}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <Select value={coverageFilter} onValueChange={setCoverageFilter}>
@@ -962,10 +991,6 @@ export default function MLEstoque() {
                   <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="title">Nome A-Z</SelectItem>
-                    <SelectItem value="price_desc">Maior Preço</SelectItem>
-                    <SelectItem value="price_asc">Menor Preço</SelectItem>
-                    <SelectItem value="qty_desc">Maior Estoque</SelectItem>
-                    <SelectItem value="qty_asc">Menor Estoque</SelectItem>
                     <SelectItem value="sold_desc">Mais Vendidos</SelectItem>
                     <SelectItem value="visits_desc">Maior Visitas</SelectItem>
                     <SelectItem value="health_asc">Menor Saúde</SelectItem>
@@ -983,7 +1008,7 @@ export default function MLEstoque() {
             {filteredItems.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
                 <Package className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">{search || stockFilter !== "all" || coverageFilter !== "all" ? "Nenhum produto encontrado" : "Nenhum produto no inventário"}</p>
+                <p className="text-sm">{search || brandFilter !== "all" || coverageFilter !== "all" ? "Nenhum produto encontrado" : "Nenhum produto no inventário"}</p>
               </div>
             ) : (
               <div className="max-h-[600px] overflow-auto">
@@ -993,8 +1018,8 @@ export default function MLEstoque() {
                       <TableHead className="w-8" />
                       <TableHead className="w-10" />
                       <TableHead className="text-xs">Produto</TableHead>
-                      <TableHead className="text-xs text-right">Preço</TableHead>
-                      <TableHead className="text-xs text-right">Estoque</TableHead>
+                      <SortableHead label="Preço" sortAsc="price_asc" sortDesc="price_desc" current={sortBy} onSort={setSortBy} className="text-right" />
+                      <SortableHead label="Estoque" sortAsc="qty_asc" sortDesc="qty_desc" current={sortBy} onSort={setSortBy} className="text-right" />
                       <TableHead className="text-xs text-right">Vendidos</TableHead>
                       <TableHead className="text-xs text-right">Unid/dia</TableHead>
                       <TableHead className="text-xs">Cobertura</TableHead>
