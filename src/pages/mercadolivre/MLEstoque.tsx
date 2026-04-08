@@ -759,7 +759,7 @@ export default function MLEstoque() {
   const [brandFilter, setBrandFilter] = useState("all");
   const [coverageFilter, setCoverageFilter] = useState("all");
   const [sortBy, setSortBy] = useState("title");
-  const [hideOutOfStock, setHideOutOfStock] = useState(false);
+  const [hideOutOfStock, setHideOutOfStock] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const brands = useMemo(() => {
