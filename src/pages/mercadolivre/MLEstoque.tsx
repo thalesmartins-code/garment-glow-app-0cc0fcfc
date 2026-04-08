@@ -628,22 +628,10 @@ function SubTabEstoqueMarca({ items }: Pick<RelatoriosProps, "items">) {
     <div className="space-y-4">
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card><CardContent className="pt-4 pb-3">
-          <p className="text-xs text-muted-foreground">Marcas</p>
-          <p className="text-2xl font-bold">{brandData.length}</p>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4 pb-3">
-          <p className="text-xs text-muted-foreground">Total de SKUs</p>
-          <p className="text-2xl font-bold">{numFmt(items.length)}</p>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4 pb-3">
-          <p className="text-xs text-muted-foreground">Unidades em Estoque</p>
-          <p className="text-2xl font-bold">{numFmt(totalUnits)}</p>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4 pb-3">
-          <p className="text-xs text-muted-foreground">Valor em Estoque</p>
-          <p className="text-lg font-bold">{currencyFmtShort(totalValue)}</p>
-        </CardContent></Card>
+        <KPICard title="Marcas" value={String(brandData.length)} variant="minimal" size="compact" />
+        <KPICard title="Total de SKUs" value={numFmt(items.length)} variant="minimal" size="compact" />
+        <KPICard title="Unidades em Estoque" value={numFmt(totalUnits)} variant="minimal" size="compact" />
+        <KPICard title="Valor em Estoque" value={currencyFmtShort(totalValue)} variant="minimal" size="compact" />
       </div>
 
       {/* Charts */}
