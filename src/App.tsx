@@ -11,6 +11,7 @@ import { MLStoreProvider } from "@/contexts/MLStoreContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { SalesDataProvider } from "@/contexts/SalesDataContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { MenuVisibilityProvider } from "@/contexts/MenuVisibilityContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RoleRoute } from "@/components/auth/RoleRoute";
 import { OAuthCodeRedirect } from "@/components/auth/OAuthCodeRedirect";
@@ -47,6 +48,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
+        <MenuVisibilityProvider>
         <SellerProvider>
           <SettingsProvider>
             <SalesDataProvider>
@@ -158,6 +160,7 @@ const App = () => (
             </SalesDataProvider>
           </SettingsProvider>
         </SellerProvider>
+        </MenuVisibilityProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

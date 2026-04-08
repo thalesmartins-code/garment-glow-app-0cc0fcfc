@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { canAccess } from "@/config/roleAccess";
+import { useMenuVisibility } from "@/contexts/MenuVisibilityContext";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -41,6 +42,7 @@ export function EnvironmentSidebar({ sections, items, footerItem }: EnvironmentS
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { role } = useAuth();
+  const { isMenuItemVisible } = useMenuVisibility();
 
   // Normalise: convert flat items to a single unnamed section for backwards compat
   const resolvedSections: SidebarNavSection[] = sections ?? (items ? [{ items }] : []);
@@ -284,9 +286,22 @@ export function EnvironmentSidebar({ sections, items, footerItem }: EnvironmentS
       {/* Nav sections */}
       <nav className={cn("flex flex-1 flex-col overflow-y-auto pb-4", collapsed ? "items-center px-2 gap-1.5" : "px-3")}>
         {resolvedSections.map((section, sIdx) => {
-          const visibleItems = section.items.filter(
-            (item) => item.comingSoon || canAccess(role, item.path)
-          );
+          const visibleItems = section.items
+            .map((item) => {
+              if (!item.children) return item;
+              // Filter children by menu visibility config
+              const visibleChildren = item.children.filter(
+                (child) => isMenuItemVisible(child.path, role)
+              );
+              return { ...item, children: visibleChildren };
+            })
+            .filter((item) => {
+              if (item.comingSoon) return true;
+              if (!canAccess(role, item.path)) return false;
+              // Hide parent if all children are hidden
+              if (item.children && item.children.length === 0) return false;
+              return true;
+            });
           if (visibleItems.length === 0) return null;
 
           return (
