@@ -844,6 +844,7 @@ export default function MLEstoque() {
                       <TableHead className="text-xs text-right">Preço</TableHead>
                       <TableHead className="text-xs text-right">Disp.</TableHead>
                       <TableHead className="text-xs text-right">Vendidos</TableHead>
+                      <TableHead className="text-xs text-right">Unid/dia</TableHead>
                       <TableHead className="text-xs">Cobertura</TableHead>
                       <TableHead className="text-xs">Saúde</TableHead>
                       <TableHead className="w-8" />
@@ -888,6 +889,9 @@ export default function MLEstoque() {
                               {numFmt(item.available_quantity)}
                             </TableCell>
                             <TableCell className="text-xs text-right">{numFmt(item.sold_quantity)}</TableCell>
+                            <TableCell className="text-xs text-right tabular-nums text-muted-foreground">
+                              {cd && cd.avg_daily_sales > 0 ? cd.avg_daily_sales.toFixed(1) : "—"}
+                            </TableCell>
                             <TableCell>{cd ? <CoverageBadge cls={cd.coverage_class} /> : <span className="text-xs text-muted-foreground">—</span>}</TableCell>
                             <TableCell><HealthBar health={item.health} /></TableCell>
                             <TableCell className="p-1">
