@@ -165,21 +165,12 @@ function SubTabCobertura({ items, coverageMap, coveragePeriod }: Pick<Relatorios
 
       {/* ── KPI row ── */}
       <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
-        {[
-          { label: "SKUs analisados",   value: String(kpis.total),                          color: "text-foreground" },
-          { label: "Cobertos (OK)",     value: `${kpis.okPct}%`,                            color: "text-emerald-600" },
-          { label: "Média cobertura",   value: kpis.avgDays != null ? `${kpis.avgDays}d` : "—", color: "text-foreground" },
-          { label: "Ruptura",           value: String(kpis.ruptura),                         color: kpis.ruptura > 0 ? "text-red-500" : "text-foreground" },
-          { label: "Crítico + Alerta",  value: String(kpis.critico + kpis.alerta),           color: kpis.critico + kpis.alerta > 0 ? "text-amber-500" : "text-foreground" },
-          { label: "Sem giro",          value: String(kpis.semGiro),                         color: "text-slate-400" },
-        ].map(k => (
-          <Card key={k.label}>
-            <CardContent className="pt-3 pb-2 px-3">
-              <p className="text-[11px] text-muted-foreground leading-tight">{k.label}</p>
-              <p className={`text-xl font-bold tabular-nums mt-0.5 ${k.color}`}>{k.value}</p>
-            </CardContent>
-          </Card>
-        ))}
+        <KPICard title="SKUs analisados" value={String(kpis.total)} variant="minimal" size="compact" icon={<Boxes className="w-4 h-4" />} iconClassName="bg-primary/10 text-primary" />
+        <KPICard title="Cobertos (OK)" value={`${kpis.okPct}%`} variant="minimal" size="compact" icon={<CheckCircle2 className="w-4 h-4" />} iconClassName="bg-success/10 text-success" />
+        <KPICard title="Média cobertura" value={kpis.avgDays != null ? `${kpis.avgDays}d` : "—"} variant="minimal" size="compact" icon={<Clock className="w-4 h-4" />} iconClassName="bg-accent/10 text-accent" />
+        <KPICard title="Ruptura" value={String(kpis.ruptura)} variant="minimal" size="compact" icon={<PackageX className="w-4 h-4" />} iconClassName="bg-destructive/10 text-destructive" />
+        <KPICard title="Crítico + Alerta" value={String(kpis.critico + kpis.alerta)} variant="minimal" size="compact" icon={<AlertTriangle className="w-4 h-4" />} iconClassName="bg-warning/10 text-warning" />
+        <KPICard title="Sem giro" value={String(kpis.semGiro)} variant="minimal" size="compact" icon={<Package className="w-4 h-4" />} iconClassName="bg-muted text-muted-foreground" />
       </div>
 
       {/* ── Distribution + Buckets ── */}
@@ -365,9 +356,9 @@ function SubTabValorRisco({ items, coverageMap }: Pick<RelatoriosProps, "items" 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <KPICard title="Capital em Ruptura/Crítico" value={currencyFmt(capitalCards.risco)} variant="danger" size="compact" />
-        <KPICard title="Capital Parado (Sem Giro)" value={currencyFmt(capitalCards.parado)} variant="neutral" size="compact" />
-        <KPICard title="Capital Saudável" value={currencyFmt(capitalCards.saudavel)} variant="success" size="compact" />
+        <KPICard title="Capital em Ruptura/Crítico" value={currencyFmt(capitalCards.risco)} variant="minimal" size="compact" icon={<AlertTriangle className="w-4 h-4" />} iconClassName="bg-destructive/10 text-destructive" />
+        <KPICard title="Capital Parado (Sem Giro)" value={currencyFmt(capitalCards.parado)} variant="minimal" size="compact" icon={<Package className="w-4 h-4" />} iconClassName="bg-muted text-muted-foreground" />
+        <KPICard title="Capital Saudável" value={currencyFmt(capitalCards.saudavel)} variant="minimal" size="compact" icon={<CheckCircle2 className="w-4 h-4" />} iconClassName="bg-success/10 text-success" />
       </div>
 
       <Card>
@@ -457,9 +448,9 @@ function SubTabCurvaABC({ items }: Pick<RelatoriosProps, "items">) {
         <span>{summary}</span>
       </div>
       <div className="grid grid-cols-3 gap-3">
-        <KPICard title="Classe A" value={String(counts.A)} variant="success" size="compact" />
-        <KPICard title="Classe B" value={String(counts.B)} variant="warning" size="compact" />
-        <KPICard title="Classe C" value={String(counts.C)} variant="danger" size="compact" />
+        <KPICard title="Classe A" value={String(counts.A)} variant="minimal" size="compact" icon={<TrendingUp className="w-4 h-4" />} iconClassName="bg-success/10 text-success" />
+        <KPICard title="Classe B" value={String(counts.B)} variant="minimal" size="compact" icon={<Activity className="w-4 h-4" />} iconClassName="bg-warning/10 text-warning" />
+        <KPICard title="Classe C" value={String(counts.C)} variant="minimal" size="compact" icon={<BarChart3 className="w-4 h-4" />} iconClassName="bg-destructive/10 text-destructive" />
       </div>
       <Card>
         <CardHeader className="pb-2">
@@ -574,10 +565,9 @@ function SubTabSaude({ items }: Pick<RelatoriosProps, "items">) {
       </div>
 
       {unhealthy.length > 0 && (
-        <Card className="border-amber-200 dark:border-amber-800">
+        <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-amber-500" />
+            <CardTitle className="text-sm font-medium text-foreground">
               Anúncios com Saúde Baixa (&lt;60%) — por Visitas
             </CardTitle>
           </CardHeader>
