@@ -1043,7 +1043,7 @@ export default function MLEstoque() {
             iconClassName="bg-destructive/10 text-destructive"
           />
           <KPICard
-            title="Crítico + Alerta"
+            title="CRÍTICO + ALERTA"
             value={numFmt(filteredStats.critico + filteredStats.alerta)}
             icon={<AlertTriangle className="w-4 h-4" />}
             variant={filteredStats.critico + filteredStats.alerta > 0 ? "warning" : "minimal"}
