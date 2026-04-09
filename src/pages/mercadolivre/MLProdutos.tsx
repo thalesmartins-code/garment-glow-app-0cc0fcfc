@@ -30,12 +30,15 @@ import {
   PieChart, Pie, Cell, ComposedChart, Line, Area,
 } from "recharts";
 
+const TOTAL_PERIOD = -1; // sentinel: no date filter → use ML API's sold_quantity
+
 const RANKING_QUICK_RANGES = [
+  { label: "Total",   value: TOTAL_PERIOD },
   { label: "Hoje",    value: 0  },
   { label: "7 dias",  value: 7  },
   { label: "15 dias", value: 15 },
   { label: "30 dias", value: 30 },
-] as const;
+];
 
 import type { ProductVariation } from "@/contexts/MLInventoryContext";
 import { LISTING_TYPE_RATES } from "@/data/financialMockData";
@@ -163,26 +166,39 @@ export default function MLProdutos() {
 
   // ── Ranking date filter ──────────────────────────────────────────────────────
   const { user } = useAuth();
-  const [rankingPeriod, setRankingPeriod] = useState<number>(30);
+  const [rankingPeriod, setRankingPeriod] = useState<number>(TOTAL_PERIOD);
   const [rankingRange, setRankingRange] = useState<{ from: Date; to: Date } | null>(null);
   const [rankingPopoverOpen, setRankingPopoverOpen] = useState(false);
-  const [pendingPeriod, setPendingPeriod] = useState<number | null>(30);
+  const [pendingPeriod, setPendingPeriod] = useState<number | null>(TOTAL_PERIOD);
   const [pendingRange, setPendingRange] = useState<DateRange | null>(null);
   const [rankingRawData, setRankingRawData] = useState<{ item_id: string; qty_sold: number }[]>([]);
 
   const fetchRankingSales = useCallback(async () => {
     if (!user) return;
-    const toDate = format(new Date(), "yyyy-MM-dd");
-    const fromDate = rankingRange
-      ? format(rankingRange.from, "yyyy-MM-dd")
-      : format(subDays(new Date(), rankingPeriod), "yyyy-MM-dd");
-    const toDateFinal = rankingRange ? format(rankingRange.to, "yyyy-MM-dd") : toDate;
+    // "Total" → no date filter; use sold_quantity from ML API (empty raw data = fallback)
+    if (!rankingRange && rankingPeriod === TOTAL_PERIOD) {
+      setRankingRawData([]);
+      return;
+    }
+    const today = format(new Date(), "yyyy-MM-dd");
+    let fromDate: string;
+    let toDate: string;
+    if (rankingRange) {
+      fromDate = format(rankingRange.from, "yyyy-MM-dd");
+      toDate   = format(rankingRange.to,   "yyyy-MM-dd");
+    } else if (rankingPeriod === 0) {
+      fromDate = today;
+      toDate   = today;
+    } else {
+      fromDate = format(subDays(new Date(), rankingPeriod), "yyyy-MM-dd");
+      toDate   = today;
+    }
     const { data } = await supabase
       .from("ml_product_daily_cache")
       .select("item_id, qty_sold")
       .eq("user_id", user.id)
       .gte("date", fromDate)
-      .lte("date", toDateFinal);
+      .lte("date", toDate);
     setRankingRawData(data ?? []);
   }, [user, rankingPeriod, rankingRange]);
 
@@ -198,17 +214,19 @@ export default function MLProdutos() {
 
   const rankingLabel = rankingRange
     ? `${format(rankingRange.from, "dd/MM")} – ${format(rankingRange.to, "dd/MM")}`
-    : rankingPeriod === 0
-      ? "Hoje"
-      : `Últimos ${rankingPeriod} dias`;
+    : rankingPeriod === TOTAL_PERIOD ? "Todo o período"
+    : rankingPeriod === 0            ? "Hoje"
+    : `Últimos ${rankingPeriod} dias`;
 
   const pendingLabel = pendingRange?.from
     ? pendingRange.to && pendingRange.to.getTime() !== pendingRange.from.getTime()
       ? `${format(pendingRange.from, "dd/MM/yy")} – ${format(pendingRange.to, "dd/MM/yy")}`
       : format(pendingRange.from, "dd/MM/yy")
     : pendingPeriod !== null
-      ? pendingPeriod === 0 ? "Hoje" : `Últimos ${pendingPeriod} dias`
-      : null;
+      ? pendingPeriod === TOTAL_PERIOD ? "Todo o período"
+      : pendingPeriod === 0            ? "Hoje"
+      : `Últimos ${pendingPeriod} dias`
+    : null;
 
   const canConfirm = pendingRange?.from != null || pendingPeriod !== null;
 
@@ -825,7 +843,7 @@ export default function MLProdutos() {
                         variant="ghost"
                         size="sm"
                         className="h-7 text-xs text-muted-foreground"
-                        onClick={() => { setPendingRange(null); setPendingPeriod(30); }}
+                        onClick={() => { setPendingRange(null); setPendingPeriod(TOTAL_PERIOD); }}
                       >
                         <X className="w-3.5 h-3.5 mr-1" />
                         Limpar
