@@ -306,6 +306,14 @@ serve(async (req) => {
       );
     }
 
+    // Validate spreadsheetId format (alphanumeric, dashes, underscores only)
+    if (!/^[a-zA-Z0-9_-]+$/.test(spreadsheetId)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid spreadsheetId format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Use separate env vars for client email and private key
     const clientEmail = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_EMAIL") || Deno.env.get("GOOGLE_CLIENT_EMAIL");
     const privateKey = Deno.env.get("GOOGLE_PRIVATE_KEY");
