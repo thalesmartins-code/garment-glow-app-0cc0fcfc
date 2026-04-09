@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMenuVisibility, MENU_SECTIONS, MenuVisibilityConfig, AppRole } from "@/contexts/MenuVisibilityContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,9 +29,19 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Local copy of menu config for editing (starts from persisted config)
-  const [localConfig, setLocalConfig] = useState<MenuVisibilityConfig>(() => ({ ...config }));
+  // Deep copy of menu config for editing — avoids shared array references
+  const deepCopy = (c: MenuVisibilityConfig): MenuVisibilityConfig => ({
+    admin:  [...c.admin],
+    editor: [...c.editor],
+    viewer: [...c.viewer],
+  });
+  const [localConfig, setLocalConfig] = useState<MenuVisibilityConfig>(() => deepCopy(config));
   const [savingMenu, setSavingMenu] = useState(false);
+
+  // Sync localConfig whenever the persisted context config changes (e.g. after save or reload)
+  useEffect(() => {
+    setLocalConfig(deepCopy(config));
+  }, [config]);
 
   const initials = (fullName || "U")
     .split(" ")

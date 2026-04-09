@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { canAccess } from "@/config/roleAccess";
+import { useMenuVisibility } from "@/contexts/MenuVisibilityContext";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -53,10 +54,13 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { role } = useAuth();
+  const { isMenuItemVisible } = useMenuVisibility();
 
   const allNavItems = [...baseNavItems, { icon: ShieldCheck, label: "Usuários", path: "/usuarios" }];
   const navItems = allNavItems.filter((item) => canAccess(role, item.path));
-  const visibleMlSubItems = mlSubItems.filter((item) => canAccess(role, item.path));
+  const visibleMlSubItems = mlSubItems.filter(
+    (item) => canAccess(role, item.path) && isMenuItemVisible(item.path, role)
+  );
   const isMLActive = location.pathname.startsWith("/api");
   const showMLGroup = visibleMlSubItems.length > 0;
 
