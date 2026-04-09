@@ -113,13 +113,16 @@ export default function Profile() {
   }, [role, fetchUsers]);
 
   const handleRoleChange = async (userId: string, newRole: AppRole) => {
-    const { error } = await supabase
-      .from("user_roles")
-      .update({ role: newRole })
-      .eq("user_id", userId);
+    const { data, error } = await supabase.functions.invoke("admin-update-role", {
+      body: { user_id: userId, role: newRole },
+    });
 
-    if (error) {
-      toast({ title: "Erro ao atualizar perfil", description: error.message, variant: "destructive" });
+    if (error || data?.error) {
+      toast({
+        title: "Erro ao atualizar perfil",
+        description: data?.error ?? error?.message,
+        variant: "destructive",
+      });
     } else {
       toast({ title: "Perfil atualizado" });
       setUsers((prev) => prev.map((u) => (u.user_id === userId ? { ...u, role: newRole } : u)));
