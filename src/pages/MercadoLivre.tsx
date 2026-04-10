@@ -1579,7 +1579,6 @@ export default function MercadoLivre() {
                 {effectiveProducts.slice(0, 8).map((p, i) => {
                   const medals = ["🥇", "🥈", "🥉"];
                   const medal = i < 3 ? medals[i] : null;
-                  const ticket = p.qty_sold > 0 ? p.revenue / p.qty_sold : 0;
                   return (
                     <div key={p.item_id || i} className="flex items-center gap-2 py-1.5 border-b border-border/30 last:border-0">
                       <span className="w-5 text-center text-xs font-semibold text-muted-foreground">
