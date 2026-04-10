@@ -758,7 +758,7 @@ export default function MercadoLivre() {
 
   const autoSyncTriggeredRef = useRef(false);
 
-  // Reset refs and local state when seller or store changes so data re-fetches
+  // Reset refs and local state when scope changes (seller or store switch)
   useEffect(() => {
     cacheLoadedRef.current = false;
     autoSyncTriggeredRef.current = false;
@@ -771,40 +771,36 @@ export default function MercadoLivre() {
     setCachedAccessToken(null);
     setProductStockMap({});
     setLastSyncedAt(null);
-  }, [selectedSeller?.id, selectedStore]);
+  }, [scopeKey]);
 
   useEffect(() => {
     if (!user || cacheLoadedRef.current) return;
     cacheLoadedRef.current = true;
 
-    (async () => {
-      // Check for any token
-      const { data: tokenRows } = await supabase
-        .from("ml_tokens")
-        .select("access_token, ml_user_id")
-        .eq("user_id", user.id)
-        .not("access_token", "is", null)
-        .limit(10);
+    // If no ML connection for this seller, stop immediately
+    if (!hasMLConnection || resolvedMLUserIds.length === 0) {
+      setConnected(false);
+      setLoading(false);
+      return;
+    }
 
-      if (!tokenRows || tokenRows.length === 0) {
+    (async () => {
+      // Use tokens from the scope (already filtered by seller)
+      const firstStore = stores.find((s) => resolvedMLUserIds.includes(s.ml_user_id));
+      if (!firstStore) {
         setConnected(false);
         setLoading(false);
         return;
       }
 
-      // Use the first available token (or the selected one)
-      const targetToken = selectedStore !== "all"
-        ? tokenRows.find((t) => t.ml_user_id === selectedStore) || tokenRows[0]
-        : tokenRows[0];
-
-      setCachedAccessToken(targetToken.access_token!);
+      setCachedAccessToken(firstStore.access_token);
       setConnected(true);
 
       const { fromDate, toDate } = getFilterDates(customRange, period);
       await Promise.all([loadFromCache(), loadHourlyCache(), loadProductCache(fromDate, toDate)]);
 
       supabase.functions
-        .invoke("ml-inventory", { body: { access_token: targetToken.access_token } })
+        .invoke("ml-inventory", { body: { access_token: firstStore.access_token } })
         .then(({ data: invData }) => {
           if (invData?.items) {
             const stockMap: Record<string, number> = {};
@@ -824,7 +820,7 @@ export default function MercadoLivre() {
         }
       }
     })();
-  }, [user, loadFromCache, loadHourlyCache, loadProductCache, syncFromAPI, selectedStore]);
+  }, [user, loadFromCache, loadHourlyCache, loadProductCache, syncFromAPI, scopeKey, hasMLConnection, resolvedMLUserIds, stores]);
 
 
   // Recarrega diário, horário E produtos sempre que o filtro mudar
