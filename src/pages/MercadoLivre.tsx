@@ -820,7 +820,7 @@ export default function MercadoLivre() {
         }
       }
     })();
-  }, [user, loadFromCache, loadHourlyCache, loadProductCache, syncFromAPI, scopeKey, hasMLConnection, resolvedMLUserIds, stores]);
+  }, [user, storeLoading, loadFromCache, loadHourlyCache, loadProductCache, syncFromAPI, scopeKey, hasMLConnection, resolvedMLUserIds, stores]);
 
 
   // Recarrega diário, horário E produtos sempre que o filtro mudar
