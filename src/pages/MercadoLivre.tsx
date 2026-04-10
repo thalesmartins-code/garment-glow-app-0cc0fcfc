@@ -1322,7 +1322,7 @@ export default function MercadoLivre() {
       {isAll && overlaidHourlyData && perMarketplaceHourly ? (
         <Card>
           <div className="px-4 pt-4 pb-3">
-            <span className="text-sm font-medium text-foreground">Receita por Hora — Todos os Marketplaces</span>
+            <span className="text-sm font-medium text-foreground">Receita por Hora — Todas as Lojas</span>
           </div>
           <CardContent className="px-4 pb-2 pt-0">
             <ResponsiveContainer width="100%" height={220}>
@@ -1334,12 +1334,12 @@ export default function MercadoLivre() {
                   formatter={(value: number, name: string) => [currencyFmt(Number(value)), name]}
                   contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", backgroundColor: "hsl(var(--card))", color: "hsl(var(--card-foreground))", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
                 />
-                {perMarketplaceHourly.map((mp) => (
+                {perMarketplaceHourly.map((mp, idx) => (
                   <Line
                     key={mp.id}
                     type="monotone"
                     dataKey={mp.name}
-                    stroke={MARKETPLACE_STROKE_COLORS[mp.id] || "hsl(var(--primary))"}
+                    stroke={STORE_STROKE_COLORS[idx % STORE_STROKE_COLORS.length]}
                     strokeWidth={2}
                     dot={false}
                     activeDot={{ r: 4 }}
