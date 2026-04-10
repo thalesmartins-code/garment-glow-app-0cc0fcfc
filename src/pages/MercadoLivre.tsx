@@ -21,7 +21,7 @@ import { HistoricalSyncModal } from "@/components/mercadolivre/HistoricalSyncMod
 import { TopSellingProducts, type ProductSalesRow } from "@/components/mercadolivre/TopSellingProducts";
 
 import { RevenueByMarketplace, type MarketplaceRevenueGroup } from "@/components/mercadolivre/RevenueByMarketplace";
-import { MLStoreSelector } from "@/components/mercadolivre/MLStoreSelector";
+
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
 import { GoalsCard } from "@/components/mercadolivre/GoalsCard";
 import { useMLAds } from "@/hooks/useMLAds";
@@ -1200,7 +1200,7 @@ export default function MercadoLivre() {
             <TabsTrigger value="vendas" className="text-xs px-3 h-7">Vendas</TabsTrigger>
             <TabsTrigger value="relatorios" className="text-xs px-3 h-7">Relatórios</TabsTrigger>
           </TabsList>
-          {isML && <MLStoreSelector />}
+
           <Popover
             open={popoverOpen}
             onOpenChange={(open) => {
