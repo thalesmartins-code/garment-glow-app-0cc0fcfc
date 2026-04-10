@@ -1573,7 +1573,7 @@ export default function MercadoLivre() {
                   <span className="flex-1">Produto</span>
                   <span className="w-14 text-right">Vendidos</span>
                   <span className="w-20 text-right">Receita</span>
-                  <span className="w-20 text-right">Ticket</span>
+                  
                   <span className="w-14 text-right">Estoque</span>
                 </div>
                 {effectiveProducts.slice(0, 8).map((p, i) => {
