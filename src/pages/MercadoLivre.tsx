@@ -1089,7 +1089,7 @@ export default function MercadoLivre() {
             : `Conecte as ${mlStores.length} contas do Mercado Livre para visualizar os dados.`}
         </p>
         <Button asChild>
-          <Link to="/integracoes">Ir para Integrações</Link>
+          <Link to="/api/integracoes">Ir para Integrações</Link>
         </Button>
       </div>
     );

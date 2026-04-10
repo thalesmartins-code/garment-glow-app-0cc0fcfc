@@ -72,7 +72,7 @@ function NotConnected() {
         <Plug className="w-16 h-16 text-muted-foreground/40" />
         <h2 className="text-xl font-semibold">Mercado Livre não conectado</h2>
         <p className="text-muted-foreground text-sm">Conecte sua conta para visualizar a análise financeira.</p>
-        <Button asChild><Link to="/integracoes">Ir para Integrações</Link></Button>
+        <Button asChild><Link to="/api/integracoes">Ir para Integrações</Link></Button>
       </div>
     </div>
   );
