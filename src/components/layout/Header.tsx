@@ -16,7 +16,6 @@ import { MarketplaceSwitcher } from "./MarketplaceSwitcher";
 import { SellerMarketplaceBar } from "./SellerMarketplaceBar";
 import { HistoricalSyncModal } from "@/components/mercadolivre/HistoricalSyncModal";
 import { useMLStoreSafe } from "@/contexts/MLStoreContext";
-import { MLStoreSelector } from "@/components/mercadolivre/MLStoreSelector";
 
 interface HeaderProps {
   title: string;
