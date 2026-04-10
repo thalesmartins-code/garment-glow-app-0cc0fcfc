@@ -747,6 +747,21 @@ export default function MercadoLivre() {
 
   const autoSyncTriggeredRef = useRef(false);
 
+  // Reset refs and local state when seller or store changes so data re-fetches
+  useEffect(() => {
+    cacheLoadedRef.current = false;
+    autoSyncTriggeredRef.current = false;
+    setLoading(true);
+    setAllDaily([]);
+    setAllHourly([]);
+    setAllProductSales([]);
+    setConnected(false);
+    setMlUser(null);
+    setCachedAccessToken(null);
+    setProductStockMap({});
+    setLastSyncedAt(null);
+  }, [selectedSeller?.id]);
+
   useEffect(() => {
     if (!user || cacheLoadedRef.current) return;
     cacheLoadedRef.current = true;
