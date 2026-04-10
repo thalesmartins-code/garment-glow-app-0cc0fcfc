@@ -1456,8 +1456,8 @@ export default function MercadoLivre() {
       />
       </div>
 
-      {/* === Custos + Funil + Publicidade === */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* === Custos + Top Anúncios === */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Card de Custos */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0 }}>
         <Card className="h-full relative overflow-hidden opacity-75 border border-dashed border-muted-foreground/30">
