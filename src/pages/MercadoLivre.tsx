@@ -234,7 +234,7 @@ function getComparisonRanges(customRange: DateRange, period: number) {
 export default function MercadoLivre() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { stores, selectedStore, salesCache, setSalesCache } = useMLStore();
+  const { stores, selectedStore, salesCache, setSalesCache, scopeKey, sellerId, resolvedMLUserIds, hasMLConnection } = useMLStore();
   const { selectedMarketplace, activeMarketplace } = useMarketplace();
   const { selectedSeller, selectedStoreIds } = useSeller();
 
@@ -397,7 +397,7 @@ export default function MercadoLivre() {
   // Carrega produtos filtrados pelo período exato
   const loadProductCache = useCallback(
     async (fromDate: string, toDate: string) => {
-      if (!user) {
+      if (!user || resolvedMLUserIds.length === 0) {
         setAllProductSales([]);
         return;
       }
@@ -411,6 +411,8 @@ export default function MercadoLivre() {
         .limit(5000);
       if (selectedStore !== "all") {
         query = query.eq("ml_user_id", selectedStore);
+      } else {
+        query = query.in("ml_user_id", resolvedMLUserIds);
       }
       const { data } = await query;
       setAllProductSales(
@@ -424,12 +426,12 @@ export default function MercadoLivre() {
         })),
       );
     },
-    [user, selectedStore],
+    [user, selectedStore, resolvedMLUserIds],
   );
 
   const loadHourlyCache = useCallback(
     async (overrideDate?: string | null) => {
-      if (!user) {
+      if (!user || resolvedMLUserIds.length === 0) {
         setAllHourly([]);
         return [] as HourlyBreakdown[];
       }
@@ -440,6 +442,8 @@ export default function MercadoLivre() {
         .eq("user_id", user.id);
       if (selectedStore !== "all") {
         query = query.eq("ml_user_id", selectedStore);
+      } else {
+        query = query.in("ml_user_id", resolvedMLUserIds);
       }
       query = query
         .order("date", { ascending: false })
@@ -459,7 +463,7 @@ export default function MercadoLivre() {
       setAllHourly(mapped);
       return mapped;
     },
-    [user, isHourlyAvailable, hourlyTargetDate, selectedStore],
+    [user, isHourlyAvailable, hourlyTargetDate, selectedStore, resolvedMLUserIds],
   );
 
   const loadFromCache = useCallback(async (overrideFrom?: string, overrideTo?: string): Promise<boolean> => {
