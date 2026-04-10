@@ -1009,25 +1009,21 @@ export default function MercadoLivre() {
 
   const deltaLabel = period === 0 ? "vs ontem" : customRange ? "vs período anterior" : `vs ${period}d anteriores`;
 
-  // Per-marketplace hourly data for "Todos" grid view
+  // Per-store hourly data for "Todas" view (e.g. SP vs MG)
   const perMarketplaceHourly = useMemo(() => {
-    if (!isAll) return null;
-    const mpIds = ["mercado-livre", "amazon", "shopee", "magalu"] as const;
-    const mpList = mpIds.map((id) => {
-      const brand = getMarketplaceBrand(id)!;
-      const MpIcon = brand.icon;
-      return {
-        id,
-        name: brand.name,
-        data: id === "mercado-livre" ? hourly : getMarketplaceHourlyData(id),
-        icon: <MpIcon className="w-4 h-4" />,
-      };
-    });
-    return mpList.map((mp) => ({
-      ...mp,
-      chartData: buildHourlyChartData(mp.data),
-    }));
-  }, [isAll, hourly]);
+    if (!isAll || stores.length < 2) return null;
+    return stores
+      .filter((s) => resolvedMLUserIds.includes(s.ml_user_id))
+      .map((store) => ({
+        id: store.ml_user_id,
+        name: store.displayName,
+        data: hourly.filter((h: any) => h.ml_user_id === store.ml_user_id),
+        icon: null,
+        chartData: buildHourlyChartData(
+          hourly.filter((h: any) => h.ml_user_id === store.ml_user_id)
+        ),
+      }));
+  }, [isAll, stores, resolvedMLUserIds, hourly]);
 
   // ── Cost card computations ──────────────────────────────────────────────────
   const costSummary = useMemo(() => {
