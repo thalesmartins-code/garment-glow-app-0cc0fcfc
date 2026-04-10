@@ -1609,9 +1609,6 @@ export default function MercadoLivre() {
                       <span className="w-20 text-right text-xs font-semibold tabular-nums text-foreground">
                         {p.revenue.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </span>
-                      <span className="w-20 text-right text-xs tabular-nums text-muted-foreground">
-                        {ticket > 0 ? ticket.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "—"}
-                      </span>
                       <span className="w-14 text-right text-[10px] text-muted-foreground whitespace-nowrap">
                         {p.available_quantity != null ? `${p.available_quantity} un` : "—"}
                       </span>
