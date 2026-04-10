@@ -467,7 +467,10 @@ export default function MercadoLivre() {
   );
 
   const loadFromCache = useCallback(async (overrideFrom?: string, overrideTo?: string): Promise<boolean> => {
-    if (!user) return false;
+    if (!user || resolvedMLUserIds.length === 0) {
+      setAllDaily([]);
+      return false;
+    }
 
     // Stamp this request; any older in-flight call that resolves after us will be discarded.
     const reqId = ++loadDailyReqRef.current;
@@ -475,6 +478,8 @@ export default function MercadoLivre() {
     let userCacheQuery = supabase.from("ml_user_cache").select("*").eq("user_id", user.id);
     if (selectedStore !== "all") {
       userCacheQuery = userCacheQuery.eq("ml_user_id", Number(selectedStore));
+    } else if (resolvedMLUserIds.length > 0) {
+      userCacheQuery = userCacheQuery.in("ml_user_id", resolvedMLUserIds.map(Number));
     }
 
     // Use explicit dates if provided, otherwise derive from current state
@@ -492,6 +497,8 @@ export default function MercadoLivre() {
       .limit(1000);
     if (selectedStore !== "all") {
       dailyCacheQuery = dailyCacheQuery.eq("ml_user_id", selectedStore);
+    } else {
+      dailyCacheQuery = dailyCacheQuery.in("ml_user_id", resolvedMLUserIds);
     }
 
     const [{ data: userCacheData }, { data: dailyCache }] = await Promise.all([
@@ -519,7 +526,7 @@ export default function MercadoLivre() {
     setAllDaily(dailyCache.map(mapDailyRow));
     setConnected(true);
     return true;
-  }, [user, selectedStore, customRange, period]);
+  }, [user, selectedStore, resolvedMLUserIds, customRange, period]);
 
   const saveToCache = useCallback(
     async (
