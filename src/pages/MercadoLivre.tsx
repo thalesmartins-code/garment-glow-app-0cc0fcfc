@@ -1457,9 +1457,9 @@ export default function MercadoLivre() {
       </div>
 
       {/* === Custos + Top Anúncios === */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {/* Card de Custos */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0 }}>
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+        {/* Card de Custos — 2/6 */}
+        <motion.div className="md:col-span-2" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0 }}>
         <Card className="h-full relative overflow-hidden opacity-75 border border-dashed border-muted-foreground/30">
           {/* Overlay "Em desenvolvimento" */}
           <div className="absolute top-2 right-2 z-10">
@@ -1557,7 +1557,7 @@ export default function MercadoLivre() {
         </motion.div>
 
         {/* Top Anúncios — expanded */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }}>
+        <motion.div className="md:col-span-4" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }}>
         <Card className="h-full">
           <div className="px-4 pt-4 pb-2 flex items-center justify-between">
             <span className="text-sm font-medium text-foreground">Top Anúncios</span>
@@ -1573,13 +1573,12 @@ export default function MercadoLivre() {
                   <span className="flex-1">Produto</span>
                   <span className="w-14 text-right">Vendidos</span>
                   <span className="w-20 text-right">Receita</span>
-                  <span className="w-20 text-right">Ticket</span>
+                  
                   <span className="w-14 text-right">Estoque</span>
                 </div>
                 {effectiveProducts.slice(0, 8).map((p, i) => {
                   const medals = ["🥇", "🥈", "🥉"];
                   const medal = i < 3 ? medals[i] : null;
-                  const ticket = p.qty_sold > 0 ? p.revenue / p.qty_sold : 0;
                   return (
                     <div key={p.item_id || i} className="flex items-center gap-2 py-1.5 border-b border-border/30 last:border-0">
                       <span className="w-5 text-center text-xs font-semibold text-muted-foreground">
@@ -1609,9 +1608,6 @@ export default function MercadoLivre() {
                       </span>
                       <span className="w-20 text-right text-xs font-semibold tabular-nums text-foreground">
                         {p.revenue.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                      </span>
-                      <span className="w-20 text-right text-xs tabular-nums text-muted-foreground">
-                        {ticket > 0 ? ticket.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 }) : "—"}
                       </span>
                       <span className="w-14 text-right text-[10px] text-muted-foreground whitespace-nowrap">
                         {p.available_quantity != null ? `${p.available_quantity} un` : "—"}
