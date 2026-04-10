@@ -325,7 +325,7 @@ export default function MercadoLivre() {
   }, [currentFrom, currentTo]);
 
   // Ads hook uses the wider chart range so sparkline always has 7+ days
-  const { daily: adsDaily, campaigns: adsCampaigns, loading: adsLoading, isRealData: adsIsRealData, adsAvailable } = useMLAds({
+  const { daily: adsDaily } = useMLAds({
     dateFrom: adsChartFrom,
     dateTo: currentTo,
   });
