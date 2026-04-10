@@ -800,14 +800,26 @@ export default function MercadoLivre() {
     })();
   }, [user, loadFromCache, loadHourlyCache, loadProductCache, syncFromAPI, selectedStore]);
 
-  // Reload caches when store selection changes
+  // Reload caches and access token when store selection changes
   useEffect(() => {
     if (!user || !cacheLoadedRef.current) return;
+    // Update the cached access token for the newly selected store
+    if (selectedStore !== "all") {
+      supabase
+        .from("ml_tokens")
+        .select("access_token")
+        .eq("user_id", user.id)
+        .eq("ml_user_id", selectedStore)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.access_token) setCachedAccessToken(data.access_token);
+        });
+    }
     const { fetchFrom, fetchTo, currentFrom, currentTo } = getComparisonRanges(customRange, period);
     void loadFromCache(fetchFrom, fetchTo);
     void loadHourlyCache();
     void loadProductCache(currentFrom, currentTo);
-  }, [selectedStore]);
+  }, [selectedStore]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Recarrega diário, horário E produtos sempre que o filtro mudar
   useEffect(() => {

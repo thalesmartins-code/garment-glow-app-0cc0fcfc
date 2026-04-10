@@ -67,11 +67,14 @@ export function useMLAds(opts: UseMLAdsOptions = {}): UseMLAdsResult {
   const [adsAvailable, setAdsAvailable] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const storeId = useMemo(() => {
-    if (selectedStore !== "all" && selectedStore) return selectedStore;
-    if (stores.length > 0) return stores[0].ml_user_id;
-    return "default-store";
+  // When a specific store is selected use it; when "all" use all store IDs
+  const targetStoreIds = useMemo(() => {
+    if (selectedStore !== "all" && selectedStore) return [selectedStore];
+    return stores.map((s) => s.ml_user_id);
   }, [selectedStore, stores]);
+
+  // Single storeId used as cache key and mock seed (first store or specific)
+  const storeId = targetStoreIds[0] ?? "default-store";
 
   const connected = stores.length > 0;
 
@@ -95,28 +98,43 @@ export function useMLAds(opts: UseMLAdsOptions = {}): UseMLAdsResult {
     return daysBack;
   }, [daysBack, dateFrom, dateTo]);
 
-  const cacheKey = `${storeId}:${effectiveDateFrom}:${effectiveDateTo}`;
+  const cacheKey = `${targetStoreIds.join(",")}:${effectiveDateFrom}:${effectiveDateTo}`;
 
-  // Fetch real data from edge function
+  // Fetch one store's ads data from the edge function
+  const fetchOneStore = useCallback(async (
+    targetStoreId: string,
+    accessToken: string,
+    force: boolean,
+  ) => {
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const params = new URLSearchParams({
+      ml_user_id: targetStoreId,
+      date_from: effectiveDateFrom,
+      date_to: effectiveDateTo,
+    });
+    if (force) params.set("force", "true");
+
+    const res = await fetch(
+      `https://${projectId}.supabase.co/functions/v1/ml-ads?${params}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
+        },
+      },
+    );
+    if (!res.ok) return null;
+    return res.json();
+  }, [effectiveDateFrom, effectiveDateTo]);
+
+  // Fetch real data — handles single store or aggregates multiple stores
   const fetchRealData = useCallback(async (force = false) => {
-    if (!connected || !user || storeId === "default-store") return;
-
-    const targetStoreId = storeId === "default-store" ? stores[0]?.ml_user_id : storeId;
-    if (!targetStoreId) return;
+    if (!connected || !user || targetStoreIds.length === 0) return;
 
     const hasCachedData = !!(adsCache.get(cacheKey) && Date.now() - (adsCache.get(cacheKey)?.fetchedAt ?? 0) < CACHE_TTL_MS);
     if (!hasCachedData) setLoading(true);
-    try {
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const params = new URLSearchParams({
-        ml_user_id: targetStoreId,
-        date_from: effectiveDateFrom,
-        date_to: effectiveDateTo,
-      });
-      if (force) params.set("force", "true");
 
-      const supabaseUrl = `https://${projectId}.supabase.co/functions/v1/ml-ads?${params}`;
-      
+    try {
       const session = await supabase.auth.getSession();
       const accessToken = session.data.session?.access_token;
       if (!accessToken) {
@@ -124,47 +142,56 @@ export function useMLAds(opts: UseMLAdsOptions = {}): UseMLAdsResult {
         return;
       }
 
-      const res = await fetch(supabaseUrl, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
-        },
-      });
+      const results = await Promise.all(
+        targetStoreIds.map((id) => fetchOneStore(id, accessToken, force)),
+      );
 
-      if (!res.ok) {
-        const errBody = await res.text();
-        console.warn(`ml-ads: API returned ${res.status}`, errBody);
-        return;
-      }
+      // Aggregate across stores
+      const aggregated: { daily: AdsDailyStat[]; campaigns: AdsCampaign[]; products: AdsProductStat[] } = {
+        daily: [],
+        campaigns: [],
+        products: [],
+      };
+      let anyAvailable = false;
 
-      const result = await res.json();
-      // Track whether the Ads API is accessible at all
-      if (typeof result.adsAvailable === "boolean") {
-        setAdsAvailable(result.adsAvailable);
-      }
-      if (result.daily && result.daily.length > 0) {
-        setRealData({
-          daily: result.daily,
-          campaigns: result.campaigns || [],
-          products: result.products || [],
-          summary: result.summary || computeAdsSummary(result.daily),
-        });
-        adsCache.set(cacheKey, { daily: result.daily, campaigns: result.campaigns || [], products: result.products || [], summary: result.summary || computeAdsSummary(result.daily), fetchedAt: Date.now() });
-        setIsRealData(true);
-        console.log(`ml-ads: loaded from ${result.source || "unknown"}`);
-      } else {
-        if (result.adsAvailable === false) {
-          console.warn("ml-ads: Advertising API not available for this seller (404/403) — account may not have Mercado Ads activated");
-        } else {
-          console.log("ml-ads: API accessible but no data for period, using mock");
+      for (const result of results) {
+        if (!result) continue;
+        if (result.adsAvailable === true) anyAvailable = true;
+        if (result.daily?.length) {
+          // Merge daily by date (sum numeric fields)
+          for (const row of result.daily as AdsDailyStat[]) {
+            const existing = aggregated.daily.find((d) => d.date === row.date);
+            if (existing) {
+              existing.impressions = (existing.impressions ?? 0) + (row.impressions ?? 0);
+              existing.clicks      = (existing.clicks      ?? 0) + (row.clicks      ?? 0);
+              existing.spend       = (existing.spend       ?? 0) + (row.spend       ?? 0);
+            } else {
+              aggregated.daily.push({ ...row });
+            }
+          }
         }
+        if (result.campaigns?.length) aggregated.campaigns.push(...result.campaigns);
+        if (result.products?.length)  aggregated.products.push(...result.products);
+      }
+
+      if (anyAvailable) setAdsAvailable(true);
+
+      if (aggregated.daily.length > 0) {
+        const summary = computeAdsSummary(aggregated.daily);
+        const cached: AdsCache = { ...aggregated, summary, fetchedAt: Date.now() };
+        setRealData({ ...aggregated, summary });
+        adsCache.set(cacheKey, cached);
+        setIsRealData(true);
+        console.log(`ml-ads: loaded ${targetStoreIds.length} store(s)`);
+      } else {
+        console.log("ml-ads: no data for period, using mock");
       }
     } catch (err) {
       console.warn("ml-ads: Error fetching real data, falling back to mock", err);
     } finally {
       setLoading(false);
     }
-  }, [connected, user, storeId, stores, effectiveDateFrom, effectiveDateTo]);
+  }, [connected, user, targetStoreIds, cacheKey, fetchOneStore]);
   // Auto-fetch on mount and when params change — skip if cache is still fresh
   useEffect(() => {
     const cached = adsCache.get(cacheKey);

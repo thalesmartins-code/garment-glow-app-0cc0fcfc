@@ -1,3 +1,5 @@
+import { MLStoreSelector } from "@/components/mercadolivre/MLStoreSelector";
+
 interface Props {
   title: string;
   children?: React.ReactNode;
@@ -17,7 +19,10 @@ export function MLPageHeader({ title, children, lastUpdated }: Props) {
           {formattedDate ? `Última sinc: ${formattedDate}` : "Nunca sincronizado"}
         </p>
       </div>
-      {children && <div className="flex items-center gap-2">{children}</div>}
+      <div className="flex items-center gap-2">
+        <MLStoreSelector />
+        {children}
+      </div>
     </div>
   );
 }

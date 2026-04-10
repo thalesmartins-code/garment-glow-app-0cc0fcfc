@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useMLInventory } from "@/contexts/MLInventoryContext";
+import { useMLStore } from "@/contexts/MLStoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays, startOfDay } from "date-fns";
@@ -152,6 +153,7 @@ import { Progress } from "@/components/ui/progress";
 
 export default function MLProdutos() {
   const { items, loading, hasToken, lastUpdated, refresh } = useMLInventory();
+  const { selectedStore } = useMLStore();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
@@ -200,14 +202,18 @@ export default function MLProdutos() {
       fromDate = format(subDays(new Date(), rankingPeriod), "yyyy-MM-dd");
       toDate   = today;
     }
-    const { data } = await supabase
+    let query = supabase
       .from("ml_product_daily_cache")
       .select("item_id, qty_sold")
       .eq("user_id", user.id)
       .gte("date", fromDate)
       .lte("date", toDate);
+    if (selectedStore !== "all") {
+      query = query.eq("ml_user_id", selectedStore);
+    }
+    const { data } = await query;
     setRankingRawData(data ?? []);
-  }, [user, rankingPeriod, rankingRange]);
+  }, [user, rankingPeriod, rankingRange, selectedStore]);
 
   useEffect(() => { fetchRankingSales(); }, [fetchRankingSales]);
 
