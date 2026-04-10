@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSeller } from "@/contexts/SellerContext";
@@ -85,7 +85,7 @@ const MLStoreContext = createContext<MLStoreState | null>(null);
 
 export function MLStoreProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const { selectedSeller, selectedStoreIds } = useSeller();
+  const { selectedSeller } = useSeller();
   const [stores, setStores] = useState<MLStore[]>([]);
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [loading, setLoading] = useState(true);
@@ -172,49 +172,6 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetchStores();
   }, [fetchStores]);
-
-  // Sync selectedStore with the store filter in the header (SellerContext.selectedStoreIds).
-  // seller_stores.external_id holds the ml_user_id for ML stores.
-  useEffect(() => {
-    if (stores.length === 0) return;
-
-    if (selectedStoreIds.length === 0) {
-      // "All stores" selected in header → "all" in ML context (or auto-select if only one)
-      const next = stores.length === 1 ? stores[0].ml_user_id : "all";
-      setSelectedStore(next);
-      return;
-    }
-
-    const sellerStores = selectedSeller?.stores ?? [];
-
-    // Primary: map via seller_stores.external_id (set after OAuth connect)
-    const mlExternalIds = sellerStores
-      .filter((s) => selectedStoreIds.includes(s.id) && s.marketplace === "ml" && s.external_id)
-      .map((s) => s.external_id as string);
-
-    if (mlExternalIds.length === 1) {
-      setSelectedStore(mlExternalIds[0]);
-      setSalesCacheRaw(defaultSalesCache);
-      return;
-    }
-
-    // Fallback: if external_id is not set yet, infer by seller_id when there is only one ML store
-    const selectedMlSellerStores = sellerStores.filter(
-      (s) => selectedStoreIds.includes(s.id) && s.marketplace === "ml",
-    );
-    if (selectedMlSellerStores.length === 1 && selectedSeller?.id) {
-      const matchingTokenStores = stores.filter((s) => s.seller_id === selectedSeller.id);
-      if (matchingTokenStores.length === 1) {
-        setSelectedStore(matchingTokenStores[0].ml_user_id);
-        setSalesCacheRaw(defaultSalesCache);
-        return;
-      }
-    }
-
-    // Non-ML store selected, or ambiguous → "all"
-    setSelectedStore("all");
-    setSalesCacheRaw(defaultSalesCache);
-  }, [selectedStoreIds, selectedSeller, stores]);
 
   return (
     <MLStoreContext.Provider

@@ -878,55 +878,72 @@ export default function MercadoLivre() {
     return [];
   }, [nonMlStores, isAll, useRealData, selectedMarketplace]);
 
-  // Merge real ML data with mock data when "all"
-  const effectiveDaily = useMemo(() => {
-    if (isAll) {
-      // Merge real daily + mock daily by date, restricted to current period
-      const dateMap = new Map<string, DailyBreakdown>();
-      for (const d of daily) dateMap.set(d.date, { ...d });
-      for (const d of mockDaily) {
-        if (d.date < currentFrom || d.date > currentTo) continue;
-        const existing = dateMap.get(d.date);
-        if (existing) {
-          existing.total += d.total;
-          existing.approved += d.approved;
-          existing.qty += d.qty;
-          existing.units_sold += d.units_sold;
-          existing.cancelled += d.cancelled;
-          existing.shipped += d.shipped;
-          existing.unique_visits += d.unique_visits;
-          existing.unique_buyers += d.unique_buyers;
-        } else {
-          dateMap.set(d.date, { ...d });
-        }
+  // Aggregate daily rows by date (handles multi-store "all" case and single store)
+  function aggregateDailyRows(rows: DailyBreakdown[]): DailyBreakdown[] {
+    const dateMap = new Map<string, DailyBreakdown>();
+    for (const d of rows) {
+      const existing = dateMap.get(d.date);
+      if (existing) {
+        existing.total         += d.total;
+        existing.approved      += d.approved;
+        existing.qty           += d.qty;
+        existing.units_sold    += d.units_sold;
+        existing.cancelled     += d.cancelled;
+        existing.shipped       += d.shipped;
+        existing.unique_visits += d.unique_visits;
+        existing.unique_buyers += d.unique_buyers;
+      } else {
+        dateMap.set(d.date, { ...d });
       }
-      return Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+    }
+    return Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  // When ML is connected, always use real filtered data (respects selectedStore).
+  // Only fall back to mock data when not connected.
+  const effectiveDaily = useMemo(() => {
+    if (connected) {
+      const aggregated = aggregateDailyRows(daily);
+      // If non-ML stores are explicitly selected alongside ML, also include their data
+      if (nonMlStores.length > 0) {
+        const nonMlData = aggregateStoreDailyData(nonMlStores, 30)
+          .filter((d) => d.date >= currentFrom && d.date <= currentTo);
+        return aggregateDailyRows([...aggregated, ...nonMlData]);
+      }
+      return aggregated;
+    }
+    if (isAll) {
+      return mockDaily
+        .filter((d) => d.date >= currentFrom && d.date <= currentTo)
+        .sort((a, b) => a.date.localeCompare(b.date));
     }
     if (isML) return daily;
     return mockDaily.filter((d) => d.date >= currentFrom && d.date <= currentTo);
-  }, [isAll, isML, daily, mockDaily, currentFrom, currentTo]);
+  }, [connected, daily, nonMlStores, isAll, isML, mockDaily, currentFrom, currentTo]);
 
   const effectiveHourly = useMemo(() => {
-    if (isAll) {
+    if (connected) {
+      // Aggregate real hourly data across stores (sum per hour)
       const hourMap = new Map<number, HourlyBreakdown>();
-      for (const h of hourly) hourMap.set(h.hour, { ...h });
-      for (const h of mockHourly) {
+      for (const h of hourly) {
         const existing = hourMap.get(h.hour);
         if (existing) {
-          existing.total += h.total;
+          existing.total    += h.total;
           existing.approved += h.approved;
-          existing.qty += h.qty;
+          existing.qty      += h.qty;
         } else {
           hourMap.set(h.hour, { ...h });
         }
       }
       return Array.from(hourMap.values()).sort((a, b) => a.hour - b.hour);
     }
+    if (isAll) return mockHourly;
     if (isML) return hourly;
     return mockHourly;
-  }, [isAll, isML, hourly, mockHourly]);
+  }, [connected, isAll, isML, hourly, mockHourly]);
 
   const effectiveProducts = useMemo(() => {
+    if (connected) return filteredTopProducts;
     if (isAll) {
       const mlTagged = filteredTopProducts.map(p => ({ ...p, _marketplace: "mercado-livre" }));
       const mockTagged = mockProducts.map(p => {
@@ -938,7 +955,7 @@ export default function MercadoLivre() {
     }
     if (isML) return filteredTopProducts;
     return mockProducts;
-  }, [isAll, isML, filteredTopProducts, mockProducts]);
+  }, [connected, isAll, isML, filteredTopProducts, mockProducts]);
 
   const effectiveMetrics = useMemo(() => {
     if (effectiveDaily.length === 0) return null;
@@ -957,32 +974,15 @@ export default function MercadoLivre() {
     return m;
   }, [effectiveDaily]);
 
-  // Previous period daily data (same merge logic)
+  // Previous period daily data (same aggregation logic)
   const effectivePreviousDaily = useMemo(() => {
-    if (isAll) {
-      const dateMap = new Map<string, DailyBreakdown>();
-      for (const d of previousDaily) dateMap.set(d.date, { ...d });
-      for (const d of mockDaily) {
-        if (d.date < prevFrom || d.date > prevTo) continue;
-        const existing = dateMap.get(d.date);
-        if (existing) {
-          existing.total += d.total;
-          existing.approved += d.approved;
-          existing.qty += d.qty;
-          existing.units_sold += d.units_sold;
-          existing.cancelled += d.cancelled;
-          existing.shipped += d.shipped;
-          existing.unique_visits += d.unique_visits;
-          existing.unique_buyers += d.unique_buyers;
-        } else {
-          dateMap.set(d.date, { ...d });
-        }
-      }
-      return Array.from(dateMap.values());
+    if (connected) {
+      return aggregateDailyRows(previousDaily);
     }
+    if (isAll) return mockDaily.filter(d => d.date >= prevFrom && d.date <= prevTo);
     if (isML) return previousDaily;
     return mockDaily.filter(d => d.date >= prevFrom && d.date <= prevTo);
-  }, [isAll, isML, previousDaily, mockDaily, prevFrom, prevTo]);
+  }, [connected, isAll, isML, previousDaily, mockDaily, prevFrom, prevTo]);
 
   const previousMetrics = useMemo(() => {
     if (effectivePreviousDaily.length === 0) return null;
