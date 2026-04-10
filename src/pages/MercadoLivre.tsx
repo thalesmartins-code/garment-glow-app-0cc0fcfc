@@ -1047,6 +1047,28 @@ export default function MercadoLivre() {
     };
   }, [effectiveMetrics, adsSummary]);
 
+  // Monthly metrics for GoalsCard — always covers the full current month
+  const monthlyMetrics = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth(); // 0-based
+    const monthFrom = format(new Date(y, m, 1), "yyyy-MM-dd");
+    const monthTo = format(now, "yyyy-MM-dd");
+    const monthRows = allDaily.filter((d) => d.date >= monthFrom && d.date <= monthTo);
+    if (monthRows.length === 0) return null;
+    const r = {
+      total_revenue: monthRows.reduce((s, d) => s + d.total, 0),
+      units_sold: monthRows.reduce((s, d) => s + d.units_sold, 0),
+      total_orders: monthRows.reduce((s, d) => s + d.qty, 0),
+      unique_visits: monthRows.reduce((s, d) => s + (d.unique_visits || 0), 0),
+      unique_buyers: monthRows.reduce((s, d) => s + (d.unique_buyers || 0), 0),
+      avg_ticket: 0,
+      conversion_rate: 0,
+    };
+    if (r.total_orders > 0) r.avg_ticket = r.total_revenue / r.total_orders;
+    if (r.unique_visits > 0) r.conversion_rate = (r.unique_buyers / r.unique_visits) * 100;
+    return r;
+  }, [allDaily]);
 
 
   const STORE_STROKE_COLORS = ["hsl(45, 93%, 47%)", "hsl(200, 70%, 50%)", "hsl(140, 60%, 45%)", "hsl(280, 60%, 55%)"];
