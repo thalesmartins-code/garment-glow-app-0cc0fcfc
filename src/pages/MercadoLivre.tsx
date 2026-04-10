@@ -20,7 +20,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { HistoricalSyncModal } from "@/components/mercadolivre/HistoricalSyncModal";
 import { TopSellingProducts, type ProductSalesRow } from "@/components/mercadolivre/TopSellingProducts";
 
-import { RevenueByMarketplace, type MarketplaceRevenueGroup } from "@/components/mercadolivre/RevenueByMarketplace";
+
 
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
 import { GoalsCard } from "@/components/mercadolivre/GoalsCard";
@@ -1071,62 +1071,6 @@ export default function MercadoLivre() {
   }, [isAll, perMarketplaceHourly]);
 
 
-  // Revenue by marketplace + store breakdown for "Todos" view
-  const revenueByMarketplace = useMemo<MarketplaceRevenueGroup[]>(() => {
-    if (!isAll || !selectedSeller) return [];
-    const storeList = selectedSeller.stores.filter((s) => s.is_active);
-    // Group stores by marketplace shortcode
-    const grouped = new Map<string, typeof storeList>();
-    for (const store of storeList) {
-      const mp = store.marketplace;
-      if (!grouped.has(mp)) grouped.set(mp, []);
-      grouped.get(mp)!.push(store);
-    }
-
-    const result: MarketplaceRevenueGroup[] = [];
-    for (const [mpShort, stores] of grouped) {
-      const mpId = SELLER_TO_MP_ID[mpShort] ?? mpShort;
-      const brand = getMarketplaceBrand(mpId);
-      if (!brand) continue;
-
-      let groupRevenue = 0;
-      let groupOrders = 0;
-      const storeRows = stores.map((store) => {
-        let revenue = 0;
-        let orders = 0;
-        if (mpShort === "ml") {
-          // Use real daily data
-          revenue = daily.reduce((s, d) => s + d.total, 0);
-          orders = daily.reduce((s, d) => s + d.qty, 0);
-          // If multiple ML stores, split proportionally by store count (real per-store data not available yet)
-          if (stores.length > 1) {
-            revenue = revenue / stores.length;
-            orders = Math.round(orders / stores.length);
-          }
-        } else {
-          // Use mock store data
-          const storeDaily = getStoreDailyData(store.id, mpShort, 30);
-          revenue = storeDaily.reduce((s, d) => s + d.total, 0);
-          orders = storeDaily.reduce((s, d) => s + d.qty, 0);
-        }
-        groupRevenue += revenue;
-        groupOrders += orders;
-        return { name: store.store_name, revenue, orders };
-      });
-
-      result.push({
-        mpId,
-        mpName: brand.name,
-        icon: brand.icon,
-        gradient: brand.gradient,
-        totalRevenue: groupRevenue,
-        totalOrders: groupOrders,
-        stores: storeRows.sort((a, b) => b.revenue - a.revenue),
-      });
-    }
-
-    return result.sort((a, b) => b.totalRevenue - a.totalRevenue);
-  }, [isAll, selectedSeller, daily]);
 
 
   // Show "not connected" when ML stores are selected but there's no valid API token
@@ -1379,10 +1323,6 @@ export default function MercadoLivre() {
         />
       </div>
 
-      {/* === Revenue by Marketplace (Todos) === */}
-      {isAll && revenueByMarketplace.length > 0 && (
-        <RevenueByMarketplace groups={revenueByMarketplace} />
-      )}
 
       {/* === Hourly Charts + Goals === */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
