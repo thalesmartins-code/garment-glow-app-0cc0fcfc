@@ -368,13 +368,17 @@ export default function MLProdutos() {
   }, [rankingFiltered]);
 
   const brandData = useMemo(() => {
+    const getSold = (id: string) =>
+      rankingSoldMap.size > 0 ? (rankingSoldMap.get(id) ?? 0) : items.find(i => i.id === id)?.sold_quantity ?? 0;
+
     const map = new Map<string, { revenue: number; qty: number; ads: number; stock: number }>();
     items.forEach((i) => {
       const brand = i.brand || "Sem marca";
+      const sold = getSold(i.id);
       const prev = map.get(brand) ?? { revenue: 0, qty: 0, ads: 0, stock: 0 };
       map.set(brand, {
-        revenue: prev.revenue + i.sold_quantity * i.price,
-        qty: prev.qty + i.sold_quantity,
+        revenue: prev.revenue + sold * i.price,
+        qty: prev.qty + sold,
         ads: prev.ads + 1,
         stock: prev.stock + i.available_quantity,
       });
@@ -382,7 +386,7 @@ export default function MLProdutos() {
     return Array.from(map.entries())
       .map(([brand, d]) => ({ brand, ...d, avgTicket: d.qty > 0 ? d.revenue / d.qty : 0 }))
       .sort((a, b) => b.revenue - a.revenue);
-  }, [items]);
+  }, [items, rankingSoldMap]);
 
   const maxBrandRevenue = brandData.length > 0 ? brandData[0].revenue : 1;
 
