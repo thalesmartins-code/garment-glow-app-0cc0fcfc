@@ -176,7 +176,7 @@ export default function MLProdutos() {
 
   // ── Ranking date filter ──────────────────────────────────────────────────────
   const { user } = useAuth();
-  const [rankingPeriod, setRankingPeriod] = useState<number>(TOTAL_PERIOD);
+  const [rankingPeriod, setRankingPeriod] = useState<number>(0);
   const [rankingRange, setRankingRange] = useState<{ from: Date; to: Date } | null>(null);
   const [rankingPopoverOpen, setRankingPopoverOpen] = useState(false);
   const [pendingPeriod, setPendingPeriod] = useState<number | null>(TOTAL_PERIOD);
