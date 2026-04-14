@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
@@ -115,39 +116,39 @@ const App = () => (
                         <Route path="/api/perfil" element={<Profile />} />
                         <Route
                           path="/api"
-                          element={<RoleRoute><MercadoLivre /></RoleRoute>}
+                          element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Vendas"><MercadoLivre /></ErrorBoundary></RoleRoute>}
                         />
                         <Route
                           path="/api/estoque"
-                          element={<RoleRoute><MLEstoque /></RoleRoute>}
+                          element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Estoque"><MLEstoque /></ErrorBoundary></RoleRoute>}
                         />
                         <Route
                           path="/api/anuncios"
-                          element={<RoleRoute><MLProdutos /></RoleRoute>}
+                          element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Anúncios"><MLProdutos /></ErrorBoundary></RoleRoute>}
                         />
                         <Route
                           path="/api/pedidos"
-                          element={<RoleRoute><MLPedidos /></RoleRoute>}
+                          element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Pedidos"><MLPedidos /></ErrorBoundary></RoleRoute>}
                         />
                         <Route
                           path="/api/publicidade"
-                          element={<RoleRoute><MLAnuncios /></RoleRoute>}
+                          element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Publicidade"><MLAnuncios /></ErrorBoundary></RoleRoute>}
                         />
                         <Route
                           path="/api/financeiro"
-                          element={<RoleRoute><MLFinanceiro /></RoleRoute>}
+                          element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página Financeiro"><MLFinanceiro /></ErrorBoundary></RoleRoute>}
                         />
                         <Route
                           path="/api/reputacao"
-                          element={<RoleRoute><MLReputacao /></RoleRoute>}
+                          element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Reputação"><MLReputacao /></ErrorBoundary></RoleRoute>}
                         />
                         <Route
                           path="/api/devolucoes"
-                          element={<RoleRoute><MLDevolucoes /></RoleRoute>}
+                          element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Devoluções"><MLDevolucoes /></ErrorBoundary></RoleRoute>}
                         />
                         <Route
                           path="/api/perguntas"
-                          element={<RoleRoute><MLPerguntas /></RoleRoute>}
+                          element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Perguntas"><MLPerguntas /></ErrorBoundary></RoleRoute>}
                         />
                         <Route
                           path="/api/sincronizacoes"
@@ -159,7 +160,7 @@ const App = () => (
                         />
                         <Route
                           path="/api/metas"
-                          element={<RoleRoute><MLMetas /></RoleRoute>}
+                          element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Metas"><MLMetas /></ErrorBoundary></RoleRoute>}
                         />
                         <Route
                           path="/api/sellers"
