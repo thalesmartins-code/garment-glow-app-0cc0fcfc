@@ -42,35 +42,25 @@ serve(async (req) => {
       });
     }
 
-    const { user_id, role } = await req.json();
+    const { user_id, banned } = await req.json();
 
-    if (!user_id || !role) {
-      return new Response(JSON.stringify({ error: "user_id e role são obrigatórios" }), {
+    if (!user_id || typeof banned !== "boolean") {
+      return new Response(JSON.stringify({ error: "user_id e banned são obrigatórios" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const validRoles = ["admin", "editor", "viewer"];
-    if (!validRoles.includes(role)) {
-      return new Response(JSON.stringify({ error: "Role inválido" }), {
+    if (user_id === caller.id) {
+      return new Response(JSON.stringify({ error: "Você não pode desativar sua própria conta" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Prevent admin from removing their own admin role
-    if (user_id === caller.id && role !== "admin") {
-      return new Response(JSON.stringify({ error: "Você não pode remover seu próprio cargo de admin" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { error: updateError } = await adminClient
-      .from("user_roles")
-      .update({ role })
-      .eq("user_id", user_id);
+    const { error: updateError } = await adminClient.auth.admin.updateUserById(user_id, {
+      ban_duration: banned ? "876000h" : "none",
+    });
 
     if (updateError) {
       return new Response(JSON.stringify({ error: updateError.message }), {
@@ -82,9 +72,9 @@ serve(async (req) => {
     // Audit log
     await adminClient.from("audit_log").insert({
       actor_id: caller.id,
-      action: "role_changed",
+      action: banned ? "user_deactivated" : "user_activated",
       target_user_id: user_id,
-      details: { new_role: role },
+      details: { banned },
     });
 
     return new Response(JSON.stringify({ success: true }), {
