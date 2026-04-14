@@ -1,10 +1,7 @@
 import { motion } from "framer-motion";
 import { Package, Award, Trophy, Star, Target } from "lucide-react";
 
-const floatAnimation = (duration: number, delay: number) => ({
-  y: [0, -5, 0],
-  transition: { duration, repeat: Infinity, ease: [0.45, 0.05, 0.55, 0.95] as [number, number, number, number], delay },
-});
+/* Float animation handled via CSS for GPU-accelerated smoothness */
 
 const cardBase =
   "rounded-xl bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] shadow-sm opacity-60";
