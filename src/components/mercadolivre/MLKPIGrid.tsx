@@ -44,14 +44,14 @@ export function MLKPIGrid({ metrics, previousMetrics, loading, syncing, hasSyncP
       />
       <KPICard
         title="Pedidos"
-        value={metrics ? String(metrics.units_sold) : "—"}
+        value={metrics ? String(metrics.total_orders) : "—"}
         icon={<ShoppingCart className="w-4 h-4" />}
         variant="minimal"
         iconClassName="bg-[hsl(270,70%,50%)]/10 text-[hsl(270,70%,50%)]"
         size="compact"
         loading={loading}
         refreshing={refreshing}
-        delta={metrics && previousMetrics ? calcDelta(metrics.units_sold, previousMetrics.units_sold) : undefined}
+        delta={metrics && previousMetrics ? calcDelta(metrics.total_orders, previousMetrics.total_orders) : undefined}
       />
       <KPICard
         title="Ticket Médio"
