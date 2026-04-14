@@ -103,7 +103,8 @@ export default function MercadoLivre() {
   const [sellerReputation, setSellerReputation] = useState<any>(null);
 
   const connected = hasMLConnection && resolvedMLUserIds.length > 0;
-  const loading = useRealData && (storeLoading || dailyLoading);
+  const queryHasNoData = allDaily.length === 0;
+  const loading = useRealData && (storeLoading || dailyLoading || (connected && queryHasNoData));
 
   // ── Sync ──
   const sync = useMLSync({
