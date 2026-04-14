@@ -40,6 +40,14 @@ interface StoreInfo { ml_user_id: string; name: string; }
 interface ProductRow { item_id: string; title: string; thumbnail: string | null; qty_sold: number; revenue: number; stock: number | null; }
 interface BrandRow { name: string; revenue: number; }
 
+interface SellerData {
+  kpi: { revenue: number; orders: number; ticket: number; visits: number; conversion: number };
+  overlaidData: Record<string, any>[];
+  storeNames: StoreInfo[];
+  topProducts: ProductRow[];
+  brandData: BrandRow[];
+}
+
 const BRAND_COLORS = [
   "hsl(var(--primary))", "hsl(var(--accent))", "hsl(25,95%,53%)", "hsl(270,70%,50%)",
   "hsl(160,60%,45%)", "hsl(340,75%,55%)", "hsl(200,70%,50%)", "hsl(45,93%,47%)",
