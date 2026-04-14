@@ -68,6 +68,7 @@ const TVModeVendas = () => {
   const [overlaidData, setOverlaidData] = useState<Record<string, any>[]>([]);
   const [storeNames, setStoreNames] = useState<StoreInfo[]>([]);
   const [topProducts, setTopProducts] = useState<ProductRow[]>([]);
+  const [brandData, setBrandData] = useState<BrandRow[]>([]);
   const [loading, setLoading] = useState(false);
 
   const seller = SELLERS[sellerIdx];
