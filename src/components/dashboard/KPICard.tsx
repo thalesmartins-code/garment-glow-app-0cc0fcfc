@@ -26,7 +26,7 @@ interface KPICardProps {
   valueDecimals?: number;
   progressValue?: number;
   tooltip?: string;
-  size?: "default" | "compact";
+  size?: "default" | "compact" | "tv";
 }
 
 const variantStyles: Record<CardVariant, { icon: string; trend: string; card: string }> = {
