@@ -67,15 +67,16 @@ const TVModeVendas = () => {
   const [clock, setClock] = useState(new Date());
   const [cycleProgress, setCycleProgress] = useState(0);
 
-  const [kpi, setKpi] = useState({ revenue: 0, orders: 0, ticket: 0, visits: 0, conversion: 0 });
-  const [overlaidData, setOverlaidData] = useState<Record<string, any>[]>([]);
-  const [storeNames, setStoreNames] = useState<StoreInfo[]>([]);
-  const [topProducts, setTopProducts] = useState<ProductRow[]>([]);
-  const [brandData, setBrandData] = useState<BrandRow[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Cache all sellers' data in a map — only re-fetch on refresh interval
+  const [sellerCache, setSellerCache] = useState<Record<string, SellerData>>({});
+  const [loading, setLoading] = useState(true);
 
   const seller = SELLERS[sellerIdx];
-  
+  const emptyData: SellerData = {
+    kpi: { revenue: 0, orders: 0, ticket: 0, visits: 0, conversion: 0 },
+    overlaidData: [], storeNames: [], topProducts: [], brandData: [],
+  };
+  const current = sellerCache[seller.id] || emptyData;
 
   useEffect(() => { localStorage.setItem(STORAGE_KEY_CYCLE, String(cycleSec)); }, [cycleSec]);
   useEffect(() => { localStorage.setItem(STORAGE_KEY_REFRESH, String(refreshMin)); }, [refreshMin]);
@@ -102,120 +103,121 @@ const TVModeVendas = () => {
     return () => clearInterval(i);
   }, [sellerIdx, cycleSec]);
 
-  const fetchData = useCallback(async () => {
+  // Fetch data for a single seller and return the processed result
+  const fetchSellerData = useCallback(async (sellerId: string): Promise<SellerData> => {
+    const [dailyRes, hourlyRes, productsRes, storesRes, tokensRes] = await Promise.all([
+      supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").eq("seller_id", sellerId).eq("date", today),
+      supabase.from("ml_hourly_cache").select("hour, total_revenue, qty_orders, ml_user_id").eq("seller_id", sellerId).eq("date", today).order("hour", { ascending: true }).limit(200),
+      supabase.from("ml_product_daily_cache").select("item_id, title, thumbnail, qty_sold, revenue").eq("seller_id", sellerId).eq("date", today).order("revenue", { ascending: false }).limit(50),
+      supabase.from("ml_user_cache").select("ml_user_id, custom_name, nickname").eq("seller_id", sellerId),
+      supabase.from("ml_tokens").select("access_token").eq("seller_id", sellerId),
+    ]);
+
+    // KPIs
+    const daily = dailyRes.data || [];
+    const revenue = daily.reduce((s, r) => s + Number(r.total_revenue), 0);
+    const orders = daily.reduce((s, r) => s + Number(r.qty_orders), 0);
+    const visits = daily.reduce((s, r) => s + Number(r.unique_visits), 0);
+    const ticket = orders > 0 ? revenue / orders : 0;
+    const conversion = visits > 0 ? (orders / visits) * 100 : 0;
+
+    // Store names
+    const stores: StoreInfo[] = (storesRes.data || []).map((s) => ({
+      ml_user_id: String(s.ml_user_id),
+      name: s.custom_name || s.nickname || String(s.ml_user_id),
+    }));
+
+    // Hourly data
+    const hourlyRows = hourlyRes.data || [];
+    const uniqueIds = [...new Set(hourlyRows.map((r) => String(r.ml_user_id)))];
+    const storeNameMap: Record<string, string> = {};
+    for (const st of stores) storeNameMap[st.ml_user_id] = st.name;
+    for (const id of uniqueIds) if (!storeNameMap[id]) storeNameMap[id] = id;
+    const overlaidData = Array.from({ length: 24 }, (_, hour) => {
+      const row: Record<string, any> = { label: `${String(hour).padStart(2, "0")}h`, hour };
+      for (const id of uniqueIds) {
+        const name = storeNameMap[id];
+        const matching = hourlyRows.filter((r) => r.hour === hour && String(r.ml_user_id) === id);
+        row[name] = matching.reduce((s, r) => s + Number(r.total_revenue), 0);
+      }
+      return row;
+    });
+
+    // Inventory (stock + brand)
+    const stockMap: Record<string, number> = {};
+    const brandByItemId: Record<string, string> = {};
+    const tokens = (tokensRes.data || []).map((t) => t.access_token).filter(Boolean);
+    try {
+      for (const token of tokens) {
+        const { data: invData } = await supabase.functions.invoke("ml-inventory", { body: { access_token: token } });
+        if (invData?.items) {
+          for (const item of invData.items) {
+            stockMap[item.id] = (stockMap[item.id] || 0) + (item.available_quantity || 0);
+            if (item.brand) brandByItemId[item.id] = item.brand;
+          }
+        }
+      }
+    } catch { /* optional */ }
+
+    // Products
+    const prodMap: Record<string, ProductRow> = {};
+    (productsRes.data || []).forEach((r) => {
+      if (!prodMap[r.item_id]) prodMap[r.item_id] = { item_id: r.item_id, title: r.title, thumbnail: r.thumbnail, qty_sold: 0, revenue: 0, stock: stockMap[r.item_id] ?? null };
+      prodMap[r.item_id].qty_sold += Number(r.qty_sold);
+      prodMap[r.item_id].revenue += Number(r.revenue);
+    });
+    const allProds = Object.values(prodMap);
+    const topProducts = [...allProds].sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+
+    // Brand aggregation
+    const brandRevMap: Record<string, number> = {};
+    allProds.forEach((p) => {
+      const brand = brandByItemId[p.item_id] || "Sem marca";
+      brandRevMap[brand] = (brandRevMap[brand] || 0) + p.revenue;
+    });
+    const brandData = Object.entries(brandRevMap)
+      .map(([name, rev]) => ({ name, revenue: rev }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
+
+    return {
+      kpi: { revenue, orders, ticket, visits, conversion },
+      overlaidData, storeNames: stores, topProducts, brandData,
+    };
+  }, [today]);
+
+  // Fetch ALL sellers in parallel and cache results
+  const fetchAllSellers = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const [dailyRes, hourlyRes, productsRes, storesRes, tokensRes] = await Promise.all([
-        supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").eq("seller_id", seller.id).eq("date", today),
-        supabase.from("ml_hourly_cache").select("hour, total_revenue, qty_orders, ml_user_id").eq("seller_id", seller.id).eq("date", today).order("hour", { ascending: true }).limit(200),
-        supabase.from("ml_product_daily_cache").select("item_id, title, thumbnail, qty_sold, revenue").eq("seller_id", seller.id).eq("date", today).order("revenue", { ascending: false }).limit(50),
-        supabase.from("ml_user_cache").select("ml_user_id, custom_name, nickname").eq("seller_id", seller.id),
-        supabase.from("ml_tokens").select("access_token").eq("seller_id", seller.id),
-      ]);
-
-      // KPIs
-      const daily = dailyRes.data || [];
-      const revenue = daily.reduce((s, r) => s + Number(r.total_revenue), 0);
-      const orders = daily.reduce((s, r) => s + Number(r.qty_orders), 0);
-      const visits = daily.reduce((s, r) => s + Number(r.unique_visits), 0);
-      const ticket = orders > 0 ? revenue / orders : 0;
-      const conversion = visits > 0 ? (orders / visits) * 100 : 0;
-      setKpi({ revenue, orders, ticket, visits, conversion });
-
-      // Store names
-      const stores: StoreInfo[] = (storesRes.data || []).map((s) => ({
-        ml_user_id: String(s.ml_user_id),
-        name: s.custom_name || s.nickname || String(s.ml_user_id),
-      }));
-      setStoreNames(stores);
-
-      // Build overlaid hourly data per store
-      const hourlyRows = hourlyRes.data || [];
-      const uniqueIds = [...new Set(hourlyRows.map((r) => String(r.ml_user_id)))];
-      const storeNameMap: Record<string, string> = {};
-      for (const st of stores) storeNameMap[st.ml_user_id] = st.name;
-      for (const id of uniqueIds) if (!storeNameMap[id]) storeNameMap[id] = id;
-
-      const buckets = Array.from({ length: 24 }, (_, hour) => {
-        const row: Record<string, any> = { label: `${String(hour).padStart(2, "0")}h`, hour };
-        for (const id of uniqueIds) {
-          const name = storeNameMap[id];
-          const matching = hourlyRows.filter((r) => r.hour === hour && String(r.ml_user_id) === id);
-          row[name] = matching.reduce((s, r) => s + Number(r.total_revenue), 0);
-        }
-        return row;
-      });
-      setOverlaidData(buckets);
-
-      // Fetch inventory for stock + brand data
-      const stockMap: Record<string, number> = {};
-      const brandByItemId: Record<string, string> = {};
-      const tokens = (tokensRes.data || []).map((t) => t.access_token).filter(Boolean);
-      try {
-        for (const token of tokens) {
-          const { data: invData } = await supabase.functions.invoke("ml-inventory", {
-            body: { access_token: token },
-          });
-          if (invData?.items) {
-            for (const item of invData.items) {
-              stockMap[item.id] = (stockMap[item.id] || 0) + (item.available_quantity || 0);
-              if (item.brand) brandByItemId[item.id] = item.brand;
-            }
-          }
-        }
-      } catch { /* inventory is optional */ }
-
-      // Products + Brands
-      const prodMap: Record<string, ProductRow> = {};
-      (productsRes.data || []).forEach((r) => {
-        if (!prodMap[r.item_id]) prodMap[r.item_id] = { item_id: r.item_id, title: r.title, thumbnail: r.thumbnail, qty_sold: 0, revenue: 0, stock: stockMap[r.item_id] ?? null };
-        prodMap[r.item_id].qty_sold += Number(r.qty_sold);
-        prodMap[r.item_id].revenue += Number(r.revenue);
-      });
-      const allProds = Object.values(prodMap);
-      setTopProducts(allProds.sort((a, b) => b.revenue - a.revenue).slice(0, 10));
-
-      // Brand aggregation — use official brand from inventory API, fallback to "Sem marca"
-      const brandRevMap: Record<string, number> = {};
-      allProds.forEach((p) => {
-        const brand = brandByItemId[p.item_id] || "Sem marca";
-        brandRevMap[brand] = (brandRevMap[brand] || 0) + p.revenue;
-      });
-      const sortedBrands = Object.entries(brandRevMap)
-        .map(([name, revenue]) => ({ name, revenue }))
-        .sort((a, b) => b.revenue - a.revenue)
-        .slice(0, 10);
-      setBrandData(sortedBrands);
+      const results = await Promise.all(
+        SELLERS.map(async (s) => ({ id: s.id, data: await fetchSellerData(s.id) }))
+      );
+      const cache: Record<string, SellerData> = {};
+      for (const r of results) cache[r.id] = r.data;
+      setSellerCache(cache);
     } catch (err) {
       console.error("TVModeVendas: fetch error", err);
     } finally {
       setLoading(false);
     }
-  }, [user, seller.id, today]);
+  }, [user, fetchSellerData]);
 
-  // Reset all data immediately on seller change so stale data doesn't linger
-  useEffect(() => {
-    setKpi({ revenue: 0, orders: 0, ticket: 0, visits: 0, conversion: 0 });
-    setOverlaidData([]);
-    setStoreNames([]);
-    setTopProducts([]);
-    setBrandData([]);
-  }, [sellerIdx]);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
+  // Fetch once on mount, then on refresh interval
+  useEffect(() => { fetchAllSellers(); }, [fetchAllSellers]);
 
   useEffect(() => {
-    const i = setInterval(fetchData, refreshMin * 60_000);
+    const i = setInterval(fetchAllSellers, refreshMin * 60_000);
     return () => clearInterval(i);
-  }, [refreshMin, fetchData]);
+  }, [refreshMin, fetchAllSellers]);
 
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) document.documentElement.requestFullscreen();
     else document.exitFullscreen();
   }, []);
 
-  const totalProductRevenue = topProducts.reduce((s, p) => s + p.revenue, 0);
+  const totalProductRevenue = current.topProducts.reduce((s, p) => s + p.revenue, 0);
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6 flex flex-col gap-4 select-none">
