@@ -90,7 +90,7 @@ export function HistoricalSyncModal({ mlUserId, onSyncComplete, sellerId }: Prop
   };
 
   const handleSync = async () => {
-    if (!fromMonth || !toMonth || !accessToken || !user) return;
+    if (!fromMonth || !toMonth || !mlUserId || !user) return;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
