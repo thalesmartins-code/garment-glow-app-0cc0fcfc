@@ -12,6 +12,7 @@ import {
   ResponsiveContainer
 } from "recharts";
 import { format } from "date-fns";
+import { STORE_STROKE_COLORS } from "@/config/storeColors";
 
 const SELLERS = [
   { id: "8c57110c-77bc-4603-a959-01e965fbea3a", name: "Sandrini", initials: "SA", logo: "https://http2.mlstatic.com/D_NQ_NP_788484-MLA84290244651_052025-F.jpg" },
