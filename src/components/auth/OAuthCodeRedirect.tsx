@@ -11,11 +11,15 @@ export function OAuthCodeRedirect({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const code = searchParams.get("code");
-    if (code && !window.location.pathname.includes("/integracoes")) {
-      // Determine the correct integrations route based on the current environment
-      const isApi = window.location.pathname.startsWith("/api") || window.location.pathname === "/";
-      const target = isApi ? "/api/integracoes" : "/sheets/integracoes";
-      navigate(`${target}?code=${encodeURIComponent(code)}`, { replace: true });
+    const path = window.location.pathname;
+    if (code) {
+      const isAlreadyOnCorrectRoute =
+        path === "/api/integracoes" || path === "/sheets/integracoes";
+      if (!isAlreadyOnCorrectRoute) {
+        const isSheets = path.startsWith("/sheets");
+        const target = isSheets ? "/sheets/integracoes" : "/api/integracoes";
+        navigate(`${target}?code=${encodeURIComponent(code)}`, { replace: true });
+      }
     }
   }, [searchParams, navigate]);
 
