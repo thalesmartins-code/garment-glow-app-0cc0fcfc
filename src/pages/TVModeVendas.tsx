@@ -37,7 +37,7 @@ const formatDate = (d: Date) =>
   d.toLocaleString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }).replace(/-feira/g, "");
 
 interface StoreInfo { ml_user_id: string; name: string; }
-interface ProductRow { item_id: string; title: string; thumbnail: string | null; qty_sold: number; revenue: number; }
+interface ProductRow { item_id: string; title: string; thumbnail: string | null; qty_sold: number; revenue: number; stock: number | null; }
 interface BrandRow { name: string; revenue: number; }
 
 const BRAND_COLORS = [
@@ -103,11 +103,12 @@ const TVModeVendas = () => {
     if (!user) return;
     setLoading(true);
     try {
-      const [dailyRes, hourlyRes, productsRes, storesRes] = await Promise.all([
+      const [dailyRes, hourlyRes, productsRes, storesRes, tokensRes] = await Promise.all([
         supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").eq("seller_id", seller.id).eq("date", today),
         supabase.from("ml_hourly_cache").select("hour, total_revenue, qty_orders, ml_user_id").eq("seller_id", seller.id).eq("date", today).order("hour", { ascending: true }).limit(200),
         supabase.from("ml_product_daily_cache").select("item_id, title, thumbnail, qty_sold, revenue").eq("seller_id", seller.id).eq("date", today).order("revenue", { ascending: false }).limit(50),
         supabase.from("ml_user_cache").select("ml_user_id, custom_name, nickname").eq("seller_id", seller.id),
+        supabase.from("ml_tokens").select("access_token").eq("seller_id", seller.id),
       ]);
 
       // KPIs
@@ -126,7 +127,7 @@ const TVModeVendas = () => {
       }));
       setStoreNames(stores);
 
-      // Build overlaid hourly data per store (like "Todas as Lojas" chart)
+      // Build overlaid hourly data per store
       const hourlyRows = hourlyRes.data || [];
       const uniqueIds = [...new Set(hourlyRows.map((r) => String(r.ml_user_id)))];
       const storeNameMap: Record<string, string> = {};
@@ -144,17 +145,33 @@ const TVModeVendas = () => {
       });
       setOverlaidData(buckets);
 
+      // Fetch inventory for stock data
+      const stockMap: Record<string, number> = {};
+      const tokens = (tokensRes.data || []).map((t) => t.access_token).filter(Boolean);
+      try {
+        for (const token of tokens) {
+          const { data: invData } = await supabase.functions.invoke("ml-inventory", {
+            body: { access_token: token },
+          });
+          if (invData?.items) {
+            for (const item of invData.items) {
+              stockMap[item.id] = (stockMap[item.id] || 0) + (item.available_quantity || 0);
+            }
+          }
+        }
+      } catch { /* stock is optional */ }
+
       // Products + Brands
       const prodMap: Record<string, ProductRow> = {};
       (productsRes.data || []).forEach((r) => {
-        if (!prodMap[r.item_id]) prodMap[r.item_id] = { item_id: r.item_id, title: r.title, thumbnail: r.thumbnail, qty_sold: 0, revenue: 0 };
+        if (!prodMap[r.item_id]) prodMap[r.item_id] = { item_id: r.item_id, title: r.title, thumbnail: r.thumbnail, qty_sold: 0, revenue: 0, stock: stockMap[r.item_id] ?? null };
         prodMap[r.item_id].qty_sold += Number(r.qty_sold);
         prodMap[r.item_id].revenue += Number(r.revenue);
       });
       const allProds = Object.values(prodMap);
       setTopProducts(allProds.sort((a, b) => b.revenue - a.revenue).slice(0, 10));
 
-      // Brand aggregation from product titles
+      // Brand aggregation — use inventory brand when available, fallback to title extraction
       const brandMap: Record<string, number> = {};
       allProds.forEach((p) => {
         const brand = extractBrand(p.title);
@@ -242,12 +259,12 @@ const TVModeVendas = () => {
       </div>
 
       {/* Main content: Charts left + Top Products right */}
-      <div className="flex-1 grid grid-cols-5 gap-4 min-h-0">
+      <div className="flex-1 grid grid-cols-7 gap-4 min-h-0">
         {/* Left column: stacked charts */}
         <div className="col-span-3 flex flex-col gap-4 min-h-0">
-          {/* Hourly chart */}
-          <Card className="flex-1 flex flex-col min-h-0">
-            <div className="px-4 pt-4 pb-3 flex items-center justify-between">
+          {/* Hourly chart — smaller */}
+          <Card className="flex-none flex flex-col">
+            <div className="px-4 pt-4 pb-2 flex items-center justify-between">
               <span className="text-sm font-medium text-foreground">Receita por Hora — Todas as Lojas</span>
               <div className="flex items-center gap-4">
                 {storeNames.map((st, idx) => (
@@ -258,52 +275,50 @@ const TVModeVendas = () => {
                 ))}
               </div>
             </div>
-            <CardContent className="flex-1 flex flex-col px-4 pb-2 pt-0 min-h-0">
-              <div className="flex-1 min-h-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={overlaidData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" interval={2} />
-                    <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
-                    <RechartsTooltip
-                      formatter={(value: number, name: string) => [formatCurrency(Number(value)), name]}
-                      contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", backgroundColor: "hsl(var(--card))", color: "hsl(var(--card-foreground))", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
+            <CardContent className="px-4 pb-2 pt-0">
+              <ResponsiveContainer width="100%" height={180}>
+                <ComposedChart data={overlaidData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" interval={2} />
+                  <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
+                  <RechartsTooltip
+                    formatter={(value: number, name: string) => [formatCurrency(Number(value)), name]}
+                    contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", backgroundColor: "hsl(var(--card))", color: "hsl(var(--card-foreground))", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
+                  />
+                  {storeNames.map((st, idx) => (
+                    <Line
+                      key={st.ml_user_id}
+                      type="monotone"
+                      dataKey={st.name}
+                      stroke={STORE_STROKE_COLORS[idx % STORE_STROKE_COLORS.length]}
+                      strokeWidth={2}
+                      dot={false}
+                      activeDot={{ r: 4 }}
                     />
-                    {storeNames.map((st, idx) => (
-                      <Line
-                        key={st.ml_user_id}
-                        type="monotone"
-                        dataKey={st.name}
-                        stroke={STORE_STROKE_COLORS[idx % STORE_STROKE_COLORS.length]}
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 4 }}
-                      />
-                    ))}
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
+                  ))}
+                </ComposedChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Brand chart */}
-          <Card className="flex-none">
+          {/* Brand chart — taller */}
+          <Card className="flex-1 flex flex-col min-h-0">
             <div className="px-4 pt-4 pb-3">
               <span className="text-sm font-medium text-foreground">Receita por Marca (Top 10)</span>
             </div>
-            <CardContent className="px-4 pb-3 pt-0">
+            <CardContent className="flex-1 px-4 pb-3 pt-0 min-h-0">
               {brandData.length === 0 && !loading ? (
                 <p className="text-sm text-muted-foreground text-center py-4">Sem dados</p>
               ) : (
-                <ResponsiveContainer width="100%" height={180}>
+                <ResponsiveContainer width="100%" height="100%">
                   <BarChart layout="vertical" data={brandData} margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>
                     <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={90} fontSize={11} tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis dataKey="name" type="category" width={90} fontSize={12} tick={{ fill: "hsl(var(--muted-foreground))" }} />
                     <RechartsTooltip
                       formatter={(value: number) => [formatCurrency(value), "Receita"]}
                       contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", backgroundColor: "hsl(var(--card))", color: "hsl(var(--card-foreground))", boxShadow: "0 4px 12px rgba(0,0,0,0.08)", fontSize: 12 }}
                     />
-                    <Bar dataKey="revenue" radius={[0, 4, 4, 0]}>
+                    <Bar dataKey="revenue" radius={[0, 6, 6, 0]}>
                       {brandData.map((_, idx) => (
                         <Cell key={idx} fill={BRAND_COLORS[idx % BRAND_COLORS.length]} />
                       ))}
@@ -315,8 +330,8 @@ const TVModeVendas = () => {
           </Card>
         </div>
 
-        {/* Top products */}
-        <Card className="col-span-2 flex flex-col">
+        {/* Top products — wider (4/7) */}
+        <Card className="col-span-4 flex flex-col">
           <div className="px-5 pt-4 pb-3">
             <span className="text-sm font-medium text-foreground">Top 10 Anúncios</span>
           </div>
@@ -332,6 +347,7 @@ const TVModeVendas = () => {
                     <col className="w-14" />
                     <col />
                     <col className="w-20" />
+                    <col className="w-20" />
                     <col className="w-24" />
                     <col className="w-16" />
                   </colgroup>
@@ -339,6 +355,7 @@ const TVModeVendas = () => {
                     <tr className="text-muted-foreground border-b border-border/50 text-xs">
                       <th className="text-left py-2.5">#</th>
                       <th className="text-left py-2.5" colSpan={2}>Produto</th>
+                      <th className="text-right py-2.5">Estoque</th>
                       <th className="text-right py-2.5">Vendidos</th>
                       <th className="text-right py-2.5">Receita</th>
                       <th className="text-right py-2.5">% Part.</th>
@@ -361,6 +378,15 @@ const TVModeVendas = () => {
                           </td>
                           <td className="py-2 pl-2 overflow-hidden">
                             <p className="truncate text-foreground text-[15px]">{p.title}</p>
+                          </td>
+                          <td className="text-right text-[15px] whitespace-nowrap">
+                            {p.stock !== null ? (
+                              <span className={p.stock === 0 ? "text-destructive font-semibold" : p.stock <= 5 ? "text-warning font-semibold" : "text-muted-foreground"}>
+                                {p.stock}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/50">—</span>
+                            )}
                           </td>
                           <td className="text-right font-semibold text-foreground text-[15px] whitespace-nowrap">{p.qty_sold} un</td>
                           <td className="text-right font-semibold text-foreground text-[15px] whitespace-nowrap">{formatCurrency(p.revenue)}</td>
