@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  ComposedChart, Bar, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+  ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   ResponsiveContainer
 } from "recharts";
 import { format } from "date-fns";
@@ -36,7 +36,7 @@ const formatTime = (d: Date) =>
 const formatDate = (d: Date) =>
   d.toLocaleString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }).replace(/-feira/g, "");
 
-interface HourlyRow { hour: number; revenue: number; orders: number; }
+interface StoreInfo { ml_user_id: string; name: string; }
 interface ProductRow { item_id: string; title: string; thumbnail: string | null; qty_sold: number; revenue: number; }
 
 const MEDALS = ["🥇", "🥈", "🥉"];
@@ -52,12 +52,13 @@ const TVModeVendas = () => {
   const [cycleProgress, setCycleProgress] = useState(0);
 
   const [kpi, setKpi] = useState({ revenue: 0, orders: 0, ticket: 0, visits: 0, conversion: 0 });
-  const [hourly, setHourly] = useState<HourlyRow[]>([]);
+  const [overlaidData, setOverlaidData] = useState<Record<string, any>[]>([]);
+  const [storeNames, setStoreNames] = useState<StoreInfo[]>([]);
   const [topProducts, setTopProducts] = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(false);
 
   const seller = SELLERS[sellerIdx];
-  const sellerColor = STORE_STROKE_COLORS[sellerIdx % STORE_STROKE_COLORS.length];
+  
 
   useEffect(() => { localStorage.setItem(STORAGE_KEY_CYCLE, String(cycleSec)); }, [cycleSec]);
   useEffect(() => { localStorage.setItem(STORAGE_KEY_REFRESH, String(refreshMin)); }, [refreshMin]);
@@ -88,12 +89,14 @@ const TVModeVendas = () => {
     if (!user) return;
     setLoading(true);
     try {
-      const [dailyRes, hourlyRes, productsRes] = await Promise.all([
+      const [dailyRes, hourlyRes, productsRes, storesRes] = await Promise.all([
         supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").eq("seller_id", seller.id).eq("date", today),
-        supabase.from("ml_hourly_cache").select("hour, total_revenue, qty_orders").eq("seller_id", seller.id).eq("date", today).order("hour", { ascending: true }).limit(200),
+        supabase.from("ml_hourly_cache").select("hour, total_revenue, qty_orders, ml_user_id").eq("seller_id", seller.id).eq("date", today).order("hour", { ascending: true }).limit(200),
         supabase.from("ml_product_daily_cache").select("item_id, title, thumbnail, qty_sold, revenue").eq("seller_id", seller.id).eq("date", today).order("revenue", { ascending: false }).limit(50),
+        supabase.from("ml_user_cache").select("ml_user_id, custom_name, nickname").eq("seller_id", seller.id),
       ]);
 
+      // KPIs
       const daily = dailyRes.data || [];
       const revenue = daily.reduce((s, r) => s + Number(r.total_revenue), 0);
       const orders = daily.reduce((s, r) => s + Number(r.qty_orders), 0);
@@ -102,16 +105,32 @@ const TVModeVendas = () => {
       const conversion = visits > 0 ? (orders / visits) * 100 : 0;
       setKpi({ revenue, orders, ticket, visits, conversion });
 
-      const hourlyMap: Record<number, HourlyRow> = {};
-      (hourlyRes.data || []).forEach((r) => {
-        if (!hourlyMap[r.hour]) hourlyMap[r.hour] = { hour: r.hour, revenue: 0, orders: 0 };
-        hourlyMap[r.hour].revenue += Number(r.total_revenue);
-        hourlyMap[r.hour].orders += Number(r.qty_orders);
-      });
-      const fullHourly: HourlyRow[] = [];
-      for (let h = 0; h <= 23; h++) fullHourly.push(hourlyMap[h] || { hour: h, revenue: 0, orders: 0 });
-      setHourly(fullHourly);
+      // Store names
+      const stores: StoreInfo[] = (storesRes.data || []).map((s) => ({
+        ml_user_id: String(s.ml_user_id),
+        name: s.custom_name || s.nickname || String(s.ml_user_id),
+      }));
+      setStoreNames(stores);
 
+      // Build overlaid hourly data per store (like "Todas as Lojas" chart)
+      const hourlyRows = hourlyRes.data || [];
+      const uniqueIds = [...new Set(hourlyRows.map((r) => String(r.ml_user_id)))];
+      const storeNameMap: Record<string, string> = {};
+      for (const st of stores) storeNameMap[st.ml_user_id] = st.name;
+      for (const id of uniqueIds) if (!storeNameMap[id]) storeNameMap[id] = id;
+
+      const buckets = Array.from({ length: 24 }, (_, hour) => {
+        const row: Record<string, any> = { label: `${String(hour).padStart(2, "0")}h`, hour };
+        for (const id of uniqueIds) {
+          const name = storeNameMap[id];
+          const matching = hourlyRows.filter((r) => r.hour === hour && String(r.ml_user_id) === id);
+          row[name] = matching.reduce((s, r) => s + Number(r.total_revenue), 0);
+        }
+        return row;
+      });
+      setOverlaidData(buckets);
+
+      // Products
       const prodMap: Record<string, ProductRow> = {};
       (productsRes.data || []).forEach((r) => {
         if (!prodMap[r.item_id]) prodMap[r.item_id] = { item_id: r.item_id, title: r.title, thumbnail: r.thumbnail, qty_sold: 0, revenue: 0 };
@@ -206,28 +225,31 @@ const TVModeVendas = () => {
       <div className="flex-1 grid grid-cols-3 gap-4 min-h-0">
         {/* Hourly chart */}
         <Card className="col-span-2 flex flex-col">
-          <CardContent className="flex-1 flex flex-col p-4 pb-3">
-            <h2 className="text-sm font-medium text-foreground pb-3">Receita por Hora</h2>
+          <div className="px-4 pt-4 pb-3">
+            <span className="text-sm font-medium text-foreground">Receita por Hora — Todas as Lojas</span>
+          </div>
+          <CardContent className="flex-1 flex flex-col px-4 pb-2 pt-0 min-h-0">
             <div className="flex-1 min-h-0">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={hourly} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="tvRevenueGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={sellerColor} stopOpacity={0.3} />
-                      <stop offset="100%" stopColor={sellerColor} stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
+                <ComposedChart data={overlaidData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                  <XAxis dataKey="hour" tick={{ fontSize: 11 }} interval={2} tickFormatter={(h) => `${String(h).padStart(2, "0")}h`} />
-                  <YAxis yAxisId="revenue" orientation="left" tick={{ fontSize: 10 }} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
-                  <YAxis yAxisId="orders" orientation="right" tick={{ fontSize: 10 }} />
+                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" interval={2} />
+                  <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
                   <RechartsTooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
-                    formatter={(value: number, name: string) => [name === "revenue" ? formatCurrency(value) : value, name === "revenue" ? "Receita" : "Pedidos"]}
-                    labelFormatter={(h) => `${String(h).padStart(2, "0")}:00`}
+                    formatter={(value: number, name: string) => [formatCurrency(Number(value)), name]}
+                    contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", backgroundColor: "hsl(var(--card))", color: "hsl(var(--card-foreground))", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
                   />
-                  <Area yAxisId="revenue" dataKey="revenue" fill="url(#tvRevenueGrad)" stroke={sellerColor} strokeWidth={2} type="monotone" />
-                  <Bar yAxisId="orders" dataKey="orders" fill={`${sellerColor}`} fillOpacity={0.6} radius={[6, 6, 0, 0]} maxBarSize={24} />
+                  {storeNames.map((st, idx) => (
+                    <Line
+                      key={st.ml_user_id}
+                      type="monotone"
+                      dataKey={st.name}
+                      stroke={STORE_STROKE_COLORS[idx % STORE_STROKE_COLORS.length]}
+                      strokeWidth={2}
+                      dot={false}
+                      activeDot={{ r: 4 }}
+                    />
+                  ))}
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
