@@ -233,6 +233,11 @@ export default function Integrations() {
       const userId = user?.id || null;
       const mlUserId = String(tokenData.user_id);
 
+      // Use persisted seller from before OAuth redirect as fallback
+      const sellerId = selectedSeller?.id || localStorage.getItem("ml_oauth_seller_id") || null;
+      // Clean up the persisted seller
+      localStorage.removeItem("ml_oauth_seller_id");
+
       await supabase.from("ml_tokens").upsert(
         {
           user_id: userId,
@@ -241,14 +246,14 @@ export default function Integrations() {
           expires_at: expiresAt,
           ml_user_id: mlUserId,
           token_type: "bearer",
-          seller_id: selectedSeller?.id || null,
+          seller_id: sellerId,
         } as any,
         { onConflict: "user_id,ml_user_id" },
       );
 
       // Sync seller_stores.external_id so the header store filter works.
       // Try to claim an existing ML store that has no external_id yet; otherwise insert a new row.
-      if (selectedSeller?.id) {
+      if (sellerId) {
         const { data: existing } = await supabase
           .from("seller_stores" as any)
           .select("id")
