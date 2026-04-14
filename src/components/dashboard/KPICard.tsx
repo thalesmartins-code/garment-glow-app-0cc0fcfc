@@ -26,7 +26,7 @@ interface KPICardProps {
   valueDecimals?: number;
   progressValue?: number;
   tooltip?: string;
-  size?: "default" | "compact";
+  size?: "default" | "compact" | "tv";
 }
 
 const variantStyles: Record<CardVariant, { icon: string; trend: string; card: string }> = {
@@ -84,11 +84,11 @@ export function KPICard({
 
   return (
     <Card className={cn(styles.card, refreshing && "animate-pulse opacity-60 transition-opacity duration-300", className)}>
-      <CardContent className={cn(size === "compact" ? "p-3" : "p-4", "flex gap-4")}>
+      <CardContent className={cn(size === "compact" ? "p-3" : size === "tv" ? "p-5" : "p-4", "flex gap-4")}>
         <div className="flex-1 min-w-0">
           <span className={cn(
             "font-medium text-muted-foreground inline-flex items-center gap-1",
-            variant === "minimal" ? "text-[11px] uppercase tracking-wider" : size === "compact" ? "text-xs" : "text-sm"
+            variant === "minimal" ? (size === "tv" ? "text-xs uppercase tracking-wider" : "text-[11px] uppercase tracking-wider") : size === "compact" ? "text-xs" : "text-sm"
           )}>
             {title}
             {tooltip && (
@@ -106,7 +106,9 @@ export function KPICard({
           </span>
           <p className={cn(
             "leading-tight",
-            variant === "minimal" ? "text-xl font-bold" : size === "compact" ? "text-lg font-bold" : "text-[1.65rem] font-bold"
+            variant === "minimal"
+              ? (size === "tv" ? "text-3xl font-bold" : "text-xl font-bold")
+              : size === "compact" ? "text-lg font-bold" : "text-[1.65rem] font-bold"
           )}>{displayValue}</p>
           {subtitleNode ? subtitleNode : subtitle ? (
             <span className="text-xs text-muted-foreground">{subtitle}</span>
@@ -150,7 +152,7 @@ export function KPICard({
         {icon && (
           <div className={cn(
             "rounded-xl flex items-center justify-center shrink-0 self-center",
-            size === "compact" ? "w-8 h-8" : "w-10 h-10",
+            size === "compact" ? "w-8 h-8" : size === "tv" ? "w-12 h-12" : "w-10 h-10",
             iconClassName || styles.icon
           )}>
             {icon}
