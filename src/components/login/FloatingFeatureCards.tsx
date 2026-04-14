@@ -167,11 +167,11 @@ function MetasCard() {
 /* ── Container com posicionamento ── */
 export default function FloatingFeatureCards() {
   const cards = [
-    { id: 0, content: <ReputacaoCard />, className: "top-[18%] right-12 w-44", float: floatAnimation(4.5, 0) },
-    { id: 1, content: <MetasCard />, className: "top-[6%] right-[30%] w-52", float: floatAnimation(5, 0.5) },
-    { id: 2, content: <EstoqueCard />, className: "top-[48%] right-10 w-44", float: floatAnimation(4, 1) },
-    { id: 3, content: <MarcasCard />, className: "bottom-[18%] right-8 w-44", float: floatAnimation(5.5, 1.5) },
-    { id: 4, content: <ProdutosCard />, className: "bottom-[8%] left-[52%] w-52", float: floatAnimation(4.8, 0.8) },
+    { id: 0, content: <ReputacaoCard />, className: "top-[18%] right-12 w-44", float: floatAnimation(3, 0) },
+    { id: 1, content: <MetasCard />, className: "top-[6%] right-[30%] w-52", float: floatAnimation(3.4, 0.3) },
+    { id: 2, content: <EstoqueCard />, className: "top-[48%] right-10 w-44", float: floatAnimation(2.8, 0.7) },
+    { id: 3, content: <MarcasCard />, className: "bottom-[18%] right-8 w-44", float: floatAnimation(3.6, 1) },
+    { id: 4, content: <ProdutosCard />, className: "bottom-[8%] left-[52%] w-52", float: floatAnimation(3.2, 0.5) },
   ];
 
   return (
