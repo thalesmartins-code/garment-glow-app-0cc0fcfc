@@ -51,6 +51,7 @@ import {
   Megaphone,
   Truck,
   Monitor,
+  Package,
 } from "lucide-react";
 import {
   ComposedChart,
