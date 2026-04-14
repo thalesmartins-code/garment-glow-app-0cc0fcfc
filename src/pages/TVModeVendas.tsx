@@ -8,10 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  ComposedChart, BarChart, Bar, Cell, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
-  ResponsiveContainer
+  ComposedChart, PieChart, Pie, Cell, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+  ResponsiveContainer, Legend
 } from "recharts";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { STORE_STROKE_COLORS } from "@/config/storeColors";
 
 const SELLERS = [
