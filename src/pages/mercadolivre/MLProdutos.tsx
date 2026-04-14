@@ -695,11 +695,11 @@ export default function MLProdutos() {
                                 </TableCell>
                                 <TableCell className="text-center">
                                   {item.logistic_type ? (
-                                    <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
+                                    <Badge variant="outline" className={`text-[10px] ${
                                       item.logistic_type === "fulfillment" ? "border-blue-500 text-blue-600 bg-blue-50" :
                                       item.logistic_type === "self_service" ? "border-amber-500 text-amber-600 bg-amber-50" :
                                       ""
-                                    }`}>
+                                    } px-[4px] py-px`}>
                                       {item.logistic_type === "fulfillment" ? "Full" :
                                        item.logistic_type === "cross_docking" ? "Coleta" :
                                        item.logistic_type === "self_service" ? "Flex" :
