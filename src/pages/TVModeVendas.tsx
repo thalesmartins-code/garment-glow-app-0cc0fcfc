@@ -46,11 +46,6 @@ const BRAND_COLORS = [
   "hsl(290,50%,55%)", "hsl(15,80%,50%)",
 ];
 
-function extractBrand(title: string): string {
-  const clean = title.replace(/^(Kit|Par|Jogo|Conj\.?)\s+\d*\s*/i, "").trim();
-  const first = clean.split(/\s+/).slice(0, 1).join(" ");
-  return first || "Outros";
-}
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
