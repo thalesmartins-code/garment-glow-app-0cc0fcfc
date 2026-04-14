@@ -84,7 +84,7 @@ export function KPICard({
 
   return (
     <Card className={cn(styles.card, refreshing && "animate-pulse opacity-60 transition-opacity duration-300", className)}>
-      <CardContent className={cn(size === "compact" ? "p-3" : "p-4", "flex gap-4")}>
+      <CardContent className={cn(size === "compact" ? "p-3" : size === "tv" ? "p-5" : "p-4", "flex gap-4")}>
         <div className="flex-1 min-w-0">
           <span className={cn(
             "font-medium text-muted-foreground inline-flex items-center gap-1",
