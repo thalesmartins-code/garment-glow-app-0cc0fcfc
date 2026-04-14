@@ -164,7 +164,7 @@ function SubTabCobertura({ items, coverageMap, coveragePeriod }: Pick<Relatorios
     <div className="space-y-4">
 
       {/* ── KPI row ── */}
-      <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <KPICard title="SKUs analisados" value={String(kpis.total)} variant="minimal" size="compact" icon={<Boxes className="w-4 h-4" />} iconClassName="bg-primary/10 text-primary" />
         <KPICard title="Cobertos (OK)" value={`${kpis.okPct}%`} variant="minimal" size="compact" icon={<CheckCircle2 className="w-4 h-4" />} iconClassName="bg-success/10 text-success" />
         <KPICard title="Média cobertura" value={kpis.avgDays != null ? `${kpis.avgDays}d` : "—"} variant="minimal" size="compact" icon={<Clock className="w-4 h-4" />} iconClassName="bg-accent/10 text-accent" />
