@@ -105,8 +105,9 @@ const TVModeVendas = () => {
   }, [sellerIdx, cycleSec]);
 
   const fetchSellerData = useCallback(async (sellerId: string): Promise<SellerData> => {
-    const [dailyRes, hourlyTodayRes, hourlyYesterdayRes, productsRes, storesRes, tokensRes] = await Promise.all([
+    const [dailyRes, dailyYesterdayRes, hourlyTodayRes, hourlyYesterdayRes, productsRes, storesRes, tokensRes] = await Promise.all([
       supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").eq("seller_id", sellerId).eq("date", today),
+      supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").eq("seller_id", sellerId).eq("date", yesterday),
       supabase.from("ml_hourly_cache").select("hour, total_revenue, ml_user_id").eq("seller_id", sellerId).eq("date", today).order("hour", { ascending: true }).limit(200),
       supabase.from("ml_hourly_cache").select("hour, total_revenue, ml_user_id").eq("seller_id", sellerId).eq("date", yesterday).order("hour", { ascending: true }).limit(200),
       supabase.from("ml_product_daily_cache").select("item_id, title, thumbnail, qty_sold, revenue").eq("seller_id", sellerId).eq("date", today).order("revenue", { ascending: false }).limit(50),
