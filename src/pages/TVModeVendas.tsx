@@ -226,6 +226,8 @@ const TVModeVendas = () => {
     }));
   }, [current.hourlyToday, current.hourlyYesterday]);
 
+  const calcDelta = (cur: number, prev: number) => prev === 0 ? undefined : ((cur - prev) / prev) * 100;
+
   const totalProductRevenue = current.topProducts.reduce((s, p) => s + p.revenue, 0);
   const totalBrandRevenue = current.brandData.reduce((s, b) => s + b.revenue, 0);
 
