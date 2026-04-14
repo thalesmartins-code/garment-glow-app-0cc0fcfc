@@ -307,69 +307,29 @@ export default function Integrations() {
     }
   };
 
-  // Check for existing ML tokens on mount (localStorage + DB fallback + auto-refresh)
+  // Check for existing ML tokens on mount (DB only, no localStorage)
   useEffect(() => {
     const checkTokens = async () => {
-      let tokens: { access_token?: string; refresh_token?: string; expires_at?: number; user_id?: string } | null = null;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data: dbTokens } = await supabase
+          .from("ml_tokens")
+          .select("ml_user_id, expires_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1);
 
-      // First check localStorage
-      const mlTokens = localStorage.getItem("ml_tokens");
-      if (mlTokens) {
-        try { tokens = JSON.parse(mlTokens); } catch (e) { /* ignore */ }
-      }
+        const firstToken = dbTokens?.[0];
+        if (!firstToken) return;
 
-      // Fallback: check DB for ANY token
-      if (!tokens?.access_token) {
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
-          const { data: dbTokens } = await supabase
-            .from("ml_tokens")
-            .select("*")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(1);
-
-          const firstToken = dbTokens?.[0];
-          if (firstToken?.access_token) {
-            const expiresAt = firstToken.expires_at ? new Date(firstToken.expires_at).getTime() : 0;
-            tokens = {
-              access_token: firstToken.access_token,
-              refresh_token: firstToken.refresh_token || undefined,
-              expires_at: expiresAt,
-              user_id: firstToken.ml_user_id || undefined,
-            };
-            localStorage.setItem("ml_tokens", JSON.stringify(tokens));
-          }
-        } catch (e) { /* ignore */ }
-      }
-
-      if (!tokens?.access_token) return;
-
-      const expiresAt = tokens.expires_at || 0;
-      const thirtyMinutes = 30 * 60 * 1000;
-
-      // If expiring within 30 minutes, auto-refresh
-      if (expiresAt > 0 && expiresAt - Date.now() < thirtyMinutes && tokens.refresh_token) {
-        console.log("ML token expiring soon, auto-refreshing...");
-        const success = await refreshMLToken(tokens.refresh_token);
-        if (!success) {
-          updateIntegrationStatus("ml", "expired");
-        }
-        return;
-      }
-
-      if (expiresAt > Date.now()) {
-        updateIntegrationStatus("ml", "connected");
-      } else {
-        // Already expired, try refresh
-        if (tokens.refresh_token) {
-          const success = await refreshMLToken(tokens.refresh_token);
-          if (!success) updateIntegrationStatus("ml", "expired");
+        const expiresAt = firstToken.expires_at ? new Date(firstToken.expires_at).getTime() : 0;
+        if (expiresAt > Date.now()) {
+          updateIntegrationStatus("ml", "connected");
         } else {
           updateIntegrationStatus("ml", "expired");
         }
-      }
+      } catch (e) { /* ignore */ }
     };
     checkTokens();
   }, []);
@@ -507,7 +467,6 @@ export default function Integrations() {
 
   const handleDisconnect = async (integrationId: string) => {
     if (integrationId === "ml") {
-      // Delete ALL ML tokens from DB for this user
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -517,6 +476,7 @@ export default function Integrations() {
       } catch (e) {
         console.error("Failed to delete ML tokens from DB:", e);
       }
+      // Clean up any legacy localStorage
       localStorage.removeItem("ml_tokens");
       localStorage.removeItem("ml_metrics");
       localStorage.removeItem("ml_user");
