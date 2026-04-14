@@ -36,7 +36,7 @@ const formatTime = (d: Date) =>
 const formatDate = (d: Date) =>
   d.toLocaleString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }).replace(/-feira/g, "");
 
-interface HourlyRow { hour: number; revenue: number; orders: number; }
+interface StoreInfo { ml_user_id: string; name: string; }
 interface ProductRow { item_id: string; title: string; thumbnail: string | null; qty_sold: number; revenue: number; }
 
 const MEDALS = ["🥇", "🥈", "🥉"];
