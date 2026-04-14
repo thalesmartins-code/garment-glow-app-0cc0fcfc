@@ -117,18 +117,23 @@ export default function MercadoLivre() {
     [adsDaily, currentFrom, currentTo],
   );
 
-  // ── Sync state to context ──
+  // ── Sync state to context (debounced to avoid re-render cascade) ──
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => {
-    setSalesCache(() => ({
-      daily: allDaily,
-      hourly: allHourly,
-      products: allProductSales,
-      mlUser,
-      connected,
-      lastSyncedAt,
-      accessToken: "server-managed",
-      productStockMap,
-    }));
+    clearTimeout(syncTimerRef.current);
+    syncTimerRef.current = setTimeout(() => {
+      setSalesCache(() => ({
+        daily: allDaily,
+        hourly: allHourly,
+        products: allProductSales,
+        mlUser,
+        connected,
+        lastSyncedAt,
+        accessToken: "server-managed",
+        productStockMap,
+      }));
+    }, 50);
+    return () => clearTimeout(syncTimerRef.current);
   }, [allDaily, allHourly, allProductSales, mlUser, connected, lastSyncedAt, productStockMap, setSalesCache]);
 
   // ── Reset on scope change ──
