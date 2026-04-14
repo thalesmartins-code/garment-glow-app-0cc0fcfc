@@ -1158,6 +1158,12 @@ export default function MercadoLivre() {
         <div className="flex items-center justify-between gap-4">
         <MLPageHeader title="Vendas" lastUpdated={useRealData && lastSyncedAt ? new Date(lastSyncedAt) : null} />
         <div className="flex items-center gap-2 flex-wrap">
+          <Link to="/api/tv" target="_blank">
+            <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
+              <Monitor className="w-3.5 h-3.5" />
+              Modo TV
+            </Button>
+          </Link>
           <TabsList className="h-8">
             <TabsTrigger value="vendas" className="text-xs px-3 h-7">Vendas</TabsTrigger>
             <TabsTrigger value="relatorios" className="text-xs px-3 h-7">Relatórios</TabsTrigger>
