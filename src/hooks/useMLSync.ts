@@ -24,6 +24,10 @@ export function useMLSync(opts: UseMLSyncOptions) {
   const { user } = useAuth();
   const { toast } = useToast();
   const { stores, selectedStore, resolvedMLUserIds } = useMLStore();
+  const invalidate = useInvalidateMLQueries();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { stores, selectedStore, resolvedMLUserIds } = useMLStore();
 
   const [syncing, setSyncing] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(
