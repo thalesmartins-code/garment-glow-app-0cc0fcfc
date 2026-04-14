@@ -435,6 +435,11 @@ export default function Integrations() {
         localStorage.setItem("ml_pkce_code_verifier", data.code_verifier);
       }
 
+      // Persist selected seller so it survives the OAuth redirect
+      if (selectedSeller?.id) {
+        localStorage.setItem("ml_oauth_seller_id", selectedSeller.id);
+      }
+
       window.location.href = data.auth_url;
       return;
     }
