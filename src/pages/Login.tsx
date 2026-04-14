@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import FloatingFeatureCards from "@/components/login/FloatingFeatureCards";
 
 /* ── Mini KPI card for the showcase panel ── */
 function MiniKPI({
