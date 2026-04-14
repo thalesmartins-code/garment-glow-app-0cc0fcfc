@@ -145,8 +145,9 @@ const TVModeVendas = () => {
       });
       setOverlaidData(buckets);
 
-      // Fetch inventory for stock data
+      // Fetch inventory for stock + brand data
       const stockMap: Record<string, number> = {};
+      const brandByItemId: Record<string, string> = {};
       const tokens = (tokensRes.data || []).map((t) => t.access_token).filter(Boolean);
       try {
         for (const token of tokens) {
@@ -156,10 +157,11 @@ const TVModeVendas = () => {
           if (invData?.items) {
             for (const item of invData.items) {
               stockMap[item.id] = (stockMap[item.id] || 0) + (item.available_quantity || 0);
+              if (item.brand) brandByItemId[item.id] = item.brand;
             }
           }
         }
-      } catch { /* stock is optional */ }
+      } catch { /* inventory is optional */ }
 
       // Products + Brands
       const prodMap: Record<string, ProductRow> = {};
@@ -171,13 +173,13 @@ const TVModeVendas = () => {
       const allProds = Object.values(prodMap);
       setTopProducts(allProds.sort((a, b) => b.revenue - a.revenue).slice(0, 10));
 
-      // Brand aggregation — use inventory brand when available, fallback to title extraction
-      const brandMap: Record<string, number> = {};
+      // Brand aggregation — use official brand from inventory API, fallback to "Sem marca"
+      const brandRevMap: Record<string, number> = {};
       allProds.forEach((p) => {
-        const brand = extractBrand(p.title);
-        brandMap[brand] = (brandMap[brand] || 0) + p.revenue;
+        const brand = brandByItemId[p.item_id] || "Sem marca";
+        brandRevMap[brand] = (brandRevMap[brand] || 0) + p.revenue;
       });
-      const sortedBrands = Object.entries(brandMap)
+      const sortedBrands = Object.entries(brandRevMap)
         .map(([name, revenue]) => ({ name, revenue }))
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 10);
