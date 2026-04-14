@@ -225,8 +225,16 @@ const TVModeVendas = () => {
       <div className="flex-1 grid grid-cols-3 gap-4 min-h-0">
         {/* Hourly chart */}
         <Card className="col-span-2 flex flex-col">
-          <div className="px-4 pt-4 pb-3">
+          <div className="px-4 pt-4 pb-3 flex items-center justify-between">
             <span className="text-sm font-medium text-foreground">Receita por Hora — Todas as Lojas</span>
+            <div className="flex items-center gap-4">
+              {storeNames.map((st, idx) => (
+                <div key={st.ml_user_id} className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STORE_STROKE_COLORS[idx % STORE_STROKE_COLORS.length] }} />
+                  <span className="text-xs text-muted-foreground">{st.name}</span>
+                </div>
+              ))}
+            </div>
           </div>
           <CardContent className="flex-1 flex flex-col px-4 pb-2 pt-0 min-h-0">
             <div className="flex-1 min-h-0">
