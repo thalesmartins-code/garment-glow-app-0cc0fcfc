@@ -152,7 +152,7 @@ export function KPICard({
         {icon && (
           <div className={cn(
             "rounded-xl flex items-center justify-center shrink-0 self-center",
-            size === "compact" ? "w-8 h-8" : "w-10 h-10",
+            size === "compact" ? "w-8 h-8" : size === "tv" ? "w-12 h-12" : "w-10 h-10",
             iconClassName || styles.icon
           )}>
             {icon}
