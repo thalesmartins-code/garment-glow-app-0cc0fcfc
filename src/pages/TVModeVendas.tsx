@@ -225,28 +225,31 @@ const TVModeVendas = () => {
       <div className="flex-1 grid grid-cols-3 gap-4 min-h-0">
         {/* Hourly chart */}
         <Card className="col-span-2 flex flex-col">
-          <CardContent className="flex-1 flex flex-col p-4 pb-3">
-            <h2 className="text-sm font-medium text-foreground pb-3">Receita por Hora</h2>
+          <div className="px-4 pt-4 pb-3">
+            <span className="text-sm font-medium text-foreground">Receita por Hora — Todas as Lojas</span>
+          </div>
+          <CardContent className="flex-1 flex flex-col px-4 pb-2 pt-0 min-h-0">
             <div className="flex-1 min-h-0">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={hourly} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="tvRevenueGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={sellerColor} stopOpacity={0.3} />
-                      <stop offset="100%" stopColor={sellerColor} stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
+                <ComposedChart data={overlaidData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                  <XAxis dataKey="hour" tick={{ fontSize: 11 }} interval={2} tickFormatter={(h) => `${String(h).padStart(2, "0")}h`} />
-                  <YAxis yAxisId="revenue" orientation="left" tick={{ fontSize: 10 }} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
-                  <YAxis yAxisId="orders" orientation="right" tick={{ fontSize: 10 }} />
+                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" interval={2} />
+                  <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
                   <RechartsTooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
-                    formatter={(value: number, name: string) => [name === "revenue" ? formatCurrency(value) : value, name === "revenue" ? "Receita" : "Pedidos"]}
-                    labelFormatter={(h) => `${String(h).padStart(2, "0")}:00`}
+                    formatter={(value: number, name: string) => [formatCurrency(Number(value)), name]}
+                    contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", backgroundColor: "hsl(var(--card))", color: "hsl(var(--card-foreground))", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
                   />
-                  <Area yAxisId="revenue" dataKey="revenue" fill="url(#tvRevenueGrad)" stroke={sellerColor} strokeWidth={2} type="monotone" />
-                  <Bar yAxisId="orders" dataKey="orders" fill={`${sellerColor}`} fillOpacity={0.6} radius={[6, 6, 0, 0]} maxBarSize={24} />
+                  {storeNames.map((st, idx) => (
+                    <Line
+                      key={st.ml_user_id}
+                      type="monotone"
+                      dataKey={st.name}
+                      stroke={STORE_STROKE_COLORS[idx % STORE_STROKE_COLORS.length]}
+                      strokeWidth={2}
+                      dot={false}
+                      activeDot={{ r: 4 }}
+                    />
+                  ))}
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
