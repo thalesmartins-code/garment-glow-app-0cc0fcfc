@@ -1,4 +1,4 @@
-import { Bell, Check, ChevronDown, DatabaseZap, History, LogOut, Menu, SlidersHorizontal, Store, Upload, User } from "lucide-react";
+import { Bell, Check, ChevronDown, DatabaseZap, LogOut, Menu, SlidersHorizontal, Store, Upload, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,8 +14,6 @@ import { useSeller } from "@/contexts/SellerContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { MarketplaceSwitcher } from "./MarketplaceSwitcher";
 import { SellerMarketplaceBar } from "./SellerMarketplaceBar";
-import { HistoricalSyncModal } from "@/components/mercadolivre/HistoricalSyncModal";
-import { useMLStoreSafe } from "@/contexts/MLStoreContext";
 
 interface HeaderProps {
   title: string;
@@ -33,7 +31,7 @@ export function Header({ title, subtitle, showSellerSwitcher = true, showMarketp
   const navigate = useNavigate();
   const location = useLocation();
   const isApi = location.pathname.startsWith("/api");
-  const mlStore = useMLStoreSafe();
+  
   const profilePath = isApi ? "/api/perfil" : "/perfil";
   const settingsPath = isApi ? "/api/integracoes" : "/sheets/configuracoes";
   const displayName = profile?.full_name || "Usuário";
@@ -169,13 +167,6 @@ export function Header({ title, subtitle, showSellerSwitcher = true, showMarketp
                   Sincronizações
                 </DropdownMenuItem>
               </>
-            )}
-            {isApi && mlStore?.salesCache.accessToken && (
-              <HistoricalSyncModal
-                accessToken={mlStore.salesCache.accessToken}
-                onSyncComplete={() => mlStore.refresh()}
-                sellerId={mlStore.selectedStore !== "all" ? mlStore.stores.find(s => s.ml_user_id === mlStore.selectedStore)?.seller_id : null}
-              />
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="rounded-lg px-2 py-2 text-sm text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive" onClick={signOut}>
