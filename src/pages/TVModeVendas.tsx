@@ -12,6 +12,7 @@ import {
   ResponsiveContainer
 } from "recharts";
 import { format } from "date-fns";
+import { STORE_STROKE_COLORS } from "@/config/storeColors";
 
 const SELLERS = [
   { id: "8c57110c-77bc-4603-a959-01e965fbea3a", name: "Sandrini", initials: "SA", logo: "https://http2.mlstatic.com/D_NQ_NP_788484-MLA84290244651_052025-F.jpg" },
@@ -56,6 +57,7 @@ const TVModeVendas = () => {
   const [loading, setLoading] = useState(false);
 
   const seller = SELLERS[sellerIdx];
+  const sellerColor = STORE_STROKE_COLORS[sellerIdx % STORE_STROKE_COLORS.length];
 
   useEffect(() => { localStorage.setItem(STORAGE_KEY_CYCLE, String(cycleSec)); }, [cycleSec]);
   useEffect(() => { localStorage.setItem(STORAGE_KEY_REFRESH, String(refreshMin)); }, [refreshMin]);
@@ -211,8 +213,8 @@ const TVModeVendas = () => {
                 <ComposedChart data={hourly} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="tvRevenueGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.02} />
+                      <stop offset="0%" stopColor={sellerColor} stopOpacity={0.3} />
+                      <stop offset="100%" stopColor={sellerColor} stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
@@ -224,8 +226,8 @@ const TVModeVendas = () => {
                     formatter={(value: number, name: string) => [name === "revenue" ? formatCurrency(value) : value, name === "revenue" ? "Receita" : "Pedidos"]}
                     labelFormatter={(h) => `${String(h).padStart(2, "0")}:00`}
                   />
-                  <Area yAxisId="revenue" dataKey="revenue" fill="url(#tvRevenueGrad)" stroke="hsl(var(--primary))" strokeWidth={2} type="monotone" />
-                  <Bar yAxisId="orders" dataKey="orders" fill="hsl(var(--primary) / 0.6)" radius={[6, 6, 0, 0]} maxBarSize={24} />
+                  <Area yAxisId="revenue" dataKey="revenue" fill="url(#tvRevenueGrad)" stroke={sellerColor} strokeWidth={2} type="monotone" />
+                  <Bar yAxisId="orders" dataKey="orders" fill={`${sellerColor}`} fillOpacity={0.6} radius={[6, 6, 0, 0]} maxBarSize={24} />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
