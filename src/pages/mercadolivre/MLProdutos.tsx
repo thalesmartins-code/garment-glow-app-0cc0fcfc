@@ -212,10 +212,12 @@ export default function MLProdutos() {
       .lte("date", toDate);
     if (selectedStore !== "all") {
       query = query.eq("ml_user_id", selectedStore);
+    } else if (sellerId) {
+      query = query.eq("seller_id", sellerId);
     }
     const { data } = await query;
     setRankingRawData(data ?? []);
-  }, [user, rankingPeriod, rankingRange, selectedStore]);
+  }, [user, rankingPeriod, rankingRange, selectedStore, sellerId]);
 
   useEffect(() => { fetchRankingSales(); }, [fetchRankingSales]);
 
