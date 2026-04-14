@@ -606,38 +606,15 @@ export default function MercadoLivre() {
       setSyncing(true);
 
       try {
-        // Determine which tokens to sync
-        let tokensToSync: { access_token: string; ml_user_id: string }[] = [];
+        // Use resolved ML user IDs from scope (tokens are now handled server-side)
+        const mlUserIdsToSync = resolvedMLUserIds;
 
-        if (selectedStore === "all") {
-          // Sync all stores
-          const { data: allTokens } = await supabase
-            .from("ml_tokens")
-            .select("access_token, ml_user_id, expires_at, refresh_token")
-            .eq("user_id", user.id)
-            .not("access_token", "is", null);
-          tokensToSync = (allTokens || [])
-            .filter((t) => t.access_token && t.ml_user_id)
-            .map((t) => ({ access_token: t.access_token!, ml_user_id: t.ml_user_id! }));
-        } else {
-          // Sync specific store
-          const { data: tokenRow } = await supabase
-            .from("ml_tokens")
-            .select("access_token, expires_at, refresh_token, ml_user_id")
-            .eq("user_id", user.id)
-            .eq("ml_user_id", selectedStore)
-            .maybeSingle();
-          if (tokenRow?.access_token) {
-            tokensToSync = [{ access_token: tokenRow.access_token, ml_user_id: tokenRow.ml_user_id! }];
-          }
-        }
-
-        if (tokensToSync.length === 0) {
+        if (mlUserIdsToSync.length === 0) {
           setConnected(false);
           return;
         }
 
-        setCachedAccessToken(tokensToSync[0].access_token);
+        setCachedAccessToken("server-managed");
         setConnected(true);
 
         const today = startOfDay(new Date());
@@ -665,12 +642,12 @@ export default function MercadoLivre() {
 
         // Sync each token in small chunks to avoid API truncation on larger periods
         const totalDays = Math.round((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        const totalChunks = Math.ceil(totalDays / SYNC_CHUNK_DAYS) * tokensToSync.length;
+        const totalChunks = Math.ceil(totalDays / SYNC_CHUNK_DAYS) * mlUserIdsToSync.length;
         let chunksDone = 0;
         setSyncProgress({ current: 0, total: totalChunks });
 
         let lastUserInfo: MLUser | null = null;
-        for (const tokenInfo of tokensToSync) {
+        for (const mlUserId of mlUserIdsToSync) {
           let cursor = new Date(rangeStart);
           while (cursor <= rangeEnd) {
             const chunkStart = new Date(cursor);
@@ -685,11 +662,10 @@ export default function MercadoLivre() {
               "mercado-libre-integration",
               {
                 body: {
-                  access_token: tokenInfo.access_token,
-                  user_id: user.id,
+                  ml_user_id: mlUserId,
                   date_from: chunkFrom,
                   date_to: chunkTo,
-                  seller_id: stores.find(s => s.ml_user_id === tokenInfo.ml_user_id)?.seller_id || null,
+                  seller_id: stores.find(s => s.ml_user_id === mlUserId)?.seller_id || null,
                 },
               },
             );
@@ -728,11 +704,11 @@ export default function MercadoLivre() {
 
         // Log sync to ml_sync_log
         const daysCount = Math.round((rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        for (const tokenInfo of tokensToSync) {
+        for (const mlUserId of mlUserIdsToSync) {
           await supabase.from("ml_sync_log" as any).upsert(
             {
               user_id: user.id,
-              ml_user_id: tokenInfo.ml_user_id,
+              ml_user_id: mlUserId,
               date_from: fromDateStr,
               date_to: toDateStr,
               days_synced: daysCount,
@@ -804,7 +780,7 @@ export default function MercadoLivre() {
       await Promise.all([loadFromCache(), loadHourlyCache(), loadProductCache(fromDate, toDate)]);
 
       supabase.functions
-        .invoke("ml-inventory", { body: { access_token: firstStore.access_token } })
+        .invoke("ml-inventory", { body: { ml_user_id: firstStore.ml_user_id } })
         .then(({ data: invData }) => {
           if (invData?.items) {
             const stockMap: Record<string, number> = {};
