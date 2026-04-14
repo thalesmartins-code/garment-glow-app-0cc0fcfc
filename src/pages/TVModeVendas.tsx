@@ -41,6 +41,7 @@ interface BrandRow { name: string; revenue: number; }
 
 interface SellerData {
   kpi: { revenue: number; orders: number; ticket: number; visits: number; conversion: number };
+  kpiYesterday: { revenue: number; orders: number; ticket: number; visits: number; conversion: number };
   hourlyToday: Record<number, number>;
   hourlyYesterday: Record<number, number>;
   storeNames: StoreInfo[];
@@ -73,6 +74,7 @@ const TVModeVendas = () => {
   const seller = SELLERS[sellerIdx];
   const emptyData: SellerData = {
     kpi: { revenue: 0, orders: 0, ticket: 0, visits: 0, conversion: 0 },
+    kpiYesterday: { revenue: 0, orders: 0, ticket: 0, visits: 0, conversion: 0 },
     hourlyToday: {}, hourlyYesterday: {}, storeNames: [], topProducts: [], brandData: [],
   };
   const current = sellerCache[seller.id] || emptyData;
@@ -103,8 +105,9 @@ const TVModeVendas = () => {
   }, [sellerIdx, cycleSec]);
 
   const fetchSellerData = useCallback(async (sellerId: string): Promise<SellerData> => {
-    const [dailyRes, hourlyTodayRes, hourlyYesterdayRes, productsRes, storesRes, tokensRes] = await Promise.all([
+    const [dailyRes, dailyYesterdayRes, hourlyTodayRes, hourlyYesterdayRes, productsRes, storesRes, tokensRes] = await Promise.all([
       supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").eq("seller_id", sellerId).eq("date", today),
+      supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").eq("seller_id", sellerId).eq("date", yesterday),
       supabase.from("ml_hourly_cache").select("hour, total_revenue, ml_user_id").eq("seller_id", sellerId).eq("date", today).order("hour", { ascending: true }).limit(200),
       supabase.from("ml_hourly_cache").select("hour, total_revenue, ml_user_id").eq("seller_id", sellerId).eq("date", yesterday).order("hour", { ascending: true }).limit(200),
       supabase.from("ml_product_daily_cache").select("item_id, title, thumbnail, qty_sold, revenue").eq("seller_id", sellerId).eq("date", today).order("revenue", { ascending: false }).limit(50),
@@ -118,6 +121,13 @@ const TVModeVendas = () => {
     const visits = daily.reduce((s, r) => s + Number(r.unique_visits), 0);
     const ticket = orders > 0 ? revenue / orders : 0;
     const conversion = visits > 0 ? (orders / visits) * 100 : 0;
+
+    const dailyYest = dailyYesterdayRes.data || [];
+    const yRevenue = dailyYest.reduce((s, r) => s + Number(r.total_revenue), 0);
+    const yOrders = dailyYest.reduce((s, r) => s + Number(r.qty_orders), 0);
+    const yVisits = dailyYest.reduce((s, r) => s + Number(r.unique_visits), 0);
+    const yTicket = yOrders > 0 ? yRevenue / yOrders : 0;
+    const yConversion = yVisits > 0 ? (yOrders / yVisits) * 100 : 0;
 
     const stores: StoreInfo[] = (storesRes.data || []).map((s) => ({
       ml_user_id: String(s.ml_user_id),
@@ -173,6 +183,7 @@ const TVModeVendas = () => {
 
     return {
       kpi: { revenue, orders, ticket, visits, conversion },
+      kpiYesterday: { revenue: yRevenue, orders: yOrders, ticket: yTicket, visits: yVisits, conversion: yConversion },
       hourlyToday, hourlyYesterday, storeNames: stores, topProducts, brandData,
     };
   }, [today, yesterday]);
@@ -214,6 +225,8 @@ const TVModeVendas = () => {
       ontem: current.hourlyYesterday[h] || 0,
     }));
   }, [current.hourlyToday, current.hourlyYesterday]);
+
+  const calcDelta = (cur: number, prev: number) => prev === 0 ? undefined : ((cur - prev) / prev) * 100;
 
   const totalProductRevenue = current.topProducts.reduce((s, p) => s + p.revenue, 0);
   const totalBrandRevenue = current.brandData.reduce((s, b) => s + b.revenue, 0);
@@ -266,11 +279,11 @@ const TVModeVendas = () => {
 
       {/* KPI Row */}
       <div className="grid grid-cols-5 gap-4">
-        <KPICard title="Receita Total" value={formatCurrency(current.kpi.revenue)} rawValue={current.kpi.revenue} valuePrefix="R$ " icon={<DollarSign className="w-6 h-6" />} variant="minimal" iconClassName="bg-accent/10 text-accent" size="tv" refreshing={loading} />
-        <KPICard title="Pedidos" value={String(current.kpi.orders)} rawValue={current.kpi.orders} icon={<ShoppingCart className="w-6 h-6" />} variant="minimal" iconClassName="bg-[hsl(270,70%,50%)]/10 text-[hsl(270,70%,50%)]" size="tv" refreshing={loading} />
-        <KPICard title="Ticket Médio" value={formatCurrency(current.kpi.ticket)} rawValue={current.kpi.ticket} valuePrefix="R$ " icon={<Receipt className="w-6 h-6" />} variant="minimal" iconClassName="bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]" size="tv" refreshing={loading} />
-        <KPICard title="Visitas" value={new Intl.NumberFormat("pt-BR").format(current.kpi.visits)} rawValue={current.kpi.visits} icon={<Eye className="w-6 h-6" />} variant="minimal" iconClassName="bg-accent/10 text-accent" size="tv" refreshing={loading} />
-        <KPICard title="Conversão" value={`${current.kpi.conversion.toFixed(1)}%`} rawValue={current.kpi.conversion} valueSuffix="%" valueDecimals={1} icon={<Percent className="w-6 h-6" />} variant="minimal" iconClassName="bg-success/10 text-success" size="tv" refreshing={loading} />
+        <KPICard title="Receita Total" value={formatCurrency(current.kpi.revenue)} rawValue={current.kpi.revenue} valuePrefix="R$ " icon={<DollarSign className="w-6 h-6" />} variant="minimal" iconClassName="bg-accent/10 text-accent" size="tv" refreshing={loading} delta={calcDelta(current.kpi.revenue, current.kpiYesterday.revenue)} />
+        <KPICard title="Pedidos" value={String(current.kpi.orders)} rawValue={current.kpi.orders} icon={<ShoppingCart className="w-6 h-6" />} variant="minimal" iconClassName="bg-[hsl(270,70%,50%)]/10 text-[hsl(270,70%,50%)]" size="tv" refreshing={loading} delta={calcDelta(current.kpi.orders, current.kpiYesterday.orders)} />
+        <KPICard title="Ticket Médio" value={formatCurrency(current.kpi.ticket)} rawValue={current.kpi.ticket} valuePrefix="R$ " icon={<Receipt className="w-6 h-6" />} variant="minimal" iconClassName="bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]" size="tv" refreshing={loading} delta={calcDelta(current.kpi.ticket, current.kpiYesterday.ticket)} />
+        <KPICard title="Visitas" value={new Intl.NumberFormat("pt-BR").format(current.kpi.visits)} rawValue={current.kpi.visits} icon={<Eye className="w-6 h-6" />} variant="minimal" iconClassName="bg-accent/10 text-accent" size="tv" refreshing={loading} delta={calcDelta(current.kpi.visits, current.kpiYesterday.visits)} />
+        <KPICard title="Conversão" value={`${current.kpi.conversion.toFixed(1)}%`} rawValue={current.kpi.conversion} valueSuffix="%" valueDecimals={1} icon={<Percent className="w-6 h-6" />} variant="minimal" iconClassName="bg-success/10 text-success" size="tv" refreshing={loading} delta={calcDelta(current.kpi.conversion, current.kpiYesterday.conversion)} />
       </div>
 
       {/* Hourly chart — full width */}
@@ -351,7 +364,7 @@ const TVModeVendas = () => {
         {/* Top 5 products */}
         <Card className="flex flex-col min-h-0">
           <div className="px-5 pt-4 pb-3">
-            <span className="text-sm font-medium text-foreground">Top 5 Anúncios</span>
+            <span className="text-sm font-medium text-foreground">Top Anúncios</span>
           </div>
           <CardContent className="flex-1 flex flex-col px-5 pb-2 pt-0 overflow-hidden">
             <div className="flex-1 overflow-auto">
@@ -365,6 +378,7 @@ const TVModeVendas = () => {
                     <col className="w-14" />
                     <col />
                     <col className="w-20" />
+                    <col className="w-20" />
                     <col className="w-24" />
                     <col className="w-16" />
                   </colgroup>
@@ -372,6 +386,7 @@ const TVModeVendas = () => {
                     <tr className="text-muted-foreground border-b border-border/50 text-xs">
                       <th className="text-left py-2.5">#</th>
                       <th className="text-left py-2.5" colSpan={2}>Produto</th>
+                      <th className="text-right py-2.5">Estoque</th>
                       <th className="text-right py-2.5">Vendidos</th>
                       <th className="text-right py-2.5">Receita</th>
                       <th className="text-right py-2.5">% Part.</th>
@@ -394,6 +409,15 @@ const TVModeVendas = () => {
                           </td>
                           <td className="py-2 pl-2 overflow-hidden">
                             <p className="truncate text-foreground text-[15px]">{p.title}</p>
+                          </td>
+                          <td className="text-right text-[15px] whitespace-nowrap">
+                            {p.stock !== null ? (
+                              <span className={p.stock === 0 ? "text-destructive font-semibold" : p.stock <= 5 ? "text-warning font-semibold" : "text-muted-foreground"}>
+                                {p.stock}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/50">—</span>
+                            )}
                           </td>
                           <td className="text-right font-semibold text-foreground text-[15px] whitespace-nowrap">{p.qty_sold} un</td>
                           <td className="text-right font-semibold text-foreground text-[15px] whitespace-nowrap">{formatCurrency(p.revenue)}</td>
