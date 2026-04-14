@@ -144,14 +144,27 @@ const TVModeVendas = () => {
       });
       setOverlaidData(buckets);
 
-      // Products
+      // Products + Brands
       const prodMap: Record<string, ProductRow> = {};
       (productsRes.data || []).forEach((r) => {
         if (!prodMap[r.item_id]) prodMap[r.item_id] = { item_id: r.item_id, title: r.title, thumbnail: r.thumbnail, qty_sold: 0, revenue: 0 };
         prodMap[r.item_id].qty_sold += Number(r.qty_sold);
         prodMap[r.item_id].revenue += Number(r.revenue);
       });
-      setTopProducts(Object.values(prodMap).sort((a, b) => b.revenue - a.revenue).slice(0, 10));
+      const allProds = Object.values(prodMap);
+      setTopProducts(allProds.sort((a, b) => b.revenue - a.revenue).slice(0, 10));
+
+      // Brand aggregation from product titles
+      const brandMap: Record<string, number> = {};
+      allProds.forEach((p) => {
+        const brand = extractBrand(p.title);
+        brandMap[brand] = (brandMap[brand] || 0) + p.revenue;
+      });
+      const sortedBrands = Object.entries(brandMap)
+        .map(([name, revenue]) => ({ name, revenue }))
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 10);
+      setBrandData(sortedBrands);
     } catch (err) {
       console.error("TVModeVendas: fetch error", err);
     } finally {
