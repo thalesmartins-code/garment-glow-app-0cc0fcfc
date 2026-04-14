@@ -215,17 +215,12 @@ export default function Integrations() {
     });
   };
 
-  // Helper: save ML tokens to both localStorage and Supabase (upsert per ml_user_id)
+  // Helper: save ML tokens to Supabase only (no localStorage for tokens)
   const saveMLTokens = async (tokenData: { access_token: string; refresh_token: string; expires_in: number; user_id: string }) => {
     const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
-    const localPayload = {
-      access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token,
-      expires_at: Date.now() + tokenData.expires_in * 1000,
-      user_id: tokenData.user_id,
-    };
     localStorage.removeItem("ml_pkce_code_verifier");
-    localStorage.setItem("ml_tokens", JSON.stringify(localPayload));
+    // Clean up legacy localStorage tokens
+    localStorage.removeItem("ml_tokens");
 
     // Upsert to Supabase ml_tokens table using (user_id, ml_user_id) constraint
     try {
@@ -252,7 +247,6 @@ export default function Integrations() {
       );
 
       // Sync seller_stores.external_id so the header store filter works.
-      // Try to claim an existing ML store that has no external_id yet; otherwise insert a new row.
       if (sellerId) {
         const { data: existing } = await supabase
           .from("seller_stores" as any)
@@ -286,7 +280,6 @@ export default function Integrations() {
               is_active: true,
             });
           }
-          // Refresh SellerContext so header shows updated stores
           await refreshSellers();
         }
       }
