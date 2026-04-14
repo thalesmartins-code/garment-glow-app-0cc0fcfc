@@ -88,7 +88,7 @@ export function KPICard({
         <div className="flex-1 min-w-0">
           <span className={cn(
             "font-medium text-muted-foreground inline-flex items-center gap-1",
-            variant === "minimal" ? "text-[11px] uppercase tracking-wider" : size === "compact" ? "text-xs" : "text-sm"
+            variant === "minimal" ? (size === "tv" ? "text-xs uppercase tracking-wider" : "text-[11px] uppercase tracking-wider") : size === "compact" ? "text-xs" : "text-sm"
           )}>
             {title}
             {tooltip && (
