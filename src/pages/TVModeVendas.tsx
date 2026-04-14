@@ -112,7 +112,7 @@ const TVModeVendas = () => {
       supabase.from("ml_hourly_cache").select("hour, total_revenue, ml_user_id").eq("seller_id", sellerId).eq("date", yesterday).order("hour", { ascending: true }).limit(200),
       supabase.from("ml_product_daily_cache").select("item_id, title, thumbnail, qty_sold, revenue").eq("seller_id", sellerId).eq("date", today).order("revenue", { ascending: false }).limit(50),
       supabase.from("ml_user_cache").select("ml_user_id, custom_name, nickname").eq("seller_id", sellerId),
-      supabase.from("ml_tokens").select("access_token").eq("seller_id", sellerId),
+      supabase.from("ml_tokens").select("ml_user_id").eq("seller_id", sellerId).not("access_token", "is", null),
     ]);
 
     const daily = dailyRes.data || [];
@@ -144,13 +144,13 @@ const TVModeVendas = () => {
       hourlyYesterday[r.hour] = (hourlyYesterday[r.hour] || 0) + Number(r.total_revenue);
     });
 
-    // Inventory (stock + brand)
+    // Inventory (stock + brand) — use ml_user_id instead of access_token
     const stockMap: Record<string, number> = {};
     const brandByItemId: Record<string, string> = {};
-    const tokens = (tokensRes.data || []).map((t) => t.access_token).filter(Boolean);
+    const mlUserIds = (tokensRes.data || []).map((t) => t.ml_user_id).filter(Boolean);
     try {
-      for (const token of tokens) {
-        const { data: invData } = await supabase.functions.invoke("ml-inventory", { body: { access_token: token } });
+      for (const mlUserId of mlUserIds) {
+        const { data: invData } = await supabase.functions.invoke("ml-inventory", { body: { ml_user_id: mlUserId } });
         if (invData?.items) {
           for (const item of invData.items) {
             stockMap[item.id] = (stockMap[item.id] || 0) + (item.available_quantity || 0);
