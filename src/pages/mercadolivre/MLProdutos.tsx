@@ -154,7 +154,7 @@ import { Progress } from "@/components/ui/progress";
 
 export default function MLProdutos() {
   const { items, loading, hasToken, lastUpdated, refresh } = useMLInventory();
-  const { selectedStore, stores } = useMLStore();
+  const { selectedStore, stores, sellerId, resolvedMLUserIds, scopeKey } = useMLStore();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [stockFilter, setStockFilter] = useState<StockFilter>("all");
@@ -212,10 +212,12 @@ export default function MLProdutos() {
       .lte("date", toDate);
     if (selectedStore !== "all") {
       query = query.eq("ml_user_id", selectedStore);
+    } else if (sellerId) {
+      query = query.eq("seller_id", sellerId);
     }
     const { data } = await query;
     setRankingRawData(data ?? []);
-  }, [user, rankingPeriod, rankingRange, selectedStore]);
+  }, [user, rankingPeriod, rankingRange, selectedStore, sellerId]);
 
   useEffect(() => { fetchRankingSales(); }, [fetchRankingSales]);
 
