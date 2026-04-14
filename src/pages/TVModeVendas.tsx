@@ -103,11 +103,12 @@ const TVModeVendas = () => {
     if (!user) return;
     setLoading(true);
     try {
-      const [dailyRes, hourlyRes, productsRes, storesRes] = await Promise.all([
+      const [dailyRes, hourlyRes, productsRes, storesRes, tokensRes] = await Promise.all([
         supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").eq("seller_id", seller.id).eq("date", today),
         supabase.from("ml_hourly_cache").select("hour, total_revenue, qty_orders, ml_user_id").eq("seller_id", seller.id).eq("date", today).order("hour", { ascending: true }).limit(200),
         supabase.from("ml_product_daily_cache").select("item_id, title, thumbnail, qty_sold, revenue").eq("seller_id", seller.id).eq("date", today).order("revenue", { ascending: false }).limit(50),
         supabase.from("ml_user_cache").select("ml_user_id, custom_name, nickname").eq("seller_id", seller.id),
+        supabase.from("ml_tokens").select("access_token").eq("seller_id", seller.id),
       ]);
 
       // KPIs
@@ -126,7 +127,7 @@ const TVModeVendas = () => {
       }));
       setStoreNames(stores);
 
-      // Build overlaid hourly data per store (like "Todas as Lojas" chart)
+      // Build overlaid hourly data per store
       const hourlyRows = hourlyRes.data || [];
       const uniqueIds = [...new Set(hourlyRows.map((r) => String(r.ml_user_id)))];
       const storeNameMap: Record<string, string> = {};
@@ -144,17 +145,33 @@ const TVModeVendas = () => {
       });
       setOverlaidData(buckets);
 
+      // Fetch inventory for stock data
+      const stockMap: Record<string, number> = {};
+      const tokens = (tokensRes.data || []).map((t) => t.access_token).filter(Boolean);
+      try {
+        for (const token of tokens) {
+          const { data: invData } = await supabase.functions.invoke("ml-inventory", {
+            body: { access_token: token },
+          });
+          if (invData?.items) {
+            for (const item of invData.items) {
+              stockMap[item.id] = (stockMap[item.id] || 0) + (item.available_quantity || 0);
+            }
+          }
+        }
+      } catch { /* stock is optional */ }
+
       // Products + Brands
       const prodMap: Record<string, ProductRow> = {};
       (productsRes.data || []).forEach((r) => {
-        if (!prodMap[r.item_id]) prodMap[r.item_id] = { item_id: r.item_id, title: r.title, thumbnail: r.thumbnail, qty_sold: 0, revenue: 0 };
+        if (!prodMap[r.item_id]) prodMap[r.item_id] = { item_id: r.item_id, title: r.title, thumbnail: r.thumbnail, qty_sold: 0, revenue: 0, stock: stockMap[r.item_id] ?? null };
         prodMap[r.item_id].qty_sold += Number(r.qty_sold);
         prodMap[r.item_id].revenue += Number(r.revenue);
       });
       const allProds = Object.values(prodMap);
       setTopProducts(allProds.sort((a, b) => b.revenue - a.revenue).slice(0, 10));
 
-      // Brand aggregation from product titles
+      // Brand aggregation — use inventory brand when available, fallback to title extraction
       const brandMap: Record<string, number> = {};
       allProds.forEach((p) => {
         const brand = extractBrand(p.title);
