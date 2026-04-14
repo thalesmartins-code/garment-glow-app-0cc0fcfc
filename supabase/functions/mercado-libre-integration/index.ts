@@ -324,8 +324,10 @@ serve(async (req) => {
       const hour = brt?.hour ?? null;
       const status = order.status;
 
-      // Count units sold: each distinct product in the order = 1 sale (ML definition)
-      const orderUnits = Math.max((order.order_items || []).length, 1);
+      // Count units sold: sum of item quantities (e.g., 3 units of same product = 3)
+      const orderUnits = (order.order_items || []).reduce(
+        (sum: number, item: any) => sum + (Number(item.quantity) || 1), 0
+      ) || 1;
 
       totalRevenue += amount;
       totalUnitsSold += orderUnits;
