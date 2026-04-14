@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DollarSign, ShoppingCart, Receipt, Eye, Percent, Maximize2, Settings2 } from "lucide-react";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,26 +6,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   ComposedChart, Bar, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   ResponsiveContainer
 } from "recharts";
 import { format } from "date-fns";
 
-// ─── Seller definitions ───
 const SELLERS = [
-  {
-    id: "8c57110c-77bc-4603-a959-01e965fbea3a",
-    name: "Sandrini",
-    initials: "SA",
-    logo: "https://http2.mlstatic.com/D_NQ_NP_788484-MLA84290244651_052025-F.jpg",
-  },
-  {
-    id: "52a7ed04-0d06-4ef5-ae6c-4f3e08a12867",
-    name: "Buy Clock",
-    initials: "BC",
-    logo: "https://http2.mlstatic.com/D_NQ_NP_943366-MLA91442251991_092025-F.jpg",
-  },
+  { id: "8c57110c-77bc-4603-a959-01e965fbea3a", name: "Sandrini", initials: "SA", logo: "https://http2.mlstatic.com/D_NQ_NP_788484-MLA84290244651_052025-F.jpg" },
+  { id: "52a7ed04-0d06-4ef5-ae6c-4f3e08a12867", name: "Buy Clock", initials: "BC", logo: "https://http2.mlstatic.com/D_NQ_NP_943366-MLA91442251991_092025-F.jpg" },
 ];
 
 const STORAGE_KEY_CYCLE = "tv_vendas_cycle_s";
@@ -48,6 +38,8 @@ const formatDate = (d: Date) =>
 interface HourlyRow { hour: number; revenue: number; orders: number; }
 interface ProductRow { item_id: string; title: string; thumbnail: string | null; qty_sold: number; revenue: number; }
 
+const MEDALS = ["🥇", "🥈", "🥉"];
+
 const TVModeVendas = () => {
   const { user } = useAuth();
   const today = format(new Date(), "yyyy-MM-dd");
@@ -58,7 +50,6 @@ const TVModeVendas = () => {
   const [clock, setClock] = useState(new Date());
   const [cycleProgress, setCycleProgress] = useState(0);
 
-  // Data state
   const [kpi, setKpi] = useState({ revenue: 0, orders: 0, ticket: 0, visits: 0, conversion: 0 });
   const [hourly, setHourly] = useState<HourlyRow[]>([]);
   const [topProducts, setTopProducts] = useState<ProductRow[]>([]);
@@ -66,25 +57,19 @@ const TVModeVendas = () => {
 
   const seller = SELLERS[sellerIdx];
 
-  // Persist settings
   useEffect(() => { localStorage.setItem(STORAGE_KEY_CYCLE, String(cycleSec)); }, [cycleSec]);
   useEffect(() => { localStorage.setItem(STORAGE_KEY_REFRESH, String(refreshMin)); }, [refreshMin]);
 
-  // Clock
   useEffect(() => {
     const i = setInterval(() => setClock(new Date()), 1000);
     return () => clearInterval(i);
   }, []);
 
-  // Cycle sellers
   useEffect(() => {
-    const i = setInterval(() => {
-      setSellerIdx((prev) => (prev + 1) % SELLERS.length);
-    }, cycleSec * 1000);
+    const i = setInterval(() => setSellerIdx((prev) => (prev + 1) % SELLERS.length), cycleSec * 1000);
     return () => clearInterval(i);
   }, [cycleSec]);
 
-  // Progress bar
   useEffect(() => {
     setCycleProgress(0);
     const ms = cycleSec * 1000;
@@ -97,34 +82,16 @@ const TVModeVendas = () => {
     return () => clearInterval(i);
   }, [sellerIdx, cycleSec]);
 
-  // Fetch data
   const fetchData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
       const [dailyRes, hourlyRes, productsRes] = await Promise.all([
-        supabase
-          .from("ml_daily_cache")
-          .select("total_revenue, qty_orders, unique_visits, units_sold")
-          .eq("seller_id", seller.id)
-          .eq("date", today),
-        supabase
-          .from("ml_hourly_cache")
-          .select("hour, total_revenue, qty_orders")
-          .eq("seller_id", seller.id)
-          .eq("date", today)
-          .order("hour", { ascending: true })
-          .limit(200),
-        supabase
-          .from("ml_product_daily_cache")
-          .select("item_id, title, thumbnail, qty_sold, revenue")
-          .eq("seller_id", seller.id)
-          .eq("date", today)
-          .order("revenue", { ascending: false })
-          .limit(50),
+        supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").eq("seller_id", seller.id).eq("date", today),
+        supabase.from("ml_hourly_cache").select("hour, total_revenue, qty_orders").eq("seller_id", seller.id).eq("date", today).order("hour", { ascending: true }).limit(200),
+        supabase.from("ml_product_daily_cache").select("item_id, title, thumbnail, qty_sold, revenue").eq("seller_id", seller.id).eq("date", today).order("revenue", { ascending: false }).limit(50),
       ]);
 
-      // Aggregate daily across all stores
       const daily = dailyRes.data || [];
       const revenue = daily.reduce((s, r) => s + Number(r.total_revenue), 0);
       const orders = daily.reduce((s, r) => s + Number(r.qty_orders), 0);
@@ -133,31 +100,23 @@ const TVModeVendas = () => {
       const conversion = visits > 0 ? (orders / visits) * 100 : 0;
       setKpi({ revenue, orders, ticket, visits, conversion });
 
-      // Aggregate hourly by hour
       const hourlyMap: Record<number, HourlyRow> = {};
       (hourlyRes.data || []).forEach((r) => {
         if (!hourlyMap[r.hour]) hourlyMap[r.hour] = { hour: r.hour, revenue: 0, orders: 0 };
         hourlyMap[r.hour].revenue += Number(r.total_revenue);
         hourlyMap[r.hour].orders += Number(r.qty_orders);
       });
-      // Fill 0-23
       const fullHourly: HourlyRow[] = [];
-      for (let h = 0; h <= 23; h++) {
-        fullHourly.push(hourlyMap[h] || { hour: h, revenue: 0, orders: 0 });
-      }
+      for (let h = 0; h <= 23; h++) fullHourly.push(hourlyMap[h] || { hour: h, revenue: 0, orders: 0 });
       setHourly(fullHourly);
 
-      // Aggregate products by item_id
       const prodMap: Record<string, ProductRow> = {};
       (productsRes.data || []).forEach((r) => {
-        if (!prodMap[r.item_id]) {
-          prodMap[r.item_id] = { item_id: r.item_id, title: r.title, thumbnail: r.thumbnail, qty_sold: 0, revenue: 0 };
-        }
+        if (!prodMap[r.item_id]) prodMap[r.item_id] = { item_id: r.item_id, title: r.title, thumbnail: r.thumbnail, qty_sold: 0, revenue: 0 };
         prodMap[r.item_id].qty_sold += Number(r.qty_sold);
         prodMap[r.item_id].revenue += Number(r.revenue);
       });
-      const sorted = Object.values(prodMap).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
-      setTopProducts(sorted);
+      setTopProducts(Object.values(prodMap).sort((a, b) => b.revenue - a.revenue).slice(0, 8));
     } catch (err) {
       console.error("TVModeVendas: fetch error", err);
     } finally {
@@ -167,7 +126,6 @@ const TVModeVendas = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Auto-refresh
   useEffect(() => {
     const i = setInterval(fetchData, refreshMin * 60_000);
     return () => clearInterval(i);
@@ -182,7 +140,7 @@ const TVModeVendas = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6 flex flex-col gap-4 select-none">
-      {/* ─── Top bar ─── */}
+      {/* Top bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-5">
           <div className="flex items-center gap-3">
@@ -194,23 +152,15 @@ const TVModeVendas = () => {
           </div>
           <div className="flex items-center gap-2">
             {SELLERS.map((s, idx) => (
-              <div
-                key={s.id}
-                className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all duration-500 ${
-                  idx === sellerIdx
-                    ? "bg-primary text-primary-foreground scale-105"
-                    : "bg-muted text-muted-foreground scale-95 opacity-50"
-                }`}
-              >
+              <div key={s.id} className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all duration-500 ${idx === sellerIdx ? "bg-primary text-primary-foreground scale-105" : "bg-muted text-muted-foreground scale-95 opacity-50"}`}>
                 {s.initials}
               </div>
             ))}
           </div>
         </div>
-
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <div className="text-2xl font-bold tabular-nums">{formatTime(clock)}</div>
+            <div className="text-2xl font-bold">{formatTime(clock)}</div>
             <div className="text-xs text-muted-foreground capitalize">{formatDate(clock)}</div>
           </div>
           <Popover>
@@ -236,130 +186,104 @@ const TVModeVendas = () => {
         </div>
       </div>
 
-      {/* ─── Progress bar ─── */}
+      {/* Progress bar */}
       <div className="w-full h-0.5 bg-muted rounded-full overflow-hidden">
         <div className="h-full bg-primary transition-all duration-100 ease-linear" style={{ width: `${cycleProgress}%` }} />
       </div>
 
-      {/* ─── KPI Row ─── */}
+      {/* KPI Row */}
       <div className="grid grid-cols-5 gap-4">
-        <KPICard
-          title="Receita Total"
-          value={formatCurrency(kpi.revenue)}
-          rawValue={kpi.revenue}
-          valuePrefix="R$ "
-          icon={<DollarSign className="w-5 h-5" />}
-          variant="purple"
-          size="compact"
-          refreshing={loading}
-        />
-        <KPICard
-          title="Pedidos"
-          value={String(kpi.orders)}
-          rawValue={kpi.orders}
-          icon={<ShoppingCart className="w-5 h-5" />}
-          variant="info"
-          size="compact"
-          refreshing={loading}
-        />
-        <KPICard
-          title="Ticket Médio"
-          value={formatCurrency(kpi.ticket)}
-          rawValue={kpi.ticket}
-          valuePrefix="R$ "
-          icon={<Receipt className="w-5 h-5" />}
-          variant="orange"
-          size="compact"
-          refreshing={loading}
-        />
-        <KPICard
-          title="Visitas"
-          value={new Intl.NumberFormat("pt-BR").format(kpi.visits)}
-          rawValue={kpi.visits}
-          icon={<Eye className="w-5 h-5" />}
-          variant="neutral"
-          size="compact"
-          refreshing={loading}
-        />
-        <KPICard
-          title="Conversão"
-          value={`${kpi.conversion.toFixed(1)}%`}
-          rawValue={kpi.conversion}
-          valueSuffix="%"
-          valueDecimals={1}
-          icon={<Percent className="w-5 h-5" />}
-          variant={kpi.conversion >= 5 ? "success" : kpi.conversion >= 2 ? "warning" : "danger"}
-          size="compact"
-          refreshing={loading}
-        />
+        <KPICard title="Receita Total" value={formatCurrency(kpi.revenue)} rawValue={kpi.revenue} valuePrefix="R$ " icon={<DollarSign className="w-5 h-5" />} variant="minimal" size="compact" refreshing={loading} />
+        <KPICard title="Pedidos" value={String(kpi.orders)} rawValue={kpi.orders} icon={<ShoppingCart className="w-5 h-5" />} variant="minimal" size="compact" refreshing={loading} />
+        <KPICard title="Ticket Médio" value={formatCurrency(kpi.ticket)} rawValue={kpi.ticket} valuePrefix="R$ " icon={<Receipt className="w-5 h-5" />} variant="minimal" size="compact" refreshing={loading} />
+        <KPICard title="Visitas" value={new Intl.NumberFormat("pt-BR").format(kpi.visits)} rawValue={kpi.visits} icon={<Eye className="w-5 h-5" />} variant="minimal" size="compact" refreshing={loading} />
+        <KPICard title="Conversão" value={`${kpi.conversion.toFixed(1)}%`} rawValue={kpi.conversion} valueSuffix="%" valueDecimals={1} icon={<Percent className="w-5 h-5" />} variant="minimal" size="compact" refreshing={loading} />
       </div>
 
-      {/* ─── Main content: Chart + Top Products ─── */}
+      {/* Main content: Chart + Top Products */}
       <div className="flex-1 grid grid-cols-3 gap-4 min-h-0">
         {/* Hourly chart */}
-        <div className="col-span-2 bg-card rounded-xl p-4 flex flex-col">
-          <h2 className="text-sm font-medium text-muted-foreground mb-3">Receita por Hora</h2>
-          <div className="flex-1 min-h-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={hourly} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                <XAxis dataKey="hour" tick={{ fontSize: 11 }} tickFormatter={(h) => `${String(h).padStart(2, "0")}h`} />
-                <YAxis yAxisId="revenue" orientation="left" tick={{ fontSize: 10 }} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
-                <YAxis yAxisId="orders" orientation="right" tick={{ fontSize: 10 }} />
-                <RechartsTooltip
-                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
-                  formatter={(value: number, name: string) => [
-                    name === "revenue" ? formatCurrency(value) : value,
-                    name === "revenue" ? "Receita" : "Pedidos",
-                  ]}
-                  labelFormatter={(h) => `${String(h).padStart(2, "0")}:00`}
-                />
-                <Area yAxisId="revenue" dataKey="revenue" fill="hsl(var(--primary) / 0.15)" stroke="hsl(var(--primary))" strokeWidth={2} type="monotone" />
-                <Bar yAxisId="orders" dataKey="orders" fill="hsl(var(--primary) / 0.6)" radius={[4, 4, 0, 0]} barSize={14} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <Card className="col-span-2 flex flex-col">
+          <CardContent className="flex-1 flex flex-col p-4 pb-3">
+            <h2 className="text-sm font-medium text-foreground pb-3">Receita por Hora</h2>
+            <div className="flex-1 min-h-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={hourly} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="tvRevenueGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis dataKey="hour" tick={{ fontSize: 11 }} interval={2} tickFormatter={(h) => `${String(h).padStart(2, "0")}h`} />
+                  <YAxis yAxisId="revenue" orientation="left" tick={{ fontSize: 10 }} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+                  <YAxis yAxisId="orders" orientation="right" tick={{ fontSize: 10 }} />
+                  <RechartsTooltip
+                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+                    formatter={(value: number, name: string) => [name === "revenue" ? formatCurrency(value) : value, name === "revenue" ? "Receita" : "Pedidos"]}
+                    labelFormatter={(h) => `${String(h).padStart(2, "0")}:00`}
+                  />
+                  <Area yAxisId="revenue" dataKey="revenue" fill="url(#tvRevenueGrad)" stroke="hsl(var(--primary))" strokeWidth={2} type="monotone" />
+                  <Bar yAxisId="orders" dataKey="orders" fill="hsl(var(--primary) / 0.6)" radius={[6, 6, 0, 0]} maxBarSize={24} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Top products */}
-        <div className="col-span-1 bg-card rounded-xl p-4 flex flex-col">
-          <h2 className="text-sm font-medium text-muted-foreground mb-3">Top 5 Anúncios</h2>
-          <div className="flex-1 overflow-auto space-y-2">
-            {topProducts.length === 0 && !loading && (
-              <p className="text-xs text-muted-foreground text-center py-8">Sem dados para hoje</p>
-            )}
-            {topProducts.map((p, idx) => {
-              const share = totalProductRevenue > 0 ? (p.revenue / totalProductRevenue) * 100 : 0;
-              return (
-                <div key={p.item_id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                  <span className="text-lg font-bold text-muted-foreground w-6 text-center">{idx + 1}</span>
-                  {p.thumbnail ? (
-                    <img src={p.thumbnail} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-lg bg-muted shrink-0" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{p.title}</p>
-                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                      <span>{p.qty_sold} un.</span>
-                      <span>·</span>
-                      <span>{formatCurrency(p.revenue)}</span>
-                      <span>·</span>
-                      <span>{share.toFixed(1)}%</span>
-                    </div>
-                    {/* Mini progress */}
-                    <div className="mt-1 h-1 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full rounded-full bg-primary/60" style={{ width: `${Math.min(share, 100)}%` }} />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <Card className="col-span-1 flex flex-col">
+          <CardContent className="flex-1 flex flex-col p-4 pb-3 overflow-hidden">
+            <h2 className="text-sm font-medium text-foreground pb-3">Top 8 Anúncios</h2>
+            <div className="flex-1 overflow-auto">
+              {topProducts.length === 0 && !loading && (
+                <p className="text-xs text-muted-foreground text-center py-8">Sem dados para hoje</p>
+              )}
+              {topProducts.length > 0 && (
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-muted-foreground border-b border-border/50">
+                      <th className="text-left py-1.5 w-6">#</th>
+                      <th className="text-left py-1.5 pl-1" colSpan={2}>Produto</th>
+                      <th className="text-right py-1.5">Vendidos</th>
+                      <th className="text-right py-1.5">Receita</th>
+                      <th className="text-right py-1.5">% Part.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topProducts.map((p, idx) => {
+                      const share = totalProductRevenue > 0 ? (p.revenue / totalProductRevenue) * 100 : 0;
+                      return (
+                        <tr key={p.item_id} className="border-b border-border/30 h-10">
+                          <td className="text-center font-bold text-muted-foreground">
+                            {idx < 3 ? MEDALS[idx] : idx + 1}
+                          </td>
+                          <td className="py-1 pl-1 w-8">
+                            {p.thumbnail ? (
+                              <img src={p.thumbnail} alt="" className="w-7 h-7 rounded object-cover" />
+                            ) : (
+                              <div className="w-7 h-7 rounded bg-muted" />
+                            )}
+                          </td>
+                          <td className="py-1 pl-1.5 max-w-[120px]">
+                            <p className="truncate text-foreground">{p.title}</p>
+                          </td>
+                          <td className="text-right font-semibold text-foreground">{p.qty_sold} un</td>
+                          <td className="text-right font-semibold text-foreground">{formatCurrency(p.revenue)}</td>
+                          <td className="text-right text-muted-foreground">{share.toFixed(1)}%</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* ─── Footer ─── */}
+      {/* Footer */}
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>Atualização a cada {refreshMin} min · Alternância a cada {cycleSec}s</span>
         <span>Última atualização: {formatTime(clock)}</span>
