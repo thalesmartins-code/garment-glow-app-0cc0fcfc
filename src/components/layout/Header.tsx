@@ -152,10 +152,12 @@ export function Header({ title, subtitle, showSellerSwitcher = true, showMarketp
               <User className="mr-2 h-4 w-4 text-muted-foreground" />
               Perfil
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate(settingsPath)} className="rounded-lg px-2 py-2 text-sm hover:bg-muted focus:bg-muted">
-              <Settings className="mr-2 h-4 w-4 text-muted-foreground" />
-              Gestão de Usuários
-            </DropdownMenuItem>
+            {role === "admin" && (
+              <DropdownMenuItem onClick={() => navigate(settingsPath)} className="rounded-lg px-2 py-2 text-sm hover:bg-muted focus:bg-muted">
+                <Settings className="mr-2 h-4 w-4 text-muted-foreground" />
+                Gestão de Usuários
+              </DropdownMenuItem>
+            )}
             {isApi && (
               <>
                 <DropdownMenuItem onClick={() => navigate("/api/importacao")} className="rounded-lg px-2 py-2 text-sm hover:bg-muted focus:bg-muted">
