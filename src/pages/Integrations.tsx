@@ -551,21 +551,20 @@ export default function Integrations() {
   const handleSyncML = async () => {
     setSyncing(true);
     try {
-      const tokens = localStorage.getItem("ml_tokens");
-      if (!tokens) {
+      // Use ml_user_id from MLStoreContext instead of access_token from localStorage
+      const firstStore = mlStores[0];
+      if (!firstStore) {
         toast({
           title: "Erro",
-          description: "Nenhum token do Mercado Livre encontrado. Conecte-se primeiro.",
+          description: "Nenhuma conta do Mercado Livre conectada. Conecte-se primeiro.",
           variant: "destructive",
         });
         return;
       }
 
-      const { access_token } = JSON.parse(tokens);
-
       const today = new Date().toISOString().substring(0, 10);
       const { data, error } = await supabase.functions.invoke("mercado-libre-integration", {
-        body: { access_token, date_from: today, date_to: today, seller_id: selectedSeller?.id || null },
+        body: { ml_user_id: firstStore.ml_user_id, date_from: today, date_to: today, seller_id: selectedSeller?.id || null },
       });
 
       if (error || !data?.success) {
@@ -577,8 +576,6 @@ export default function Integrations() {
       } else {
         setMlMetrics(data.metrics);
         setMlUser(data.user);
-        localStorage.setItem("ml_metrics", JSON.stringify(data.metrics));
-        localStorage.setItem("ml_user", JSON.stringify(data.user));
         toast({
           title: "Sincronização concluída!",
           description: `Dados do Mercado Livre importados com sucesso.`,
