@@ -5,7 +5,6 @@ import { useSeller } from "@/contexts/SellerContext";
 
 export interface ScopeToken {
   ml_user_id: string;
-  access_token: string;
   seller_id: string | null;
 }
 
@@ -60,17 +59,16 @@ export function HeaderScopeProvider({ children }: { children: ReactNode }) {
     try {
       const { data } = await supabase
         .from("ml_tokens")
-        .select("ml_user_id, access_token, seller_id")
+        .select("ml_user_id, seller_id")
         .eq("user_id", user.id)
         .eq("seller_id", sellerId)
         .not("access_token", "is", null);
 
       setTokens(
         (data || [])
-          .filter((t) => t.ml_user_id && t.access_token)
+          .filter((t) => t.ml_user_id)
           .map((t) => ({
             ml_user_id: t.ml_user_id!,
-            access_token: t.access_token!,
             seller_id: t.seller_id,
           }))
       );

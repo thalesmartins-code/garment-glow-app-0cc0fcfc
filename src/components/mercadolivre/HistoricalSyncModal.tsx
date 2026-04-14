@@ -18,7 +18,6 @@ interface ImportSummary {
 }
 
 interface Props {
-  accessToken: string | null;
   onSyncComplete: () => void;
   mlUserId?: string;
   sellerId?: string | null;
@@ -51,7 +50,7 @@ function lastDayOfMonth(year: number, month: number): Date {
   return new Date(year, month + 1, 0);
 }
 
-export function HistoricalSyncModal({ accessToken, mlUserId, onSyncComplete, sellerId }: Props) {
+export function HistoricalSyncModal({ mlUserId, onSyncComplete, sellerId }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -91,7 +90,7 @@ export function HistoricalSyncModal({ accessToken, mlUserId, onSyncComplete, sel
   };
 
   const handleSync = async () => {
-    if (!fromMonth || !toMonth || !accessToken || !user) return;
+    if (!fromMonth || !toMonth || !mlUserId || !user) return;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -144,8 +143,7 @@ export function HistoricalSyncModal({ accessToken, mlUserId, onSyncComplete, sel
 
         const { data, error } = await supabase.functions.invoke("mercado-libre-integration", {
           body: {
-            access_token: accessToken,
-            user_id: user.id,
+            ml_user_id: mlUserId,
             date_from: chunk.date_from,
             date_to: chunk.date_to,
             seller_id: sellerId || null,
