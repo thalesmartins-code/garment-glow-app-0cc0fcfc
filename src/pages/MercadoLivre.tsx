@@ -1,4 +1,5 @@
-﻿import { useEffect, useState, useCallback, useRef, useMemo, lazy, Suspense } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo, lazy, Suspense } from "react";
+import { STORE_STROKE_COLORS as STORE_STROKE_COLORS_SHARED } from "@/config/storeColors";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -1363,7 +1364,7 @@ export default function MercadoLivre() {
                     key={mp.id}
                     type="monotone"
                     dataKey={mp.name}
-                    stroke={STORE_STROKE_COLORS[idx % STORE_STROKE_COLORS.length]}
+                    stroke={STORE_STROKE[idx % STORE_STROKE.length]}
                     strokeWidth={2}
                     dot={false}
                     activeDot={{ r: 4 }}

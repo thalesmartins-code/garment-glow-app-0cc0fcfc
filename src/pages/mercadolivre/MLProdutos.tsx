@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { STORE_BADGE_COLORS } from "@/config/storeColors";
 import { useMLInventory } from "@/contexts/MLInventoryContext";
 import { useMLStore } from "@/contexts/MLStoreContext";
 import { useAuth } from "@/contexts/AuthContext";
