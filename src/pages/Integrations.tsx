@@ -233,6 +233,11 @@ export default function Integrations() {
       const userId = user?.id || null;
       const mlUserId = String(tokenData.user_id);
 
+      // Use persisted seller from before OAuth redirect as fallback
+      const sellerId = selectedSeller?.id || localStorage.getItem("ml_oauth_seller_id") || null;
+      // Clean up the persisted seller
+      localStorage.removeItem("ml_oauth_seller_id");
+
       await supabase.from("ml_tokens").upsert(
         {
           user_id: userId,
@@ -241,18 +246,18 @@ export default function Integrations() {
           expires_at: expiresAt,
           ml_user_id: mlUserId,
           token_type: "bearer",
-          seller_id: selectedSeller?.id || null,
+          seller_id: sellerId,
         } as any,
         { onConflict: "user_id,ml_user_id" },
       );
 
       // Sync seller_stores.external_id so the header store filter works.
       // Try to claim an existing ML store that has no external_id yet; otherwise insert a new row.
-      if (selectedSeller?.id) {
+      if (sellerId) {
         const { data: existing } = await supabase
           .from("seller_stores" as any)
           .select("id")
-          .eq("seller_id", selectedSeller.id)
+          .eq("seller_id", sellerId)
           .eq("marketplace", "ml")
           .eq("external_id", mlUserId)
           .maybeSingle();
@@ -261,7 +266,7 @@ export default function Integrations() {
           const { data: unclaimed } = await supabase
             .from("seller_stores" as any)
             .select("id")
-            .eq("seller_id", selectedSeller.id)
+            .eq("seller_id", sellerId)
             .eq("marketplace", "ml")
             .is("external_id", null)
             .limit(1)
@@ -274,7 +279,7 @@ export default function Integrations() {
               .eq("id", (unclaimed as any).id);
           } else {
             await supabase.from("seller_stores" as any).insert({
-              seller_id: selectedSeller.id,
+              seller_id: sellerId,
               marketplace: "ml",
               external_id: mlUserId,
               store_name: `Loja ML ${mlUserId}`,
@@ -433,6 +438,11 @@ export default function Integrations() {
 
       if (data.code_verifier) {
         localStorage.setItem("ml_pkce_code_verifier", data.code_verifier);
+      }
+
+      // Persist selected seller so it survives the OAuth redirect
+      if (selectedSeller?.id) {
+        localStorage.setItem("ml_oauth_seller_id", selectedSeller.id);
       }
 
       window.location.href = data.auth_url;
