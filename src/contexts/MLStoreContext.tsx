@@ -7,7 +7,6 @@ export interface MLStore {
   ml_user_id: string;
   nickname: string | null;
   custom_name: string | null;
-  access_token: string;
   displayName: string;
   seller_id: string | null;
 }
@@ -137,7 +136,6 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
           ml_user_id: t.ml_user_id,
           nickname: cache.nickname,
           custom_name: cache.custom_name,
-          access_token: t.access_token,
           displayName: cache.custom_name || cache.nickname || `Loja ${t.ml_user_id}`,
           seller_id: t.seller_id,
         };
