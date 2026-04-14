@@ -122,6 +122,13 @@ const TVModeVendas = () => {
     const ticket = orders > 0 ? revenue / orders : 0;
     const conversion = visits > 0 ? (orders / visits) * 100 : 0;
 
+    const dailyYest = dailyYesterdayRes.data || [];
+    const yRevenue = dailyYest.reduce((s, r) => s + Number(r.total_revenue), 0);
+    const yOrders = dailyYest.reduce((s, r) => s + Number(r.qty_orders), 0);
+    const yVisits = dailyYest.reduce((s, r) => s + Number(r.unique_visits), 0);
+    const yTicket = yOrders > 0 ? yRevenue / yOrders : 0;
+    const yConversion = yVisits > 0 ? (yOrders / yVisits) * 100 : 0;
+
     const stores: StoreInfo[] = (storesRes.data || []).map((s) => ({
       ml_user_id: String(s.ml_user_id),
       name: s.custom_name || s.nickname || String(s.ml_user_id),
