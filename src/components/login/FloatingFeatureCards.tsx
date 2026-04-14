@@ -161,18 +161,27 @@ function MetasCard() {
   );
 }
 
+/* ── CSS float styles injected once ── */
+const floatStyles = `
+@keyframes login-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+`;
+
 /* ── Container com posicionamento ── */
 export default function FloatingFeatureCards() {
   const cards = [
-    { id: 0, content: <ReputacaoCard />, className: "top-[18%] right-12 w-44", float: floatAnimation(3, 0) },
-    { id: 1, content: <MetasCard />, className: "top-[6%] right-[30%] w-52", float: floatAnimation(3.4, 0.3) },
-    { id: 2, content: <EstoqueCard />, className: "top-[48%] right-10 w-44", float: floatAnimation(2.8, 0.7) },
-    { id: 3, content: <MarcasCard />, className: "bottom-[18%] right-8 w-44", float: floatAnimation(3.6, 1) },
-    { id: 4, content: <ProdutosCard />, className: "bottom-[8%] left-[52%] w-52", float: floatAnimation(3.2, 0.5) },
+    { id: 0, content: <ReputacaoCard />, className: "top-[18%] right-12 w-44", duration: "3s", delay: "0s" },
+    { id: 1, content: <MetasCard />, className: "top-[6%] right-[30%] w-52", duration: "3.5s", delay: "0.4s" },
+    { id: 2, content: <EstoqueCard />, className: "top-[48%] right-10 w-44", duration: "2.8s", delay: "0.8s" },
+    { id: 3, content: <MarcasCard />, className: "bottom-[18%] right-8 w-44", duration: "3.8s", delay: "1.2s" },
+    { id: 4, content: <ProdutosCard />, className: "bottom-[8%] left-[52%] w-52", duration: "3.2s", delay: "0.6s" },
   ];
 
   return (
     <>
+      <style>{floatStyles}</style>
       {cards.map((card) => (
         <motion.div
           key={card.id}
@@ -182,7 +191,14 @@ export default function FloatingFeatureCards() {
           initial="hidden"
           animate="visible"
         >
-          <motion.div animate={card.float}>{card.content}</motion.div>
+          <div
+            style={{
+              animation: `login-float ${card.duration} ease-in-out ${card.delay} infinite`,
+              willChange: "transform",
+            }}
+          >
+            {card.content}
+          </div>
         </motion.div>
       ))}
     </>
