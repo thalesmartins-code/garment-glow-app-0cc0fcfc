@@ -42,6 +42,7 @@ const MLPerguntas = React.lazy(() => import("./pages/mercadolivre/MLPerguntas"))
 const MLSincronizacoes = React.lazy(() => import("./pages/mercadolivre/MLSincronizacoes"));
 const MLImportacao = React.lazy(() => import("./pages/mercadolivre/MLImportacao"));
 const MLMetas = React.lazy(() => import("./pages/mercadolivre/MLMetas"));
+const MLPrecosCustos = React.lazy(() => import("./pages/mercadolivre/MLPrecosCustos"));
 const TVModeVendas = React.lazy(() => import("./pages/TVModeVendas"));
 
 import Login from "./pages/Login";
@@ -162,6 +163,10 @@ const App = () => (
                         <Route
                           path="/api/metas"
                           element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Metas"><MLMetas /></ErrorBoundary></RoleRoute>}
+                        <Route
+                          path="/api/precos-custos"
+                          element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Preços e Custos"><MLPrecosCustos /></ErrorBoundary></RoleRoute>}
+                        />
                         />
                         <Route
                           path="/api/sellers"
