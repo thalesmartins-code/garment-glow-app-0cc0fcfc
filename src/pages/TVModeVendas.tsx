@@ -152,7 +152,7 @@ const TVModeVendas = () => {
     // Inventory (stock + brand) — use ml_user_id instead of access_token
     const stockMap: Record<string, number> = {};
     const brandByItemId: Record<string, string> = {};
-    const mlUserIds = (tokensRes.data || []).map((t) => t.ml_user_id).filter(Boolean);
+    const invMLUserIds = (tokensRes.data || []).map((t) => t.ml_user_id).filter(Boolean);
     try {
       for (const mlUserId of mlUserIds) {
         const { data: invData } = await supabase.functions.invoke("ml-inventory", { body: { ml_user_id: mlUserId } });
