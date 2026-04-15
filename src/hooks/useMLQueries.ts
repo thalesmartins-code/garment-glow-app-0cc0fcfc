@@ -2,7 +2,7 @@
  * React Query wrappers for ML cache data.
  * Replaces manual useState/useCallback in useMLDataLoader.
  */
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMLStore } from "@/contexts/MLStoreContext";
 import { supabase } from "@/integrations/supabase/client";
