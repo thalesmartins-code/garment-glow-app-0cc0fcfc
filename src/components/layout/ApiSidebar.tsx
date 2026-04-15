@@ -16,7 +16,6 @@ import {
   Star,
   TrendingUp,
   Users,
-  Activity,
 } from "lucide-react";
 import {
   EnvironmentSidebar, type SidebarNavSection } from "./EnvironmentSidebar";
