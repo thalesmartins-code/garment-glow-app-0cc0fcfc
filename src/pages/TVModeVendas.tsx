@@ -154,7 +154,7 @@ const TVModeVendas = () => {
     const brandByItemId: Record<string, string> = {};
     const invMLUserIds = (tokensRes.data || []).map((t) => t.ml_user_id).filter(Boolean);
     try {
-      for (const mlUserId of mlUserIds) {
+      for (const mlUserId of invMLUserIds) {
         const { data: invData } = await supabase.functions.invoke("ml-inventory", { body: { ml_user_id: mlUserId } });
         if (invData?.items) {
           for (const item of invData.items) {
