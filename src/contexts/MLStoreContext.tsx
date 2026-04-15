@@ -93,6 +93,7 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
 
   const [stores, setStores] = useState<MLStore[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasLoadedOnce = useRef(false);
   const [salesCache, setSalesCacheRaw] = useState<MLSalesCache>(defaultSalesCache);
 
   const setSalesCache = useCallback((updater: (prev: MLSalesCache) => MLSalesCache) => {
