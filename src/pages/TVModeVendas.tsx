@@ -105,13 +105,18 @@ const TVModeVendas = () => {
   }, [sellerIdx, cycleSec]);
 
   const fetchSellerData = useCallback(async (sellerId: string): Promise<SellerData> => {
-    const [dailyRes, dailyYesterdayRes, hourlyTodayRes, hourlyYesterdayRes, productsRes, storesRes, tokensRes] = await Promise.all([
-      supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").eq("seller_id", sellerId).eq("date", today),
-      supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").eq("seller_id", sellerId).eq("date", yesterday),
-      supabase.from("ml_hourly_cache").select("hour, total_revenue, ml_user_id").eq("seller_id", sellerId).eq("date", today).order("hour", { ascending: true }).limit(200),
-      supabase.from("ml_hourly_cache").select("hour, total_revenue, ml_user_id").eq("seller_id", sellerId).eq("date", yesterday).order("hour", { ascending: true }).limit(200),
-      supabase.from("ml_product_daily_cache").select("item_id, title, thumbnail, qty_sold, revenue").eq("seller_id", sellerId).eq("date", today).order("revenue", { ascending: false }).limit(50),
-      supabase.from("ml_user_cache").select("ml_user_id, custom_name, nickname").eq("seller_id", sellerId),
+    // First resolve ml_user_ids for this seller — this is the reliable mapping
+    const storesRes = await supabase.from("ml_user_cache").select("ml_user_id, custom_name, nickname").eq("seller_id", sellerId);
+    const mlUserIds = (storesRes.data || []).map((s) => String(s.ml_user_id));
+    if (mlUserIds.length === 0) return { kpi: { revenue: 0, orders: 0, ticket: 0, visits: 0, conversion: 0 }, kpiYesterday: { revenue: 0, orders: 0, ticket: 0, visits: 0, conversion: 0 }, hourlyToday: {}, hourlyYesterday: {}, storeNames: [], topProducts: [], brandData: [] };
+
+    // Query by ml_user_id to catch rows with or without seller_id
+    const [dailyRes, dailyYesterdayRes, hourlyTodayRes, hourlyYesterdayRes, productsRes, tokensRes] = await Promise.all([
+      supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").in("ml_user_id", mlUserIds).eq("date", today),
+      supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").in("ml_user_id", mlUserIds).eq("date", yesterday),
+      supabase.from("ml_hourly_cache").select("hour, total_revenue, ml_user_id").in("ml_user_id", mlUserIds).eq("date", today).order("hour", { ascending: true }).limit(200),
+      supabase.from("ml_hourly_cache").select("hour, total_revenue, ml_user_id").in("ml_user_id", mlUserIds).eq("date", yesterday).order("hour", { ascending: true }).limit(200),
+      supabase.from("ml_product_daily_cache").select("item_id, title, thumbnail, qty_sold, revenue").in("ml_user_id", mlUserIds).eq("date", today).order("revenue", { ascending: false }).limit(50),
       supabase.from("ml_tokens").select("ml_user_id").eq("seller_id", sellerId).not("ml_user_id", "is", null),
     ]);
 
@@ -147,9 +152,9 @@ const TVModeVendas = () => {
     // Inventory (stock + brand) — use ml_user_id instead of access_token
     const stockMap: Record<string, number> = {};
     const brandByItemId: Record<string, string> = {};
-    const mlUserIds = (tokensRes.data || []).map((t) => t.ml_user_id).filter(Boolean);
+    const invMLUserIds = (tokensRes.data || []).map((t) => t.ml_user_id).filter(Boolean);
     try {
-      for (const mlUserId of mlUserIds) {
+      for (const mlUserId of invMLUserIds) {
         const { data: invData } = await supabase.functions.invoke("ml-inventory", { body: { ml_user_id: mlUserId } });
         if (invData?.items) {
           for (const item of invData.items) {
