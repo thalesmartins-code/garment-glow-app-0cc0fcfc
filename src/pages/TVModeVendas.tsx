@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { DollarSign, ShoppingCart, Receipt, Eye, Percent, Maximize2, Settings2 } from "lucide-react";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,6 +49,13 @@ interface SellerData {
   brandData: BrandRow[];
 }
 
+// Constant outside component — never recreated
+const emptyData: SellerData = {
+  kpi: { revenue: 0, orders: 0, ticket: 0, visits: 0, conversion: 0 },
+  kpiYesterday: { revenue: 0, orders: 0, ticket: 0, visits: 0, conversion: 0 },
+  hourlyToday: {}, hourlyYesterday: {}, storeNames: [], topProducts: [], brandData: [],
+};
+
 const BRAND_COLORS = [
   "hsl(var(--primary))", "hsl(var(--accent))", "hsl(25,95%,53%)", "hsl(270,70%,50%)",
   "hsl(160,60%,45%)", "hsl(340,75%,55%)", "hsl(200,70%,50%)", "hsl(45,93%,47%)",
@@ -59,8 +66,10 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 
 const TVModeVendas = () => {
   const { user } = useAuth();
-  const today = format(new Date(), "yyyy-MM-dd");
-  const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
+
+  // Stable date strings — computed once on mount, not on every render
+  const today = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
+  const yesterday = useMemo(() => format(subDays(new Date(), 1), "yyyy-MM-dd"), []);
 
   const [cycleSec, setCycleSec] = useState(() => getStored(STORAGE_KEY_CYCLE, 15));
   const [refreshMin, setRefreshMin] = useState(() => getStored(STORAGE_KEY_REFRESH, 5));
@@ -72,105 +81,122 @@ const TVModeVendas = () => {
   const [loading, setLoading] = useState(true);
 
   const seller = SELLERS[sellerIdx];
-  const emptyData: SellerData = {
-    kpi: { revenue: 0, orders: 0, ticket: 0, visits: 0, conversion: 0 },
-    kpiYesterday: { revenue: 0, orders: 0, ticket: 0, visits: 0, conversion: 0 },
-    hourlyToday: {}, hourlyYesterday: {}, storeNames: [], topProducts: [], brandData: [],
-  };
-  const current = sellerCache[seller.id] || emptyData;
+  const current = sellerCache[seller.id] ?? emptyData;
 
   useEffect(() => { localStorage.setItem(STORAGE_KEY_CYCLE, String(cycleSec)); }, [cycleSec]);
   useEffect(() => { localStorage.setItem(STORAGE_KEY_REFRESH, String(refreshMin)); }, [refreshMin]);
 
+  // Clock tick
   useEffect(() => {
     const i = setInterval(() => setClock(new Date()), 1000);
     return () => clearInterval(i);
   }, []);
 
+  // Seller cycle
   useEffect(() => {
     const i = setInterval(() => setSellerIdx((prev) => (prev + 1) % SELLERS.length), cycleSec * 1000);
     return () => clearInterval(i);
   }, [cycleSec]);
 
+  // Progress bar — resets when seller changes
   useEffect(() => {
     setCycleProgress(0);
-    const ms = cycleSec * 1000;
-    const i = setInterval(() => {
-      setCycleProgress((prev) => {
-        const next = prev + (100 / (ms / 100));
-        return next >= 100 ? 0 : next;
-      });
-    }, 100);
+    const step = 100 / (cycleSec * 10); // 10 ticks per second
+    const i = setInterval(() => setCycleProgress((prev) => Math.min(prev + step, 100)), 100);
     return () => clearInterval(i);
   }, [sellerIdx, cycleSec]);
 
-  const fetchSellerData = useCallback(async (sellerId: string): Promise<SellerData> => {
-    // First resolve ml_user_ids for this seller — this is the reliable mapping
-    const storesRes = await supabase.from("ml_user_cache").select("ml_user_id, custom_name, nickname").eq("seller_id", sellerId);
-    const mlUserIds = (storesRes.data || []).map((s) => String(s.ml_user_id));
-    if (mlUserIds.length === 0) return { kpi: { revenue: 0, orders: 0, ticket: 0, visits: 0, conversion: 0 }, kpiYesterday: { revenue: 0, orders: 0, ticket: 0, visits: 0, conversion: 0 }, hourlyToday: {}, hourlyYesterday: {}, storeNames: [], topProducts: [], brandData: [] };
+  // ── Data fetching ──────────────────────────────────────────────────────────
 
-    // Query by ml_user_id to catch rows with or without seller_id
-    const [dailyRes, dailyYesterdayRes, hourlyTodayRes, hourlyYesterdayRes, productsRes, tokensRes] = await Promise.all([
-      supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").in("ml_user_id", mlUserIds).eq("date", today),
-      supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold").in("ml_user_id", mlUserIds).eq("date", yesterday),
-      supabase.from("ml_hourly_cache").select("hour, total_revenue, ml_user_id").in("ml_user_id", mlUserIds).eq("date", today).order("hour", { ascending: true }).limit(200),
-      supabase.from("ml_hourly_cache").select("hour, total_revenue, ml_user_id").in("ml_user_id", mlUserIds).eq("date", yesterday).order("hour", { ascending: true }).limit(200),
-      supabase.from("ml_product_daily_cache").select("item_id, title, thumbnail, qty_sold, revenue").in("ml_user_id", mlUserIds).eq("date", today).order("revenue", { ascending: false }).limit(50),
-      supabase.from("ml_tokens").select("ml_user_id").eq("seller_id", sellerId).not("ml_user_id", "is", null),
+  const fetchSellerData = useCallback(async (sellerId: string): Promise<SellerData> => {
+    // Use ml_tokens as the reliable seller → ml_user_id mapping source
+    // (ml_user_cache does NOT have a seller_id column)
+    const { data: tokenRows } = await supabase
+      .from("ml_tokens")
+      .select("ml_user_id")
+      .eq("seller_id", sellerId)
+      .not("ml_user_id", "is", null)
+      .not("access_token", "is", null);
+
+    const mlUserIds = (tokenRows || []).map((t) => String(t.ml_user_id));
+    if (mlUserIds.length === 0) return emptyData;
+
+    // Store display names (by ml_user_id — no seller_id needed)
+    const { data: cacheRows } = await supabase
+      .from("ml_user_cache")
+      .select("ml_user_id, custom_name, nickname")
+      .in("ml_user_id", mlUserIds);
+
+    const [dailyRes, dailyYestRes, hourlyTodayRes, hourlyYestRes, productsRes] = await Promise.all([
+      supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold")
+        .in("ml_user_id", mlUserIds).eq("date", today),
+      supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold")
+        .in("ml_user_id", mlUserIds).eq("date", yesterday),
+      supabase.from("ml_hourly_cache").select("hour, total_revenue")
+        .in("ml_user_id", mlUserIds).eq("date", today).order("hour", { ascending: true }).limit(200),
+      supabase.from("ml_hourly_cache").select("hour, total_revenue")
+        .in("ml_user_id", mlUserIds).eq("date", yesterday).order("hour", { ascending: true }).limit(200),
+      supabase.from("ml_product_daily_cache").select("item_id, title, thumbnail, qty_sold, revenue")
+        .in("ml_user_id", mlUserIds).eq("date", today).order("revenue", { ascending: false }).limit(50),
     ]);
 
+    // KPI today
     const daily = dailyRes.data || [];
-    const revenue = daily.reduce((s, r) => s + Number(r.total_revenue), 0);
-    const orders = daily.reduce((s, r) => s + Number(r.qty_orders), 0);
-    const visits = daily.reduce((s, r) => s + Number(r.unique_visits), 0);
-    const ticket = orders > 0 ? revenue / orders : 0;
-    const conversion = visits > 0 ? (orders / visits) * 100 : 0;
+    const revenue  = daily.reduce((s, r) => s + Number(r.total_revenue), 0);
+    const orders   = daily.reduce((s, r) => s + Number(r.qty_orders), 0);
+    const visits   = daily.reduce((s, r) => s + Number(r.unique_visits), 0);
+    const ticket     = orders > 0 ? revenue / orders : 0;
+    const conversion = visits  > 0 ? (orders / visits) * 100 : 0;
 
-    const dailyYest = dailyYesterdayRes.data || [];
-    const yRevenue = dailyYest.reduce((s, r) => s + Number(r.total_revenue), 0);
-    const yOrders = dailyYest.reduce((s, r) => s + Number(r.qty_orders), 0);
-    const yVisits = dailyYest.reduce((s, r) => s + Number(r.unique_visits), 0);
-    const yTicket = yOrders > 0 ? yRevenue / yOrders : 0;
-    const yConversion = yVisits > 0 ? (yOrders / yVisits) * 100 : 0;
+    // KPI yesterday
+    const dailyYest = dailyYestRes.data || [];
+    const yRevenue   = dailyYest.reduce((s, r) => s + Number(r.total_revenue), 0);
+    const yOrders    = dailyYest.reduce((s, r) => s + Number(r.qty_orders), 0);
+    const yVisits    = dailyYest.reduce((s, r) => s + Number(r.unique_visits), 0);
+    const yTicket     = yOrders > 0 ? yRevenue / yOrders : 0;
+    const yConversion = yVisits  > 0 ? (yOrders / yVisits) * 100 : 0;
 
-    const stores: StoreInfo[] = (storesRes.data || []).map((s) => ({
+    // Store names
+    const stores: StoreInfo[] = (cacheRows || []).map((s) => ({
       ml_user_id: String(s.ml_user_id),
       name: s.custom_name || s.nickname || String(s.ml_user_id),
     }));
 
-    // Aggregate hourly data (sum all stores per hour)
+    // Hourly aggregated (sum all stores per hour)
     const hourlyToday: Record<number, number> = {};
     (hourlyTodayRes.data || []).forEach((r) => {
       hourlyToday[r.hour] = (hourlyToday[r.hour] || 0) + Number(r.total_revenue);
     });
     const hourlyYesterday: Record<number, number> = {};
-    (hourlyYesterdayRes.data || []).forEach((r) => {
+    (hourlyYestRes.data || []).forEach((r) => {
       hourlyYesterday[r.hour] = (hourlyYesterday[r.hour] || 0) + Number(r.total_revenue);
     });
 
-    // Inventory (stock + brand) — use ml_user_id instead of access_token
+    // Inventory (stock + brand) via ml-inventory edge function
     const stockMap: Record<string, number> = {};
     const brandByItemId: Record<string, string> = {};
-    const invMLUserIds = (tokensRes.data || []).map((t) => t.ml_user_id).filter(Boolean);
     try {
-      for (const mlUserId of invMLUserIds) {
-        const { data: invData } = await supabase.functions.invoke("ml-inventory", { body: { ml_user_id: mlUserId } });
-        if (invData?.items) {
-          for (const item of invData.items) {
-            stockMap[item.id] = (stockMap[item.id] || 0) + (item.available_quantity || 0);
-            if (item.brand) brandByItemId[item.id] = item.brand;
+      await Promise.all(
+        mlUserIds.map(async (mlUserId) => {
+          const { data: invData } = await supabase.functions.invoke("ml-inventory", { body: { ml_user_id: mlUserId } });
+          if (invData?.items) {
+            for (const item of invData.items) {
+              stockMap[item.id] = (stockMap[item.id] || 0) + (item.available_quantity || 0);
+              if (item.brand) brandByItemId[item.id] = item.brand;
+            }
           }
-        }
-      }
-    } catch { /* optional */ }
+        })
+      );
+    } catch { /* inventory is optional */ }
 
     // Products
     const prodMap: Record<string, ProductRow> = {};
     (productsRes.data || []).forEach((r) => {
-      if (!prodMap[r.item_id]) prodMap[r.item_id] = { item_id: r.item_id, title: r.title, thumbnail: r.thumbnail, qty_sold: 0, revenue: 0, stock: stockMap[r.item_id] ?? null };
+      if (!prodMap[r.item_id]) {
+        prodMap[r.item_id] = { item_id: r.item_id, title: r.title, thumbnail: r.thumbnail, qty_sold: 0, revenue: 0, stock: stockMap[r.item_id] ?? null };
+      }
       prodMap[r.item_id].qty_sold += Number(r.qty_sold);
-      prodMap[r.item_id].revenue += Number(r.revenue);
+      prodMap[r.item_id].revenue  += Number(r.revenue);
     });
     const allProds = Object.values(prodMap);
     const topProducts = [...allProds].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
@@ -210,19 +236,30 @@ const TVModeVendas = () => {
     }
   }, [user, fetchSellerData]);
 
-  useEffect(() => { fetchAllSellers(); }, [fetchAllSellers]);
+  // Stable ref — always points to the latest fetchAllSellers without triggering effect restarts
+  const fetchRef = useRef(fetchAllSellers);
+  useEffect(() => { fetchRef.current = fetchAllSellers; }, [fetchAllSellers]);
 
+  // Initial fetch — runs once when user becomes available, never re-runs due to function ref changes
+  const hasFetchedRef = useRef(false);
   useEffect(() => {
-    const i = setInterval(fetchAllSellers, refreshMin * 60_000);
+    if (!user || hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+    fetchRef.current();
+  }, [user]);
+
+  // Refresh timer — only restarts when refreshMin changes, independent of function references
+  useEffect(() => {
+    const i = setInterval(() => fetchRef.current(), refreshMin * 60_000);
     return () => clearInterval(i);
-  }, [refreshMin, fetchAllSellers]);
+  }, [refreshMin]);
 
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) document.documentElement.requestFullscreen();
     else document.exitFullscreen();
   }, []);
 
-  // Build hourly chart data
+  // Hourly chart data
   const hourlyChartData = useMemo(() => {
     return Array.from({ length: 24 }, (_, h) => ({
       label: `${String(h).padStart(2, "0")}h`,
@@ -234,19 +271,17 @@ const TVModeVendas = () => {
   const calcDelta = (cur: number, prev: number) => prev === 0 ? undefined : ((cur - prev) / prev) * 100;
 
   const totalProductRevenue = current.topProducts.reduce((s, p) => s + p.revenue, 0);
-  const totalBrandRevenue = current.brandData.reduce((s, b) => s + b.revenue, 0);
+  const totalBrandRevenue   = current.brandData.reduce((s, b) => s + b.revenue, 0);
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6 flex flex-col gap-4 select-none">
       {/* Top bar */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-5">
-          <div className="flex items-center gap-4">
-            <img src={seller.logo} alt={seller.name} className="h-14 w-14 rounded-xl object-cover" />
-            <div>
-              <h1 className="text-4xl font-bold leading-tight">{seller.name}</h1>
-              <p className="text-sm text-muted-foreground">Hoje · Todas as lojas</p>
-            </div>
+        <div className="flex items-center gap-4">
+          <img src={seller.logo} alt={seller.name} className="h-14 w-14 rounded-xl object-cover" />
+          <div>
+            <h1 className="text-4xl font-bold leading-tight">{seller.name}</h1>
+            <p className="text-sm text-muted-foreground">Hoje · Todas as lojas</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -284,14 +319,14 @@ const TVModeVendas = () => {
 
       {/* KPI Row */}
       <div className="grid grid-cols-5 gap-4">
-        <KPICard title="Receita Total" value={formatCurrency(current.kpi.revenue)} rawValue={current.kpi.revenue} valuePrefix="R$ " icon={<DollarSign className="w-6 h-6" />} variant="minimal" iconClassName="bg-accent/10 text-accent" size="tv" refreshing={loading} delta={calcDelta(current.kpi.revenue, current.kpiYesterday.revenue)} />
-        <KPICard title="Pedidos" value={String(current.kpi.orders)} rawValue={current.kpi.orders} icon={<ShoppingCart className="w-6 h-6" />} variant="minimal" iconClassName="bg-[hsl(270,70%,50%)]/10 text-[hsl(270,70%,50%)]" size="tv" refreshing={loading} delta={calcDelta(current.kpi.orders, current.kpiYesterday.orders)} />
-        <KPICard title="Ticket Médio" value={formatCurrency(current.kpi.ticket)} rawValue={current.kpi.ticket} valuePrefix="R$ " icon={<Receipt className="w-6 h-6" />} variant="minimal" iconClassName="bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]" size="tv" refreshing={loading} delta={calcDelta(current.kpi.ticket, current.kpiYesterday.ticket)} />
-        <KPICard title="Visitas" value={new Intl.NumberFormat("pt-BR").format(current.kpi.visits)} rawValue={current.kpi.visits} icon={<Eye className="w-6 h-6" />} variant="minimal" iconClassName="bg-accent/10 text-accent" size="tv" refreshing={loading} delta={calcDelta(current.kpi.visits, current.kpiYesterday.visits)} />
-        <KPICard title="Conversão" value={`${current.kpi.conversion.toFixed(1)}%`} rawValue={current.kpi.conversion} valueSuffix="%" valueDecimals={1} icon={<Percent className="w-6 h-6" />} variant="minimal" iconClassName="bg-success/10 text-success" size="tv" refreshing={loading} delta={calcDelta(current.kpi.conversion, current.kpiYesterday.conversion)} />
+        <KPICard title="Receita Total"  value={formatCurrency(current.kpi.revenue)}  rawValue={current.kpi.revenue}  valuePrefix="R$ " icon={<DollarSign className="w-6 h-6" />}  variant="minimal" iconClassName="bg-accent/10 text-accent"                              size="tv" refreshing={loading} delta={calcDelta(current.kpi.revenue,     current.kpiYesterday.revenue)} />
+        <KPICard title="Pedidos"        value={String(current.kpi.orders)}            rawValue={current.kpi.orders}                icon={<ShoppingCart className="w-6 h-6" />} variant="minimal" iconClassName="bg-[hsl(270,70%,50%)]/10 text-[hsl(270,70%,50%)]" size="tv" refreshing={loading} delta={calcDelta(current.kpi.orders,      current.kpiYesterday.orders)} />
+        <KPICard title="Ticket Médio"   value={formatCurrency(current.kpi.ticket)}   rawValue={current.kpi.ticket}   valuePrefix="R$ " icon={<Receipt className="w-6 h-6" />}     variant="minimal" iconClassName="bg-[hsl(25,95%,53%)]/10 text-[hsl(25,95%,53%)]"  size="tv" refreshing={loading} delta={calcDelta(current.kpi.ticket,      current.kpiYesterday.ticket)} />
+        <KPICard title="Visitas"        value={new Intl.NumberFormat("pt-BR").format(current.kpi.visits)} rawValue={current.kpi.visits} icon={<Eye className="w-6 h-6" />} variant="minimal" iconClassName="bg-accent/10 text-accent"                              size="tv" refreshing={loading} delta={calcDelta(current.kpi.visits,      current.kpiYesterday.visits)} />
+        <KPICard title="Conversão"      value={`${current.kpi.conversion.toFixed(1)}%`} rawValue={current.kpi.conversion} valueSuffix="%" valueDecimals={1} icon={<Percent className="w-6 h-6" />} variant="minimal" iconClassName="bg-success/10 text-success"  size="tv" refreshing={loading} delta={calcDelta(current.kpi.conversion, current.kpiYesterday.conversion)} />
       </div>
 
-      {/* Hourly chart — full width */}
+      {/* Hourly chart */}
       <Card className="flex flex-col" style={{ flex: "1 1 0" }}>
         <div className="px-4 pt-4 pb-2 flex items-center justify-between">
           <span className="text-sm font-medium text-foreground">Receita por Hora — Total</span>
@@ -316,7 +351,7 @@ const TVModeVendas = () => {
                 formatter={(value: number, name: string) => [formatCurrency(Number(value)), name === "hoje" ? "Hoje" : "Ontem"]}
                 contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", backgroundColor: "hsl(var(--card))", color: "hsl(var(--card-foreground))", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
               />
-              <Line type="monotone" dataKey="hoje" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+              <Line type="monotone" dataKey="hoje"  stroke="hsl(var(--primary))"          strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
               <Line type="monotone" dataKey="ontem" stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} strokeDasharray="5 5" dot={false} activeDot={{ r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>
@@ -325,7 +360,7 @@ const TVModeVendas = () => {
 
       {/* Bottom row: Brand Pie + Top 5 */}
       <div className="grid grid-cols-2 gap-4" style={{ flex: "1 1 0" }}>
-        {/* Brand pie chart */}
+        {/* Brand pie */}
         <Card className="flex flex-col min-h-0">
           <div className="px-4 pt-4 pb-2">
             <span className="text-sm font-medium text-foreground">Receita por Marca</span>
@@ -379,13 +414,8 @@ const TVModeVendas = () => {
               {current.topProducts.length > 0 && (
                 <table className="w-full table-fixed">
                   <colgroup>
-                    <col className="w-10" />
-                    <col className="w-14" />
-                    <col />
-                    <col className="w-20" />
-                    <col className="w-20" />
-                    <col className="w-24" />
-                    <col className="w-16" />
+                    <col className="w-10" /><col className="w-14" /><col />
+                    <col className="w-20" /><col className="w-20" /><col className="w-24" /><col className="w-16" />
                   </colgroup>
                   <thead>
                     <tr className="text-muted-foreground border-b border-border/50 text-xs">
@@ -406,11 +436,9 @@ const TVModeVendas = () => {
                             {idx < 3 ? MEDALS[idx] : idx + 1}
                           </td>
                           <td className="py-2 pl-1">
-                            {p.thumbnail ? (
-                              <img src={p.thumbnail} alt="" className="w-11 h-11 rounded-lg object-cover shrink-0" />
-                            ) : (
-                              <div className="w-11 h-11 rounded-lg bg-muted shrink-0" />
-                            )}
+                            {p.thumbnail
+                              ? <img src={p.thumbnail} alt="" className="w-11 h-11 rounded-lg object-cover shrink-0" />
+                              : <div className="w-11 h-11 rounded-lg bg-muted shrink-0" />}
                           </td>
                           <td className="py-2 pl-2 overflow-hidden">
                             <p className="truncate text-foreground text-[15px]">{p.title}</p>
@@ -420,9 +448,7 @@ const TVModeVendas = () => {
                               <span className={p.stock === 0 ? "text-destructive font-semibold" : p.stock <= 5 ? "text-warning font-semibold" : "text-muted-foreground"}>
                                 {p.stock}
                               </span>
-                            ) : (
-                              <span className="text-muted-foreground/50">—</span>
-                            )}
+                            ) : <span className="text-muted-foreground/50">—</span>}
                           </td>
                           <td className="text-right font-semibold text-foreground text-[15px] whitespace-nowrap">{p.qty_sold} un</td>
                           <td className="text-right font-semibold text-foreground text-[15px] whitespace-nowrap">{formatCurrency(p.revenue)}</td>
