@@ -54,6 +54,7 @@ export function HeaderScopeProvider({ children }: { children: ReactNode }) {
     if (!user || !sellerId) {
       setTokens([]);
       setLoading(false);
+      hasLoadedOnce.current = true;
       return;
     }
     if (!hasLoadedOnce.current) setLoading(true);
