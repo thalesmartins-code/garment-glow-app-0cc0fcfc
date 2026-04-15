@@ -30,6 +30,7 @@ export function HeaderScopeProvider({ children }: { children: ReactNode }) {
   const [storeId, setStoreIdRaw] = useState<string>("all");
   const [tokens, setTokens] = useState<ScopeToken[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasLoadedOnce = useRef(false);
 
   // Reset storeId when seller changes
   const prevSellerRef = useRef<string | null>(null);
@@ -53,9 +54,10 @@ export function HeaderScopeProvider({ children }: { children: ReactNode }) {
     if (!user || !sellerId) {
       setTokens([]);
       setLoading(false);
+      hasLoadedOnce.current = true;
       return;
     }
-    setLoading(true);
+    if (!hasLoadedOnce.current) setLoading(true);
     try {
       const { data } = await supabase
         .from("ml_tokens")
@@ -77,6 +79,7 @@ export function HeaderScopeProvider({ children }: { children: ReactNode }) {
       setTokens([]);
     } finally {
       setLoading(false);
+      hasLoadedOnce.current = true;
     }
   }, [user, sellerId]);
 

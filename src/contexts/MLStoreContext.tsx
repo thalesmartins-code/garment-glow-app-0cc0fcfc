@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useHeaderScope } from "@/contexts/HeaderScopeContext";
@@ -93,6 +93,7 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
 
   const [stores, setStores] = useState<MLStore[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasLoadedOnce = useRef(false);
   const [salesCache, setSalesCacheRaw] = useState<MLSalesCache>(defaultSalesCache);
 
   const setSalesCache = useCallback((updater: (prev: MLSalesCache) => MLSalesCache) => {
@@ -113,8 +114,12 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
     if (!user || !sellerId || tokens.length === 0) {
       setStores([]);
       setLoading(false);
+      hasLoadedOnce.current = true;
       return;
     }
+
+    // Only show loading skeleton on first load, not on refetches
+    if (!hasLoadedOnce.current) setLoading(true);
 
     try {
       const { data: userCaches } = await supabase
@@ -146,6 +151,7 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
       console.error("Failed to fetch ML stores:", err);
     } finally {
       setLoading(false);
+      hasLoadedOnce.current = true;
     }
   }, [user, sellerId, tokens]);
 
