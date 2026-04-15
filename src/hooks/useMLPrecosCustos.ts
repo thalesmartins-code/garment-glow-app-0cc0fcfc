@@ -33,12 +33,19 @@ export interface MLListingCost {
 export interface MLPriceReference {
   item_id: string;
   title: string;
-  category_id: string;
-  category_name: string;
+  thumbnail: string;
   listing_type_id: string;
-  price: number;
-  sale_fee_amount: number;
-  percentage_fee: number;
+  status: string;
+  currency_id: string;
+  current_price: number;
+  suggested_price: number | null;
+  lowest_price: number | null;
+  percent_difference: number;
+  applicable_suggestion: boolean;
+  selling_fees: number;
+  shipping_fees: number;
+  graph: Array<{ price: { amount: number }; info: { title: string; sold_quantity: number } }>;
+  last_updated: string | null;
 }
 
 // ── Module-level cache ────────────────────────────────────────────────────────

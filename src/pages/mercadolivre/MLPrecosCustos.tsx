@@ -352,6 +352,25 @@ function CustosPorVender({
 
 // ── Tab: Referências de Preços ────────────────────────────────────────────────
 
+const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+  with_benchmark_highest: {
+    label: "Muito Acima",
+    className: "bg-red-500/15 text-red-700 border-red-500/30",
+  },
+  with_benchmark_high: {
+    label: "Acima",
+    className: "bg-amber-500/15 text-amber-700 border-amber-500/30",
+  },
+  no_benchmark_ok: {
+    label: "Competitivo",
+    className: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
+  },
+  no_benchmark_lowest: {
+    label: "Abaixo",
+    className: "bg-blue-500/15 text-blue-700 border-blue-500/30",
+  },
+};
+
 function ReferenciasPreccos({
   references,
   loading,
@@ -361,22 +380,45 @@ function ReferenciasPreccos({
   loading: boolean;
   isRealData: boolean;
 }) {
+  const getStatusConfig = (status: string) =>
+    STATUS_CONFIG[status] ?? { label: status, className: "bg-muted text-muted-foreground" };
+
+  const diffColor = (ref: MLPriceReference) => {
+    if (ref.status === "with_benchmark_highest" || ref.status === "with_benchmark_high")
+      return "text-destructive";
+    if (ref.status === "no_benchmark_lowest") return "text-blue-600";
+    return "text-emerald-600";
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <RealDataBadge isRealData={isRealData} />
         {isRealData && (
           <p className="text-xs text-muted-foreground">
-            Comissão real calculada pela API para cada produto e categoria.
+            Recomendações de preço competitivo geradas pela API do Mercado Livre.
           </p>
         )}
       </div>
 
+      <Card className="border-blue-500/20 bg-blue-500/5">
+        <CardContent className="pt-3 pb-3 px-4">
+          <div className="flex items-start gap-2">
+            <Info className="w-4 h-4 mt-0.5 shrink-0 text-blue-600" />
+            <span className="text-xs text-blue-700">
+              As referências de preços são recomendações do Mercado Livre baseadas em produtos
+              similares, histórico de vendas e demanda — visam aumentar competitividade e
+              posicionamento nos resultados de busca.
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Custo Real por Produto</CardTitle>
+          <CardTitle className="text-sm font-medium">Análise Competitiva de Preços</CardTitle>
           <CardDescription className="text-xs">
-            Comissão calculada pela API do Mercado Livre com base no preço e categoria de cada anúncio.
+            Compare seu preço atual com o preço sugerido pelo Mercado Livre para cada anúncio.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -385,19 +427,18 @@ function ReferenciasPreccos({
               <thead>
                 <tr className="border-b bg-muted/30">
                   <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Produto</th>
-                  <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground">Categoria</th>
-                  <th className="text-center px-4 py-2.5 text-xs font-medium text-muted-foreground">Tipo</th>
-                  <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground">Preço</th>
-                  <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground">Comissão %</th>
-                  <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground">Custo</th>
-                  <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground">Líquido</th>
+                  <th className="text-center px-4 py-2.5 text-xs font-medium text-muted-foreground">Posição</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground">Preço Atual</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground">Preço Sugerido</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground">Diferença</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground">Comissão + Frete</th>
                 </tr>
               </thead>
               <tbody>
                 {loading
                   ? Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i} className="border-b">
-                        {Array.from({ length: 7 }).map((_, j) => (
+                        {Array.from({ length: 6 }).map((_, j) => (
                           <td key={j} className="px-4 py-3">
                             <Skeleton className="h-4 w-full" />
                           </td>
@@ -407,41 +448,59 @@ function ReferenciasPreccos({
                   : references.length === 0
                   ? (
                       <tr>
-                        <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground text-sm">
-                          Nenhuma referência disponível.
+                        <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">
+                          Nenhuma referência de preço disponível para seus anúncios.
                         </td>
                       </tr>
                     )
                   : references.map((ref) => {
-                      const liquido = ref.price - ref.sale_fee_amount;
+                      const cfg = getStatusConfig(ref.status);
+                      const totalFees = ref.selling_fees + ref.shipping_fees;
                       return (
-                        <tr
-                          key={ref.item_id}
-                          className="border-b hover:bg-muted/20 transition-colors"
-                        >
+                        <tr key={ref.item_id} className="border-b hover:bg-muted/20 transition-colors">
                           <td className="px-4 py-3">
-                            <p className="font-medium line-clamp-1">{ref.title}</p>
-                            <p className="text-xs text-muted-foreground">{ref.item_id}</p>
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="text-xs">{ref.category_name}</p>
+                            <div className="flex items-center gap-2.5">
+                              {ref.thumbnail && (
+                                <img
+                                  src={ref.thumbnail}
+                                  alt=""
+                                  className="w-8 h-8 object-contain rounded shrink-0 bg-muted"
+                                />
+                              )}
+                              <div>
+                                <p className="font-medium line-clamp-1 text-foreground leading-tight">
+                                  {ref.title}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">{ref.item_id}</p>
+                              </div>
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <ListingTypeBadge type={ref.listing_type_id} />
+                            <Badge className={`text-xs ${cfg.className}`}>{cfg.label}</Badge>
+                            {ref.applicable_suggestion && (
+                              <p className="text-[10px] text-muted-foreground mt-0.5">Sugestão aplicável</p>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums font-medium">
-                            {currFmt(ref.price)}
+                            {currFmt(ref.current_price)}
+                          </td>
+                          <td className="px-4 py-3 text-right tabular-nums">
+                            {ref.suggested_price != null ? (
+                              <span className="font-semibold text-emerald-600">
+                                {currFmt(ref.suggested_price)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">—</span>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <span className="text-destructive font-medium">
-                              {pctFmt(ref.percentage_fee)}
+                            <span className={`font-semibold tabular-nums ${diffColor(ref)}`}>
+                              {ref.percent_difference > 0 ? "+" : ""}
+                              {ref.percent_difference.toFixed(1)}%
                             </span>
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums text-destructive">
-                            -{currFmt(ref.sale_fee_amount)}
-                          </td>
-                          <td className="px-4 py-3 text-right tabular-nums font-semibold text-emerald-600">
-                            {currFmt(liquido)}
+                            {totalFees > 0 ? currFmt(totalFees) : "—"}
                           </td>
                         </tr>
                       );
@@ -455,32 +514,24 @@ function ReferenciasPreccos({
       {references.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Receita Líquida por Produto</CardTitle>
+            <CardTitle className="text-sm font-medium">Distribuição de Posicionamento</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart
-                data={references.slice(0, 10).map((r) => ({
-                  name: r.title.length > 18 ? r.title.substring(0, 18) + "…" : r.title,
-                  liquido: parseFloat((r.price - r.sale_fee_amount).toFixed(2)),
-                  comissao: parseFloat(r.sale_fee_amount.toFixed(2)),
-                }))}
-                barSize={28}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `R$${v}`} />
-                <RechartsTooltip
-                  formatter={(v: number, name: string) => [
-                    currFmt(v),
-                    name === "liquido" ? "Líquido" : "Comissão",
-                  ]}
-                  contentStyle={{ fontSize: 12 }}
-                />
-                <Bar dataKey="liquido" name="liquido" stackId="a" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="comissao" name="comissao" stackId="a" fill="#f87171" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="flex flex-wrap gap-3">
+              {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+                const count = references.filter((r) => r.status === key).length;
+                if (count === 0) return null;
+                return (
+                  <div key={key} className="flex items-center gap-1.5">
+                    <Badge className={`text-xs ${cfg.className}`}>{cfg.label}</Badge>
+                    <span className="text-sm font-semibold">{count}</span>
+                    <span className="text-xs text-muted-foreground">
+                      produto{count > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       )}

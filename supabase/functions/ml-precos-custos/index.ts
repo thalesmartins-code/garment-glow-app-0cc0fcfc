@@ -138,62 +138,62 @@ async function handleListingCosts(mlToken: string, params: URLSearchParams) {
   return jsonResponse({ costs });
 }
 
-// ── type=references: custo real por categoria dos itens do vendedor ─────────
+// ── type=references: sugestões de preços competitivos do ML ────────────────
 
 async function handlePriceReferences(mlUserId: string, mlToken: string) {
-  const searchData = await mlGet(
-    `/users/${mlUserId}/items/search?status=active&limit=20`,
-    mlToken,
-  );
-  if (!searchData?.results?.length) return jsonResponse({ references: [] });
+  // 1. Items que possuem sugestão de preço competitivo
+  const suggestionsData = await mlGet(`/suggestions/user/${mlUserId}/items`, mlToken);
+  if (!suggestionsData?.items?.length) return jsonResponse({ references: [] });
 
-  const itemIds: string[] = searchData.results.slice(0, 20);
+  const itemIds: string[] = suggestionsData.items.slice(0, 20);
+
+  // 2. Batch: busca título e thumbnail dos itens
   const batchData = await mlGet(
-    `/items?ids=${itemIds.join(",")}&attributes=id,title,price,listing_type_id,category_id`,
+    `/items?ids=${itemIds.join(",")}&attributes=id,title,thumbnail,listing_type_id`,
     mlToken,
   );
-  if (!batchData) return jsonResponse({ references: [] });
+  const itemMap: Record<string, { title: string; thumbnail: string; listing_type_id: string }> = {};
+  if (Array.isArray(batchData)) {
+    batchData
+      .filter((r: any) => r.code === 200 && r.body?.id)
+      .forEach((r: any) => {
+        itemMap[r.body.id] = {
+          title: r.body.title,
+          thumbnail: r.body.thumbnail ?? "",
+          listing_type_id: r.body.listing_type_id ?? "",
+        };
+      });
+  }
 
-  const items = (Array.isArray(batchData) ? batchData : [])
-    .filter((r: any) => r.code === 200 && r.body?.id)
-    .map((r: any) => r.body);
-
-  // Busca nomes das categorias
-  const categoryIds = [...new Set(items.map((i: any) => i.category_id).filter(Boolean))];
-  const catResults = await Promise.allSettled(
-    categoryIds.map((cid) => mlGet(`/categories/${cid}`, mlToken)),
-  );
-  const catMap: Record<string, string> = {};
-  categoryIds.forEach((cid, i) => {
-    const r = catResults[i];
-    if (r.status === "fulfilled" && r.value?.name) catMap[cid as string] = r.value.name;
-  });
-
-  // Busca listing_prices real por item
-  const costResults = await Promise.allSettled(
-    items.map((item: any) => {
-      const qs = `price=${item.price}&category_id=${item.category_id}&currency_id=BRL&listing_type_id=${item.listing_type_id}`;
-      return mlGet(`/sites/MLB/listing_prices?${qs}`, mlToken);
-    }),
+  // 3. Detalhes de sugestão competitiva por item
+  const detailResults = await Promise.allSettled(
+    itemIds.map((id) => mlGet(`/suggestions/items/${id}/details`, mlToken)),
   );
 
-  const references = items.map((item: any, i: number) => {
-    const costData =
-      costResults[i].status === "fulfilled" ? costResults[i].value : null;
-    const cost = Array.isArray(costData)
-      ? costData.find((c: any) => c.listing_type_id === item.listing_type_id) ?? costData[0]
-      : costData;
-    return {
-      item_id: item.id,
-      title: item.title,
-      category_id: item.category_id,
-      category_name: catMap[item.category_id] ?? item.category_id,
-      listing_type_id: item.listing_type_id,
-      price: item.price ?? 0,
-      sale_fee_amount: cost?.sale_fee_amount ?? 0,
-      percentage_fee: cost?.sale_fee_details?.percentage_fee ?? 0,
-    };
-  });
+  const references = itemIds
+    .map((id, i) => {
+      const detail = detailResults[i].status === "fulfilled" ? detailResults[i].value : null;
+      if (!detail) return null;
+      const item = itemMap[id] ?? { title: id, thumbnail: "", listing_type_id: "" };
+      return {
+        item_id: id,
+        title: item.title,
+        thumbnail: item.thumbnail,
+        listing_type_id: item.listing_type_id,
+        status: detail.status ?? "no_benchmark_ok",
+        currency_id: detail.currency_id ?? "BRL",
+        current_price: detail.current_price?.amount ?? 0,
+        suggested_price: detail.suggested_price?.amount ?? null,
+        lowest_price: detail.lowest_price?.amount ?? null,
+        percent_difference: detail.percent_difference ?? 0,
+        applicable_suggestion: detail.applicable_suggestion ?? false,
+        selling_fees: detail.costs?.selling_fees ?? 0,
+        shipping_fees: detail.costs?.shipping_fees ?? 0,
+        graph: detail.metadata?.graph ?? [],
+        last_updated: detail.last_updated ?? null,
+      };
+    })
+    .filter(Boolean);
 
   return jsonResponse({ references });
 }
