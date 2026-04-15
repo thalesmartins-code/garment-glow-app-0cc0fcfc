@@ -119,6 +119,7 @@ const TVModeVendas = () => {
       .not("access_token", "is", null);
 
     const mlUserIds = (tokenRows || []).map((t) => String(t.ml_user_id));
+    const mlUserIdsNum = (tokenRows || []).map((t) => Number(t.ml_user_id));
     if (mlUserIds.length === 0) return emptyData;
 
     // Store display names (by ml_user_id — no seller_id needed)
