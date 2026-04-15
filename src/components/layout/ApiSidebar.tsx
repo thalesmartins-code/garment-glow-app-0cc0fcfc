@@ -66,7 +66,6 @@ const apiSections: SidebarNavSection[] = [
           { icon: Target,   label: "Metas",          path: "/api/metas"          },
           { icon: Users,    label: "Sellers",        path: "/api/sellers"        },
           { icon: Plug,     label: "Integrações",    path: "/api/integracoes"    },
-          { icon: Activity, label: "Monitoramento",  path: "/api/monitoramento"  },
         ],
       },
     ],
