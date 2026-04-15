@@ -119,13 +119,14 @@ const TVModeVendas = () => {
       .not("access_token", "is", null);
 
     const mlUserIds = (tokenRows || []).map((t) => String(t.ml_user_id));
+    const mlUserIdsNum = (tokenRows || []).map((t) => Number(t.ml_user_id));
     if (mlUserIds.length === 0) return emptyData;
 
     // Store display names (by ml_user_id — no seller_id needed)
     const { data: cacheRows } = await supabase
       .from("ml_user_cache")
       .select("ml_user_id, custom_name, nickname")
-      .in("ml_user_id", mlUserIds);
+      .in("ml_user_id", mlUserIdsNum);
 
     const [dailyRes, dailyYestRes, hourlyTodayRes, hourlyYestRes, productsRes] = await Promise.all([
       supabase.from("ml_daily_cache").select("total_revenue, qty_orders, unique_visits, units_sold")
