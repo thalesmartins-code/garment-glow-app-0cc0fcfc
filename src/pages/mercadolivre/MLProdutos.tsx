@@ -1158,7 +1158,7 @@ export default function MLProdutos() {
                                           </>
                                         ) : (
                                           <>
-                                            <TableHead className="text-xs h-8 font-medium text-right">Preço de Venda</TableHead>
+                                            <TableHead className="text-xs h-8 font-medium text-right">Preço atual</TableHead>
                                             <TableHead className="text-xs h-8 font-medium text-center">Frete</TableHead>
                                             <TableHead className="text-xs h-8 font-medium text-center">—</TableHead>
                                           </>
