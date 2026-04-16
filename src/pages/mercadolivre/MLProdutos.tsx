@@ -1,13 +1,18 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { STORE_BADGE_COLORS } from "@/config/storeColors";
 import { useMLInventory } from "@/contexts/MLInventoryContext";
+import type { ProductVariation } from "@/contexts/MLInventoryContext";
 import { useMLStore } from "@/contexts/MLStoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
+import { LISTING_TYPE_RATES } from "@/data/financialMockData";
+import { useMLPrecosCustos, type MLItemSuggestion } from "@/hooks/useMLPrecosCustos";
 import { KPICard } from "@/components/dashboard/KPICard";
+import { Progress } from "@/components/ui/progress";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -41,9 +46,6 @@ const RANKING_QUICK_RANGES = [
   { label: "15 dias", value: 15 },
   { label: "30 dias", value: 30 },
 ];
-
-import type { ProductVariation } from "@/contexts/MLInventoryContext";
-import { LISTING_TYPE_RATES } from "@/data/financialMockData";
 
 // ─── Financial helpers ────────────────────────────────────────────────────────
 
@@ -150,17 +152,9 @@ function SortableHead({ label, field, current, onSort, className = "" }: {
   );
 }
 
-import { Progress } from "@/components/ui/progress";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
-import { useMLPrecosCustos, type MLItemSuggestion } from "@/hooks/useMLPrecosCustos";
-
 // ─── Price analysis status config ────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<
-  string,
-  { label: string; badgeClass: string; icon: JSX.Element; advice: (s: MLItemSuggestion) => string }
-> = {
+const STATUS_CONFIG = {
   with_benchmark_highest: {
     label: "Muito Acima do Mercado",
     badgeClass: "bg-red-500/15 text-red-700 border-red-500/30",
