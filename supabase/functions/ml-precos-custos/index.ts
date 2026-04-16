@@ -48,6 +48,41 @@ async function mlGet(path: string, mlToken: string) {
   return res.json();
 }
 
+// ── type=items: lista leve de anúncios ativos (para o seletor de produto) ───
+
+async function handleItemsList(mlUserId: string, mlToken: string) {
+  const searchData = await mlGet(
+    `/users/${mlUserId}/items/search?status=active&limit=50`,
+    mlToken,
+  );
+  if (!searchData?.results?.length) return jsonResponse({ items: [], total: 0 });
+
+  const itemIds: string[] = searchData.results.slice(0, 50);
+  const batchData = await mlGet(
+    `/items?ids=${itemIds.join(",")}&attributes=id,title,thumbnail,price,listing_type_id,category_id`,
+    mlToken,
+  );
+  if (!batchData) return jsonResponse({ items: [], total: searchData.paging?.total ?? 0 });
+
+  const items = (Array.isArray(batchData) ? batchData : [])
+    .filter((r: any) => r.code === 200 && r.body?.id)
+    .map((r: any) => ({
+      item_id: r.body.id,
+      title: r.body.title,
+      thumbnail: r.body.thumbnail ?? "",
+      price_standard: r.body.price ?? 0,
+      price_promo: null,
+      price_sale: r.body.price ?? 0,
+      category_id: r.body.category_id ?? "",
+      listing_type_id: r.body.listing_type_id ?? "",
+      currency_id: "BRL",
+      last_updated: null,
+      has_promotion: false,
+    }));
+
+  return jsonResponse({ items, total: searchData.paging?.total ?? items.length });
+}
+
 // ── type=prices: preços dos anúncios ativos do vendedor ─────────────────────
 
 async function handleItemPrices(mlUserId: string, mlToken: string) {
@@ -247,7 +282,8 @@ serve(async (req) => {
 
     console.log(`ml-precos-custos: type=${type} store=${mlUserId}`);
 
-    if (type === "prices")     return handleItemPrices(mlUserId, mlToken);
+    if (type === "items")       return handleItemsList(mlUserId, mlToken);
+    if (type === "prices")      return handleItemPrices(mlUserId, mlToken);
     if (type === "costs")      return handleListingCosts(mlToken, url.searchParams);
     if (type === "references") {
       const itemId = url.searchParams.get("item_id") ?? undefined;

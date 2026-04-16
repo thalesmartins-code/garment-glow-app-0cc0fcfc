@@ -149,21 +149,20 @@ export function useMLPrecosCustos(): UseMLPrecosCustosResult {
 
       setLoading(true);
       try {
-        const pricesData = await callEdgeFn("prices");
-        const newItems: MLItemPrice[] = pricesData?.items ?? [];
-        const newTotal: number = pricesData?.total ?? 0;
+        // type=items: leve (2 requests), ideal para popular o seletor
+        const data = await callEdgeFn("items");
+        const newItems: MLItemPrice[] = data?.items ?? [];
+        const newTotal: number = data?.total ?? 0;
 
-        if (newItems.length > 0) {
-          setItems(newItems);
-          setItemsTotal(newTotal);
-          setIsRealData(true);
-          cache.set(cacheKey, {
-            items: newItems,
-            itemsTotal: newTotal,
-            fetchedAt: Date.now(),
-          });
-          console.log(`ml-precos-custos: loaded ${newItems.length} items`);
-        }
+        setItems(newItems);
+        setItemsTotal(newTotal);
+        setIsRealData(true);
+        cache.set(cacheKey, {
+          items: newItems,
+          itemsTotal: newTotal,
+          fetchedAt: Date.now(),
+        });
+        console.log(`ml-precos-custos: loaded ${newItems.length} items`);
       } catch (err) {
         console.warn("ml-precos-custos: fetch error", err);
       } finally {
