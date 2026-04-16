@@ -139,7 +139,7 @@ function ProductPicker({
           placeholder={
             loading ? "Carregando produtos..." : "Busque um produto pelo título ou ID..."
           }
-          disabled={loading || items.length === 0}
+          disabled={loading}
           value={displayValue}
           onFocus={() => {
             setSearch("");
@@ -164,7 +164,13 @@ function ProductPicker({
         )}
       </div>
 
-      {open && filtered.length > 0 && (
+      {open && !loading && items.length === 0 && (
+        <div className="absolute z-50 mt-1 w-full bg-background border rounded-lg shadow-lg px-3 py-4 text-center text-sm text-muted-foreground">
+          Nenhum anúncio ativo encontrado na sua conta.
+        </div>
+      )}
+
+      {open && !loading && items.length > 0 && filtered.length > 0 && (
         <div className="absolute z-50 mt-1 w-full bg-background border rounded-lg shadow-lg max-h-64 overflow-y-auto">
           {filtered.map((item) => (
             <button
@@ -201,7 +207,7 @@ function ProductPicker({
         </div>
       )}
 
-      {open && search.length > 0 && filtered.length === 0 && (
+      {open && !loading && items.length > 0 && search.length > 0 && filtered.length === 0 && (
         <div className="absolute z-50 mt-1 w-full bg-background border rounded-lg shadow-lg px-3 py-4 text-center text-sm text-muted-foreground">
           Nenhum produto encontrado para "{search}"
         </div>
