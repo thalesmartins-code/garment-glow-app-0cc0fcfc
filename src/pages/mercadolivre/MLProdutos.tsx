@@ -1099,7 +1099,7 @@ export default function MLProdutos() {
                                     <div className="flex flex-col items-end gap-0.5">
                                       <div className="flex items-center gap-1.5">
                                         {hasDiscount && (
-                                          <Badge className="text-[9px] font-bold bg-emerald-500/15 text-emerald-600 border-0 px-1.5 py-0 h-4 leading-none">
+                                          <Badge className="text-[9px] font-bold bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15 hover:text-emerald-600 border-0 px-1.5 py-0 h-4 leading-none pointer-events-none">
                                             −{Math.round(((item.price - priceSale) / item.price) * 100)}%
                                           </Badge>
                                         )}
