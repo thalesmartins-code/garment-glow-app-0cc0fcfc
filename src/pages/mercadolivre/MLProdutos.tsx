@@ -971,7 +971,7 @@ export default function MLProdutos() {
                           <TableHead className="text-xs text-right w-32">
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="cursor-help border-b border-dashed border-muted-foreground/40">Preço de Venda</span>
+                                <span className="cursor-help border-b border-dashed border-muted-foreground/40">Preço atual</span>
                               </TooltipTrigger>
                               <TooltipContent className="text-xs max-w-[220px]">
                                 Preço efetivo cobrado do comprador, incluindo promoções de canal do Mercado Livre.
@@ -1158,7 +1158,7 @@ export default function MLProdutos() {
                                           </>
                                         ) : (
                                           <>
-                                            <TableHead className="text-xs h-8 font-medium text-right">Preço de Venda</TableHead>
+                                            <TableHead className="text-xs h-8 font-medium text-right">Preço atual</TableHead>
                                             <TableHead className="text-xs h-8 font-medium text-center">Frete</TableHead>
                                             <TableHead className="text-xs h-8 font-medium text-center">—</TableHead>
                                           </>
