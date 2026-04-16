@@ -68,17 +68,31 @@ async function handleItemsList(mlUserId: string, mlToken: string) {
     .filter((r: any) => r.code === 200 && r.body?.id)
     .map((r: any) => r.body);
 
-  // Busca preço efetivo via suggestions API — mesma fonte de "Seu Preço Atual" na Análise
-  const suggestionResults = await Promise.allSettled(
-    rawItems.map((item: any) =>
-      mlGet(`/suggestions/items/${item.id}/details`, mlToken),
+  // Busca preço efetivo:
+  //  1) /suggestions/items/{id}/details → mesma fonte de "Seu Preço Atual" na Análise
+  //  2) Fallback /items/{id}/sale_price?context=channel_marketplace → preço efetivo do canal
+  const [suggestionResults, salePriceResults] = await Promise.all([
+    Promise.allSettled(
+      rawItems.map((item: any) =>
+        mlGet(`/suggestions/items/${item.id}/details`, mlToken),
+      ),
     ),
-  );
+    Promise.allSettled(
+      rawItems.map((item: any) =>
+        mlGet(`/items/${item.id}/sale_price?context=channel_marketplace`, mlToken),
+      ),
+    ),
+  ]);
 
   const items = rawItems.map((item: any, i: number) => {
     const detail = suggestionResults[i].status === "fulfilled" ? suggestionResults[i].value : null;
+    const salePriceData = salePriceResults[i].status === "fulfilled" ? salePriceResults[i].value : null;
     const priceStandard: number = item.price ?? 0;
-    const priceSale: number = detail?.current_price?.amount ?? priceStandard;
+    // Prioridade: suggestions.current_price (idêntico à Análise) → sale_price → price
+    const priceSale: number =
+      detail?.current_price?.amount ??
+      salePriceData?.amount ??
+      priceStandard;
     return {
       item_id: item.id,
       title: item.title,
