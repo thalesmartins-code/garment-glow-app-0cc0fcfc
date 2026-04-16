@@ -68,17 +68,17 @@ async function handleItemsList(mlUserId: string, mlToken: string) {
     .filter((r: any) => r.code === 200 && r.body?.id)
     .map((r: any) => r.body);
 
-  // Busca preço efetivo de canal em paralelo (promoções ML além do preço do vendedor)
-  const salePriceResults = await Promise.allSettled(
+  // Busca preço efetivo via suggestions API — mesma fonte de "Seu Preço Atual" na Análise
+  const suggestionResults = await Promise.allSettled(
     rawItems.map((item: any) =>
-      mlGet(`/items/${item.id}/sale_price?context=channel_marketplace`, mlToken),
+      mlGet(`/suggestions/items/${item.id}/details`, mlToken),
     ),
   );
 
   const items = rawItems.map((item: any, i: number) => {
-    const saleData = salePriceResults[i].status === "fulfilled" ? salePriceResults[i].value : null;
+    const detail = suggestionResults[i].status === "fulfilled" ? suggestionResults[i].value : null;
     const priceStandard: number = item.price ?? 0;
-    const priceSale: number = saleData?.amount ?? priceStandard;
+    const priceSale: number = detail?.current_price?.amount ?? priceStandard;
     return {
       item_id: item.id,
       title: item.title,
