@@ -81,7 +81,7 @@ export function Header({ title, subtitle, showSellerSwitcher = true, showMarketp
                     className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-lg text-[10px] md:text-[11px] font-bold text-accent-foreground"
                     style={{ background: "var(--gradient-primary)" }}
                   >
-                    {selectedSeller?.initials ?? "?"}
+                    {selectedSeller?.initials ?? selectedSeller?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() ?? "?"}
                   </div>
                 )}
                 <span className="hidden sm:inline text-sm font-medium text-foreground">{selectedSeller?.name ?? "Seller"}</span>
@@ -112,7 +112,7 @@ export function Header({ title, subtitle, showSellerSwitcher = true, showMarketp
                       {seller.logo_url ? (
                         <img src={seller.logo_url} alt={seller.name} className="h-7 w-7 rounded-lg object-cover" />
                       ) : (
-                        <span className="text-[11px] font-bold">{seller.initials}</span>
+                        <span className="text-[11px] font-bold">{seller.initials ?? seller.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() ?? "?"}</span>
                       )}
                     </div>
                     <span className={`flex-1 text-sm ${isActive ? "font-semibold" : "font-medium"}`}>
