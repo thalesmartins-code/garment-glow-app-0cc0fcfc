@@ -637,6 +637,11 @@ export default function MLProdutos() {
         if (brandFilter !== "all" && (item.brand || "") !== brandFilter) return false;
         if (hideOutOfStock && item.available_quantity === 0) return false;
         if (logisticFilter !== "all" && (item.logistic_type || "") !== logisticFilter) return false;
+        if (onlyDiscount && columnView === "preco") {
+          const precos = precosMap.get(item.id);
+          const priceSale = precos?.price_sale ?? item.price;
+          if (!(precos != null && priceSale < item.price)) return false;
+        }
         return true;
       })
       .sort((a, b) => {
@@ -647,7 +652,7 @@ export default function MLProdutos() {
         if (sortBy === "title_desc") return b.title.localeCompare(a.title);
         return a.title.localeCompare(b.title);
       });
-  }, [items, search, statusFilter, stockFilter, sortBy, brandFilter, hideOutOfStock, logisticFilter]);
+  }, [items, search, statusFilter, stockFilter, sortBy, brandFilter, hideOutOfStock, logisticFilter, onlyDiscount, columnView, precosMap]);
 
   // KPI stats derived from filtered items so cards react to active filters
   const filteredKPIs = useMemo(() => {
