@@ -467,6 +467,7 @@ export default function MLProdutos() {
   const [brandFilter, setBrandFilter] = useState("all");
   const [hideOutOfStock, setHideOutOfStock] = useState(true);
   const [logisticFilter, setLogisticFilter] = useState<LogisticFilter>("all");
+  const [onlyDiscount, setOnlyDiscount] = useState(false);
   const [rankingBrandFilter, setRankingBrandFilter] = useState("all");
   const [rankingSort, setRankingSort] = useState("revenue_desc");
   const [rankingSearch, setRankingSearch] = useState("");
@@ -636,6 +637,11 @@ export default function MLProdutos() {
         if (brandFilter !== "all" && (item.brand || "") !== brandFilter) return false;
         if (hideOutOfStock && item.available_quantity === 0) return false;
         if (logisticFilter !== "all" && (item.logistic_type || "") !== logisticFilter) return false;
+        if (onlyDiscount && columnView === "preco") {
+          const precos = precosMap.get(item.id);
+          const priceSale = precos?.price_sale ?? item.price;
+          if (!(precos != null && priceSale < item.price)) return false;
+        }
         return true;
       })
       .sort((a, b) => {
@@ -646,7 +652,7 @@ export default function MLProdutos() {
         if (sortBy === "title_desc") return b.title.localeCompare(a.title);
         return a.title.localeCompare(b.title);
       });
-  }, [items, search, statusFilter, stockFilter, sortBy, brandFilter, hideOutOfStock, logisticFilter]);
+  }, [items, search, statusFilter, stockFilter, sortBy, brandFilter, hideOutOfStock, logisticFilter, onlyDiscount, columnView, precosMap]);
 
   // KPI stats derived from filtered items so cards react to active filters
   const filteredKPIs = useMemo(() => {
@@ -901,6 +907,18 @@ export default function MLProdutos() {
                   />
                   <span className="text-xs text-muted-foreground whitespace-nowrap">Ocultar sem estoque</span>
                 </label>
+
+                {/* Only with discount (only for "Preço" view) */}
+                {columnView === "preco" && (
+                  <label className="flex items-center gap-1.5 cursor-pointer opacity-60 hover:opacity-100 transition-opacity">
+                    <Checkbox
+                      checked={onlyDiscount}
+                      onCheckedChange={(v) => setOnlyDiscount(!!v)}
+                      className="h-3.5 w-3.5"
+                    />
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">Somente com desconto</span>
+                  </label>
+                )}
 
                 {/* Column view toggle */}
                 <Tooltip>
