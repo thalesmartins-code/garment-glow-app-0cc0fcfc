@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Loader2, Save, UserCircle } from "lucide-react";
+import { Camera, Loader2, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Profile() {
@@ -74,14 +74,11 @@ export default function Profile() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 pt-1 pb-4">
+      <div className="flex items-center justify-between gap-4 pt-4 pb-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground flex items-center gap-2">
-            <UserCircle className="h-5 w-5 text-primary" />
-            Perfil
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Atualize suas informações pessoais e foto de avatar.
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Perfil</h1>
+          <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+            {user?.email ?? ""}
           </p>
         </div>
       </div>
