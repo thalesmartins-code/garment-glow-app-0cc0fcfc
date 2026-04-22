@@ -115,14 +115,11 @@ export default function Sellers() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-start justify-between gap-4 pt-1 pb-4">
+      <div className="flex items-center justify-between gap-4 pt-4 pb-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground flex items-center gap-2">
-            <Store className="h-5 w-5 text-primary" />
-            Sellers
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Gerencie seus sellers e suas respectivas lojas por marketplace.
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Sellers</h1>
+          <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+            {sellers.length} {sellers.length === 1 ? "seller cadastrado" : "sellers cadastrados"}
           </p>
         </div>
         <Dialog open={addSellerOpen} onOpenChange={setAddSellerOpen}>

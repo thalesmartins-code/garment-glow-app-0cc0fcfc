@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Save, Target, TrendingUp, ShoppingCart, Receipt, Percent, Store, Calendar, CheckCircle2 } from "lucide-react";
+import { Save, TrendingUp, ShoppingCart, Receipt, Percent, Store, Calendar, CheckCircle2 } from "lucide-react";
 import { useMLStore } from "@/contexts/MLStoreContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { generateTargetId, generateDefaultPMTDistribution, monthLabels } from "@/types/settings";
@@ -156,14 +156,11 @@ export default function MLMetas() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 pt-1 pb-4">
+      <div className="flex items-center justify-between gap-4 pt-4 pb-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
-            Metas
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Defina metas mensais por loja e acompanhe no dashboard de Vendas.
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Metas</h1>
+          <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+            Acompanhe no dashboard de Vendas
           </p>
         </div>
         <Button onClick={handleSave} disabled={!selectedStoreId || !hasAnyTarget || saving} className="gap-2">
