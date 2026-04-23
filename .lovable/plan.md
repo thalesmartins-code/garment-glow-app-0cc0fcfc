@@ -1,40 +1,84 @@
 
 
-## Nova animação de carregamento entre páginas
+## Relatório "Por Estado" com dados reais + remoção de "Pagamento"
 
-Substituir o spinner (`Loader2` girando) que aparece em tela cheia ao trocar de página por uma animação do **logo do app (`AreaChart`)** com efeito de pulse + glow suave, mantendo a identidade visual minimalista do sistema.
+Substituir a aba **Por Estado** (atualmente simulada com percentuais fixos do e-commerce brasileiro) por dados reais agregados a partir do endereço de entrega dos pedidos do Mercado Livre. Remover completamente a aba **Pagamento** do relatório.
 
-### Visual proposto
+### Como os dados de estado serão obtidos
+
+A API de pedidos do ML (`/orders/search`) retorna em cada pedido o objeto `shipping.receiver_address.state` contendo `{ id: "BR-SP", name: "São Paulo" }`. Vamos extrair esse campo durante o processamento já existente na Edge Function `mercado-libre-integration` e agregar por (data, UF). Pedidos sem endereço (raro — apenas alguns digitais) serão classificados como `??`/desconhecido e descartados da visualização.
+
+### Mudanças
+
+**1. Banco de dados (nova tabela)**
+
+`ml_state_daily_cache` — agregação diária por UF:
+
+| coluna | tipo |
+|---|---|
+| id | uuid PK |
+| user_id | uuid (RLS por auth.uid) |
+| ml_user_id | text |
+| seller_id | uuid |
+| date | date |
+| uf | text (sigla 2 letras) |
+| state_name | text |
+| qty_orders | integer |
+| revenue | numeric |
+| approved_revenue | numeric |
+| synced_at | timestamptz |
+
+Unique index: `(user_id, ml_user_id, date, uf)`. Políticas RLS no padrão dos outros caches (`user_id = auth.uid()` em SELECT/INSERT/UPDATE/DELETE).
+
+**2. Edge function `mercado-libre-integration`**
+
+No mesmo loop que já percorre `orders`, acumular em `stateSales[date::uf] = { qty, revenue, approved_revenue, name }` lendo `order.shipping?.receiver_address?.state?.id` (ex: `"BR-SP"` → UF `"SP"`) e `state.name`. Após o loop, fazer upsert em batches de 200 em `ml_state_daily_cache` (mesmo padrão do `ml_product_daily_cache`).
+
+**3. Service layer**
+
+`src/services/mlCacheService.ts` — adicionar `fetchStateDailyCache(userId, mlUserIds, dateFrom, dateTo, selectedStore)` retornando `Array<{ date, uf, state_name, qty_orders, revenue, approved_revenue, ml_user_id }>`. Mesmo padrão de filtro multi-store dos outros fetchers.
+
+**4. React Query**
+
+`src/hooks/useMLQueries.ts` — novo hook `useMLStateQuery(dateFrom, dateTo)` espelhando `useMLProductsQuery`. Chave de cache derivada de `scopeKey + range`.
+
+**5. UI — `MLRelatorios.tsx`**
+
+- **Remover** completamente: import `CreditCard`, constante `PAYMENT_DIST`, função `TabPagamento`, `<TabsTrigger value="pagamento">` e `<TabsContent value="pagamento">`.
+- **Reescrever `TabEstado`**:
+  - Remover `STATE_DIST` (apenas como fallback de nome/sigla, não para percentuais).
+  - Consumir `useMLStateQuery(currentFrom, currentTo)` (mesmo período usado nos outros tabs do relatório, derivado de `useMLFilters`).
+  - Agregar por UF: `revenue`, `orders`, `avgTicket`, `pct = revenue / totalRevenue * 100`.
+  - Manter exatamente os mesmos componentes visuais (BrazilHeatMap, Top 10, BarChart) — só trocar a fonte dos dados.
+  - Remover o `<SimNote text="Distribuição estimada..." />`.
+  - Empty state: "Sem dados de estado para o período. Sincronize para carregar pedidos com endereço de entrega."
+
+**6. Backfill**
+
+Não é necessário backfill ativo — a próxima sincronização (manual ou automática) preenche `ml_state_daily_cache` para todo o range solicitado. Adicionar nota visual leve "Dados carregados após próxima sincronização" caso a query retorne vazio mas existam pedidos no `ml_daily_cache` no mesmo período.
+
+### Layout final das abas
 
 ```text
-┌──────────────────────────────┐
-│                              │
-│         ╭────────╮           │
-│         │   📊   │  ← ícone gradiente
-│         ╰────────╯              pulsando (scale + opacity)
-│                                 com halo/glow expandindo
-│      Carregando...              (texto sutil opcional)
-│                              │
-└──────────────────────────────┘
+[ Venda por Hora ] [ Ticket Médio ] [ Por Estado ] [ Funil ]
 ```
 
-- Ícone `AreaChart` dentro de um container `rounded-xl bg-gradient-primary shadow-glow` (mesmo estilo do login).
-- Animação combinada: `scale 1 → 1.08 → 1` + `opacity 0.7 → 1 → 0.7`, loop de ~1.6s, `ease-in-out`.
-- Halo: pseudo-elemento com `bg-primary/30` que expande (scale 1 → 1.6) e fade-out (opacity 0.5 → 0), loop sincronizado.
-- Texto "Carregando..." em `text-xs text-muted-foreground` com fade pulsante leve.
-- Respeita `prefers-reduced-motion`: cai para fade simples sem scale.
+(Pagamento removida.)
+
+### Detalhes técnicos
+
+- **UF parsing**: `state.id` no formato `"BR-XX"` → split em `-` e pegar índice 1; fallback para mapear `state.name` quando `id` ausente.
+- **Frete digital / sem endereço**: pular o pedido na agregação de estado (não criar UF "desconhecido" para não poluir o mapa).
+- **Performance**: o loop adicional dentro de `mercado-libre-integration` é O(orders) e não adiciona requests à API ML — todos os campos já vêm em `/orders/search`.
+- **TypeScript**: após a migração, `src/integrations/supabase/types.ts` será regenerado automaticamente; o serviço usa `(data || []) as StateDailyRow[]` igual aos outros fetchers.
+- **Sem alteração** em `BrazilHeatMap.tsx` (interface de input `StateData[]` já compatível).
 
 ### Arquivos afetados
 
-1. **`src/components/ui/PageLoader.tsx`** *(novo)* — componente reutilizável com o logo pulsante e halo. Recebe `label?: string` opcional.
-2. **`tailwind.config.ts`** — adicionar keyframes `logo-pulse` e `logo-halo` + animations correspondentes (não conflitam com as existentes).
-3. **`src/components/auth/ProtectedRoute.tsx`** — substituir bloco do `Loader2` por `<PageLoader />`.
-4. **`src/components/auth/RoleRoute.tsx`** — substituir bloco do `Loader2` por `<PageLoader />`.
-5. **`src/App.tsx`** — substituir o fallback do `<Suspense>` (atual `animate-spin rounded-full border-b-2`) por `<PageLoader />`.
-
-### Fora do escopo (mantidos como estão)
-
-- Spinners dentro de botões (Salvar, Atualizar, Sincronizar).
-- Spinners internos de cards (AuditLog, MLProdutos, MLEstoque, etc.).
-- Loader do modal de sincronização histórica.
+- `supabase/migrations/<timestamp>_ml_state_daily_cache.sql` *(novo)*
+- `supabase/functions/mercado-libre-integration/index.ts` — agregação + upsert
+- `src/services/mlCacheService.ts` — novo fetcher
+- `src/hooks/useMLQueries.ts` — novo `useMLStateQuery`
+- `src/types/mlCache.ts` — novo tipo `StateDailyRow`
+- `src/pages/mercadolivre/MLRelatorios.tsx` — remover Pagamento, reescrever TabEstado
 
