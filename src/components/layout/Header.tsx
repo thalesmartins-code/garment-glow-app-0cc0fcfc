@@ -165,6 +165,15 @@ export function Header({ title, subtitle, showSellerSwitcher = true, showSellerM
                 Monitoramento
               </DropdownMenuItem>
             )}
+            {isSuperAdmin && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/admin")} className="rounded-lg px-2 py-2 text-sm hover:bg-muted focus:bg-muted">
+                  <ShieldCheck className="mr-2 h-4 w-4 text-primary" />
+                  Painel super admin
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="rounded-lg px-2 py-2 text-sm text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive" onClick={signOut}>
               <LogOut className="mr-2 h-4 w-4" />
