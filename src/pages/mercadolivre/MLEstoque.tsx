@@ -985,17 +985,18 @@ export default function MLEstoque() {
   const filteredStats = useMemo(() => {
     const totalStockValue = filteredItems.reduce((s, i) => s + i.price * i.available_quantity, 0);
     const totalUnits = filteredItems.reduce((s, i) => s + i.available_quantity, 0);
-    let ruptura = 0, critico = 0, alerta = 0, sem_giro = 0, withDays = 0, sumDays = 0;
+    let ruptura = 0, critico = 0, alerta = 0, ok = 0, sem_giro = 0, withDays = 0, sumDays = 0;
     for (const item of filteredItems) {
       const cd = coverageMap.get(item.id);
       if (!cd) continue;
       if (cd.coverage_class === "ruptura") ruptura++;
       else if (cd.coverage_class === "critico") critico++;
       else if (cd.coverage_class === "alerta") alerta++;
+      else if (cd.coverage_class === "ok") ok++;
       else if (cd.coverage_class === "sem_giro") sem_giro++;
       if (cd.coverage_days !== null && cd.coverage_days > 0) { withDays++; sumDays += cd.coverage_days; }
     }
-    return { totalStockValue, totalUnits, ruptura, critico, alerta, sem_giro };
+    return { totalStockValue, totalUnits, ruptura, critico, alerta, ok, sem_giro };
   }, [filteredItems, coverageMap]);
 
   const toggleExpand = (id: string) => {
