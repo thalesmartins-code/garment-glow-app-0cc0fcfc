@@ -738,12 +738,14 @@ export default function Integrations() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between gap-4 pt-4 pb-2">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Integrações</h1>
-          <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-            Conecte suas contas de marketplaces para sincronizar dados automaticamente
-          </p>
+      <div className="sticky -top-4 md:-top-6 lg:-top-8 z-20 -mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 px-4 md:px-6 lg:px-8 pb-4 pt-4 bg-background/95 backdrop-blur-sm border-b border-border/40">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">Integrações</h1>
+            <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+              Conecte suas contas de marketplaces para sincronizar dados automaticamente
+            </p>
+          </div>
         </div>
       </div>
 
