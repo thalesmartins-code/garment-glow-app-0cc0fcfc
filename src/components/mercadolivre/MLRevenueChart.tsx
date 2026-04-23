@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { STORE_STROKE_COLORS as STORE_STROKE } from "@/config/storeColors";
 import {
@@ -18,7 +19,7 @@ interface MLRevenueChartProps {
   perMarketplaceHourly: { id: string; name: string }[] | null;
 }
 
-export function MLRevenueChart({
+function MLRevenueChartImpl({
   chartTitle,
   showHourlyChart,
   hasHourlyData,
@@ -101,3 +102,5 @@ export function MLRevenueChart({
     </Card>
   );
 }
+
+export const MLRevenueChart = memo(MLRevenueChartImpl);
