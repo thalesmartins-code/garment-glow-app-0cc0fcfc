@@ -114,6 +114,14 @@ export default {
         shimmer: {
           "100%": { transform: "translateX(100%)" },
         },
+        "logo-pulse": {
+          "0%, 100%": { transform: "scale(1)", opacity: "0.7" },
+          "50%": { transform: "scale(1.08)", opacity: "1" },
+        },
+        "logo-halo": {
+          "0%": { transform: "scale(1)", opacity: "0.5" },
+          "100%": { transform: "scale(1.6)", opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -121,6 +129,8 @@ export default {
         "fade-in": "fade-in 0.4s ease-out",
         "slide-in": "slide-in 0.3s ease-out",
         "scale-in": "scale-in 0.2s ease-out",
+        "logo-pulse": "logo-pulse 1.6s ease-in-out infinite",
+        "logo-halo": "logo-halo 1.6s ease-out infinite",
       },
     },
   },
