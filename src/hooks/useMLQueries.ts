@@ -156,6 +156,24 @@ export function useMLMonthlyDailyQuery() {
   });
 }
 
+// ── useMLStateQuery ─────────────────────────────────────────────────────────
+
+export function useMLStateQuery(dateFrom: string, dateTo: string) {
+  const { user } = useAuth();
+  const { selectedStore, resolvedMLUserIds } = useMLStore();
+  const userId = user?.id ?? "";
+
+  return useQuery({
+    queryKey: mlKeys.state(userId, resolvedMLUserIds, dateFrom, dateTo, selectedStore),
+    queryFn: async (): Promise<StateDailyRow[]> => {
+      return fetchStateDailyCache(userId, resolvedMLUserIds, dateFrom, dateTo, selectedStore);
+    },
+    enabled: !!userId && resolvedMLUserIds.length > 0 && !!dateFrom && !!dateTo,
+    staleTime: 3 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
+}
+
 // ── Invalidation helper ─────────────────────────────────────────────────────
 
 export function useInvalidateMLQueries() {
