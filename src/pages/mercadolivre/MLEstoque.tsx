@@ -1120,7 +1120,7 @@ export default function MLEstoque() {
             title="OK"
             value={numFmt(filteredStats.ok)}
             icon={<CheckCircle2 className="w-4 h-4" />}
-            variant="minimal"
+            variant={filteredStats.ok > 0 ? "success" : "minimal"}
             size="compact"
             iconClassName="bg-success/10 text-success"
           />
