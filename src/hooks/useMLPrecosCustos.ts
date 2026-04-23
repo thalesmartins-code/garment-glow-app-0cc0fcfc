@@ -74,7 +74,7 @@ export interface UseMLPrecosCustosResult {
   refresh: () => Promise<void>;
   refreshing: boolean;
   /** Busca sugestão competitiva de um item específico */
-  fetchItemSuggestion: (itemId: string) => Promise<{ suggestion: MLItemSuggestion | null; no_suggestion: boolean }>;
+  fetchItemSuggestion: (itemId: string, mlUserId?: string) => Promise<{ suggestion: MLItemSuggestion | null; no_suggestion: boolean }>;
   /** Busca comissões com parâmetros dinâmicos (para a Calculadora) */
   fetchCosts: (params: {
     price: number;
@@ -117,13 +117,14 @@ export function useMLPrecosCustos(): UseMLPrecosCustosResult {
   }, []);
 
   const callEdgeFn = useCallback(
-    async (type: string, extraParams?: Record<string, string>) => {
-      if (!storeId) return null;
+    async (type: string, extraParams?: Record<string, string>, mlUserIdOverride?: string) => {
+      const effectiveId = mlUserIdOverride ?? storeId;
+      if (!effectiveId) return null;
       const auth = await getAuthHeaders();
       if (!auth) return null;
 
       const { _baseUrl, ...headers } = auth;
-      const params = new URLSearchParams({ ml_user_id: storeId, type, ...extraParams });
+      const params = new URLSearchParams({ ml_user_id: effectiveId, type, ...extraParams });
       const res = await fetch(`${_baseUrl}?${params}`, { headers });
       if (!res.ok) {
         console.warn(`ml-precos-custos [${type}]: ${res.status}`);
@@ -174,8 +175,8 @@ export function useMLPrecosCustos(): UseMLPrecosCustosResult {
 
   /** Busca sugestão competitiva de preço para um item específico */
   const fetchItemSuggestion = useCallback(
-    async (itemId: string): Promise<{ suggestion: MLItemSuggestion | null; no_suggestion: boolean }> => {
-      const data = await callEdgeFn("references", { item_id: itemId });
+    async (itemId: string, mlUserId?: string): Promise<{ suggestion: MLItemSuggestion | null; no_suggestion: boolean }> => {
+      const data = await callEdgeFn("references", { item_id: itemId }, mlUserId);
       if (!data) return { suggestion: null, no_suggestion: true };
       return {
         suggestion: data.reference ?? null,

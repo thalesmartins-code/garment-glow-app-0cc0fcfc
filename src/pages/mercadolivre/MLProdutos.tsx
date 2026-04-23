@@ -479,13 +479,32 @@ export default function MLProdutos() {
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
   const [suggestion, setSuggestion] = useState<MLItemSuggestion | null>(null);
   const [noSuggestion, setNoSuggestion] = useState(false);
-  const { fetchItemSuggestion, items: precosItems, refresh: precosRefresh } = useMLPrecosCustos();
+  const { fetchItemSuggestion, refresh: precosRefresh } = useMLPrecosCustos();
 
-  // Mapa item_id → price_sale (preço efetivo de canal) alimentado pelo hook
-  const precosMap = useMemo(
-    () => new Map(precosItems.map((p) => [p.item_id, p])),
-    [precosItems],
+  // Cache lazy: busca current_price via suggestions API apenas para itens com deal_ids
+  // (promoção ativa), ao entrar na view "Preço"
+  const [dealPriceCache, setDealPriceCache] = useState<Map<string, number>>(new Map());
+
+  const dealItemKey = useMemo(
+    () => filtered.filter(i => i.deal_ids.length > 0).map(i => i.id).sort().join(','),
+    [filtered],
   );
+
+  useEffect(() => {
+    if (columnView !== "preco" || !dealItemKey) return;
+    const toFetch = filtered.filter(
+      i => i.deal_ids.length > 0 && !dealPriceCache.has(i.id),
+    );
+    if (toFetch.length === 0) return;
+    toFetch.forEach(async (item) => {
+      const result = await fetchItemSuggestion(item.id, item._ml_user_id);
+      const price = result.suggestion?.current_price;
+      if (price != null) {
+        setDealPriceCache(prev => new Map(prev).set(item.id, price));
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnView, dealItemKey]);
 
   const toggleRankingSort = (field: string) => {
     setRankingSort((prev) =>
@@ -638,9 +657,9 @@ export default function MLProdutos() {
         if (hideOutOfStock && item.available_quantity === 0) return false;
         if (logisticFilter !== "all" && (item.logistic_type || "") !== logisticFilter) return false;
         if (onlyDiscount && columnView === "preco") {
-          const precos = precosMap.get(item.id);
-          const priceSale = precos?.price_sale ?? item.price;
-          if (!(precos != null && priceSale < item.price)) return false;
+          const cachedDealPrice = dealPriceCache.get(item.id);
+          const priceSale = cachedDealPrice ?? item.price;
+          if (!(cachedDealPrice != null && priceSale < item.price)) return false;
         }
         return true;
       })
@@ -652,7 +671,7 @@ export default function MLProdutos() {
         if (sortBy === "title_desc") return b.title.localeCompare(a.title);
         return a.title.localeCompare(b.title);
       });
-  }, [items, search, statusFilter, stockFilter, sortBy, brandFilter, hideOutOfStock, logisticFilter, onlyDiscount, columnView, precosMap]);
+  }, [items, search, statusFilter, stockFilter, sortBy, brandFilter, hideOutOfStock, logisticFilter, onlyDiscount, columnView, dealPriceCache]);
 
   // KPI stats derived from filtered items so cards react to active filters
   const filteredKPIs = useMemo(() => {
@@ -1114,29 +1133,35 @@ export default function MLProdutos() {
                                 </>
                               );
                             })() : (() => {
-                              const precos = precosMap.get(item.id);
-                              const priceSale = precos?.price_sale ?? item.price;
-                              const hasDiscount = precos != null && priceSale < item.price;
+                              const cachedPrice = dealPriceCache.get(item.id);
+                              const hasDeal = item.deal_ids.length > 0;
+                              const priceSale = hasDeal && cachedPrice != null ? cachedPrice : item.price;
+                              const hasDiscount = hasDeal && cachedPrice != null && cachedPrice < item.price;
+                              const loadingPrice = hasDeal && cachedPrice == null;
                               return (
                                 <>
                                   <TableCell className="text-right">
-                                    <div className="flex flex-col items-end gap-0.5">
-                                      <div className="flex items-center gap-1.5">
+                                    {loadingPrice ? (
+                                      <span className="text-xs text-muted-foreground animate-pulse font-mono">…</span>
+                                    ) : (
+                                      <div className="flex flex-col items-end gap-0.5">
+                                        <div className="flex items-center gap-1.5">
+                                          {hasDiscount && (
+                                            <Badge className="text-[9px] font-bold bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15 hover:text-emerald-600 border-0 px-1.5 py-0 h-4 leading-none pointer-events-none">
+                                              −{Math.round(((item.price - priceSale) / item.price) * 100)}%
+                                            </Badge>
+                                          )}
+                                          <span className="text-xs font-semibold font-mono tabular-nums text-foreground">
+                                            {currencyFmt(priceSale)}
+                                          </span>
+                                        </div>
                                         {hasDiscount && (
-                                          <Badge className="text-[9px] font-bold bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15 hover:text-emerald-600 border-0 px-1.5 py-0 h-4 leading-none pointer-events-none">
-                                            −{Math.round(((item.price - priceSale) / item.price) * 100)}%
-                                          </Badge>
+                                          <span className="text-[10px] font-mono tabular-nums text-muted-foreground line-through">
+                                            {currencyFmt(item.price)}
+                                          </span>
                                         )}
-                                        <span className="text-xs font-semibold font-mono tabular-nums text-foreground">
-                                          {currencyFmt(priceSale)}
-                                        </span>
                                       </div>
-                                      {hasDiscount && (
-                                        <span className="text-[10px] font-mono tabular-nums text-muted-foreground line-through">
-                                          {currencyFmt(item.price)}
-                                        </span>
-                                      )}
-                                    </div>
+                                    )}
                                   </TableCell>
                                   <TableCell className="text-center">
                                     {item.free_shipping ? (
@@ -1234,9 +1259,9 @@ export default function MLProdutos() {
                                                 </>
                                               );
                                             })() : (() => {
-                                              const precos = precosMap.get(item.id);
-                                              const priceSale = precos?.price_sale ?? v.price;
-                                              const hasDiscount = precos != null && priceSale < v.price;
+                                              const cachedDealPrice = dealPriceCache.get(item.id);
+                                              const priceSale = cachedDealPrice ?? v.price;
+                                              const hasDiscount = cachedDealPrice != null && priceSale < v.price;
                                               return (
                                                 <>
                                                   <TableCell className="py-2 text-right">
