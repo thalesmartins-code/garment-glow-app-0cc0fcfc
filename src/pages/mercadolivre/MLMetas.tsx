@@ -84,17 +84,21 @@ function KpiInput({ label, icon, value, onChange, format: fmt, color }: {
 
 export default function MLMetas() {
   const { toast } = useToast();
-  const { stores } = useMLStore();
+  const { stores, resolvedMLUserIds } = useMLStore();
   const { getTarget, saveTarget } = useSettings();
 
-  const [selectedStoreId, setSelectedStoreId] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [kpi, setKpi] = useState({ revenue: 0, orders: 0, ticket: 0, conversion: 0 });
 
-  useEffect(() => {
-    if (!selectedStoreId && stores.length > 0) setSelectedStoreId(stores[0].ml_user_id);
-  }, [stores, selectedStoreId]);
+  // Drive store selection from the global header scope.
+  // When the header has a single store selected, use it. When "Todas as lojas"
+  // is active, fall back to the first available store so the user can still edit.
+  const selectedStoreId = useMemo(() => {
+    if (resolvedMLUserIds.length === 1) return resolvedMLUserIds[0];
+    return stores[0]?.ml_user_id ?? "";
+  }, [resolvedMLUserIds, stores]);
+  const isAllStoresScope = resolvedMLUserIds.length !== 1 && stores.length > 1;
 
   useEffect(() => {
     if (!selectedStoreId) return;
@@ -164,7 +168,7 @@ export default function MLMetas() {
               Acompanhe no dashboard de Vendas
             </p>
           </div>
-          <Button onClick={handleSave} disabled={!selectedStoreId || !hasAnyTarget || saving} className="gap-2">
+          <Button onClick={handleSave} disabled={!selectedStoreId || isAllStoresScope || !hasAnyTarget || saving} className="gap-2">
             <Save className="w-4 h-4" /> {saving ? "Salvando..." : "Salvar"}
           </Button>
         </div>
@@ -180,14 +184,17 @@ export default function MLMetas() {
               {stores.length === 0 ? (
                 <p className="text-sm text-muted-foreground italic">Nenhuma loja conectada</p>
               ) : (
-                <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                  <SelectContent>
-                    {stores.map((s) => (
-                      <SelectItem key={s.ml_user_id} value={s.ml_user_id}>{s.displayName}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="h-10 px-3 rounded-md border border-input bg-muted/40 flex items-center text-sm">
+                  {isAllStoresScope ? (
+                    <span className="text-muted-foreground italic">
+                      Selecione uma loja no cabeçalho
+                    </span>
+                  ) : (
+                    <span className="font-medium truncate">
+                      {selectedStore?.displayName ?? "—"}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
             <div className="space-y-1.5">
