@@ -13,7 +13,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSeller } from "@/contexts/SellerContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrganization } from "@/contexts/OrganizationContext";
-import { MarketplaceSwitcher } from "./MarketplaceSwitcher";
 import { SellerMarketplaceBar } from "./SellerMarketplaceBar";
 import { OrganizationSwitcher } from "./OrganizationSwitcher";
 
@@ -21,13 +20,12 @@ interface HeaderProps {
   title: string;
   subtitle?: string;
   showSellerSwitcher?: boolean;
-  showMarketplaceSwitcher?: boolean;
   showSellerMarketplaceBar?: boolean;
   hideStores?: boolean;
   onMenuClick?: () => void;
 }
 
-export function Header({ title, subtitle, showSellerSwitcher = true, showMarketplaceSwitcher = false, showSellerMarketplaceBar = false, hideStores = false, onMenuClick }: HeaderProps) {
+export function Header({ title, subtitle, showSellerSwitcher = true, showSellerMarketplaceBar = false, hideStores = false, onMenuClick }: HeaderProps) {
   const { selectedSeller, setSelectedSeller, activeSellers } = useSeller();
   const { profile, signOut } = useAuth();
   const { orgRole } = useOrganization();
@@ -63,7 +61,6 @@ export function Header({ title, subtitle, showSellerSwitcher = true, showMarketp
       </div>
 
       <div className="flex items-center gap-2 md:gap-3 shrink-0">
-        {showMarketplaceSwitcher && !showSellerMarketplaceBar && <MarketplaceSwitcher />}
         {showSellerSwitcher && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

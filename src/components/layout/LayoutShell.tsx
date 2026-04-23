@@ -11,14 +11,13 @@ interface LayoutShellProps {
   sidebar: ReactNode;
   mobileSidebar?: ReactNode;
   showSellerSwitcher?: boolean;
-  showMarketplaceSwitcher?: boolean;
   showSellerMarketplaceBar?: boolean;
 }
 
 const HIDE_SELLER_SWITCHER_ROUTES = ["/api/sellers", "/api/integracoes"];
 const HIDE_STORES_ROUTES: string[] = [];
 
-export function LayoutShell({ sidebar, mobileSidebar, showSellerSwitcher = true, showMarketplaceSwitcher = false, showSellerMarketplaceBar = false }: LayoutShellProps) {
+export function LayoutShell({ sidebar, mobileSidebar, showSellerSwitcher = true, showSellerMarketplaceBar = false }: LayoutShellProps) {
   const location = useLocation();
   const { title, subtitle } = getRouteMeta(location.pathname);
   const hideSwitcher = HIDE_SELLER_SWITCHER_ROUTES.includes(location.pathname);
@@ -52,7 +51,6 @@ export function LayoutShell({ sidebar, mobileSidebar, showSellerSwitcher = true,
           title={title}
           subtitle={subtitle}
           showSellerSwitcher={!hideSwitcher && showSellerSwitcher}
-          showMarketplaceSwitcher={!hideSwitcher && showMarketplaceSwitcher}
           showSellerMarketplaceBar={(!hideSwitcher || hideStores) && showSellerMarketplaceBar}
           hideStores={hideStores}
           onMenuClick={isMobile ? () => setMobileOpen(true) : undefined}
