@@ -1,84 +1,76 @@
 
 
-## Relatório "Por Estado" com dados reais + remoção de "Pagamento"
+## Botão de configuração de cobertura no Estoque
 
-Substituir a aba **Por Estado** (atualmente simulada com percentuais fixos do e-commerce brasileiro) por dados reais agregados a partir do endereço de entrega dos pedidos do Mercado Livre. Remover completamente a aba **Pagamento** do relatório.
+Adicionar um botão **"Configurar cobertura"** na barra superior da página `/api/estoque`, ao lado do seletor de período (7/15/30 dias). Ao clicar, abre um popover que permite ao usuário definir os limiares (em dias) das classes **Ruptura**, **Crítico** e **Alerta** — substituindo os valores atualmente fixos em `useMLCoverage.ts` (`< 25% do horizonte = crítico`, `< 100% = alerta`).
 
-### Como os dados de estado serão obtidos
-
-A API de pedidos do ML (`/orders/search`) retorna em cada pedido o objeto `shipping.receiver_address.state` contendo `{ id: "BR-SP", name: "São Paulo" }`. Vamos extrair esse campo durante o processamento já existente na Edge Function `mercado-libre-integration` e agregar por (data, UF). Pedidos sem endereço (raro — apenas alguns digitais) serão classificados como `??`/desconhecido e descartados da visualização.
-
-### Mudanças
-
-**1. Banco de dados (nova tabela)**
-
-`ml_state_daily_cache` — agregação diária por UF:
-
-| coluna | tipo |
-|---|---|
-| id | uuid PK |
-| user_id | uuid (RLS por auth.uid) |
-| ml_user_id | text |
-| seller_id | uuid |
-| date | date |
-| uf | text (sigla 2 letras) |
-| state_name | text |
-| qty_orders | integer |
-| revenue | numeric |
-| approved_revenue | numeric |
-| synced_at | timestamptz |
-
-Unique index: `(user_id, ml_user_id, date, uf)`. Políticas RLS no padrão dos outros caches (`user_id = auth.uid()` em SELECT/INSERT/UPDATE/DELETE).
-
-**2. Edge function `mercado-libre-integration`**
-
-No mesmo loop que já percorre `orders`, acumular em `stateSales[date::uf] = { qty, revenue, approved_revenue, name }` lendo `order.shipping?.receiver_address?.state?.id` (ex: `"BR-SP"` → UF `"SP"`) e `state.name`. Após o loop, fazer upsert em batches de 200 em `ml_state_daily_cache` (mesmo padrão do `ml_product_daily_cache`).
-
-**3. Service layer**
-
-`src/services/mlCacheService.ts` — adicionar `fetchStateDailyCache(userId, mlUserIds, dateFrom, dateTo, selectedStore)` retornando `Array<{ date, uf, state_name, qty_orders, revenue, approved_revenue, ml_user_id }>`. Mesmo padrão de filtro multi-store dos outros fetchers.
-
-**4. React Query**
-
-`src/hooks/useMLQueries.ts` — novo hook `useMLStateQuery(dateFrom, dateTo)` espelhando `useMLProductsQuery`. Chave de cache derivada de `scopeKey + range`.
-
-**5. UI — `MLRelatorios.tsx`**
-
-- **Remover** completamente: import `CreditCard`, constante `PAYMENT_DIST`, função `TabPagamento`, `<TabsTrigger value="pagamento">` e `<TabsContent value="pagamento">`.
-- **Reescrever `TabEstado`**:
-  - Remover `STATE_DIST` (apenas como fallback de nome/sigla, não para percentuais).
-  - Consumir `useMLStateQuery(currentFrom, currentTo)` (mesmo período usado nos outros tabs do relatório, derivado de `useMLFilters`).
-  - Agregar por UF: `revenue`, `orders`, `avgTicket`, `pct = revenue / totalRevenue * 100`.
-  - Manter exatamente os mesmos componentes visuais (BrazilHeatMap, Top 10, BarChart) — só trocar a fonte dos dados.
-  - Remover o `<SimNote text="Distribuição estimada..." />`.
-  - Empty state: "Sem dados de estado para o período. Sincronize para carregar pedidos com endereço de entrega."
-
-**6. Backfill**
-
-Não é necessário backfill ativo — a próxima sincronização (manual ou automática) preenche `ml_state_daily_cache` para todo o range solicitado. Adicionar nota visual leve "Dados carregados após próxima sincronização" caso a query retorne vazio mas existam pedidos no `ml_daily_cache` no mesmo período.
-
-### Layout final das abas
+### Fluxo visual
 
 ```text
-[ Venda por Hora ] [ Ticket Médio ] [ Por Estado ] [ Funil ]
+[ 7d ] [ 15d ] [ 30d ]   [⚙ Configurar cobertura]   [Estoque|Relatórios]   [Atualizar]
+                                ↓ click
+                ┌────────────────────────────────────┐
+                │ Configurar níveis de cobertura     │
+                ├────────────────────────────────────┤
+                │ Ruptura      Estoque = 0  (fixo)   │
+                │ Crítico      abaixo de [ 7 ] dias  │
+                │ Alerta       abaixo de [ 15] dias  │
+                │ OK           a partir de 15 dias   │
+                │                                    │
+                │ [Restaurar padrão]   [Salvar]      │
+                └────────────────────────────────────┘
 ```
 
-(Pagamento removida.)
+### Regras
 
-### Detalhes técnicos
+- **Ruptura** continua sendo determinada apenas por `available_quantity === 0` (não configurável).
+- **Crítico**: `0 < coverage_days < criticoMax` (campo numérico, default = `ceil(period * 0.25)` → 8 para 30d).
+- **Alerta**: `criticoMax ≤ coverage_days < alertaMax` (default = `period` → 30 para 30d).
+- **OK**: `coverage_days ≥ alertaMax`.
+- **Sem giro**: inalterado (sem vendas no período).
+- Validação: `1 ≤ criticoMax < alertaMax ≤ 365`. Se inválido, botão Salvar fica desabilitado com mensagem inline.
 
-- **UF parsing**: `state.id` no formato `"BR-XX"` → split em `-` e pegar índice 1; fallback para mapear `state.name` quando `id` ausente.
-- **Frete digital / sem endereço**: pular o pedido na agregação de estado (não criar UF "desconhecido" para não poluir o mapa).
-- **Performance**: o loop adicional dentro de `mercado-libre-integration` é O(orders) e não adiciona requests à API ML — todos os campos já vêm em `/orders/search`.
-- **TypeScript**: após a migração, `src/integrations/supabase/types.ts` será regenerado automaticamente; o serviço usa `(data || []) as StateDailyRow[]` igual aos outros fetchers.
-- **Sem alteração** em `BrazilHeatMap.tsx` (interface de input `StateData[]` já compatível).
+### Persistência
+
+Usar `localStorage` na chave `ml_coverage_thresholds` (mesma estratégia já adotada pelas metas — ver memory `tech/goals-persistence-state`):
+
+```json
+{ "criticoMax": 8, "alertaMax": 30 }
+```
+
+Carregado uma vez no mount do `MLEstoque`. Ao salvar, atualiza estado e o `localStorage` simultaneamente. Sem necessidade de tabela no Supabase (configuração estritamente local).
+
+### Reatividade
+
+Os limiares passam a ser **independentes do período de lookback** (atualmente derivados dele). O seletor 7/15/30 continua controlando apenas a janela de vendas usada para calcular `avg_daily_sales` e `coverage_days` — a classificação usa os thresholds salvos.
+
+Toda a UI (KPIs, donut, buckets, tabela de urgência, badges, alertas de ruptura) recalcula automaticamente porque depende de `coverageMap`, que é derivado dos thresholds via `useMemo`.
 
 ### Arquivos afetados
 
-- `supabase/migrations/<timestamp>_ml_state_daily_cache.sql` *(novo)*
-- `supabase/functions/mercado-libre-integration/index.ts` — agregação + upsert
-- `src/services/mlCacheService.ts` — novo fetcher
-- `src/hooks/useMLQueries.ts` — novo `useMLStateQuery`
-- `src/types/mlCache.ts` — novo tipo `StateDailyRow`
-- `src/pages/mercadolivre/MLRelatorios.tsx` — remover Pagamento, reescrever TabEstado
+1. **`src/hooks/useMLCoverage.ts`**
+   - Adicionar tipo `CoverageThresholds = { criticoMax: number; alertaMax: number }`.
+   - Aceitar terceiro argumento `thresholds` no hook (default mantém comportamento atual quando não fornecido, para retrocompatibilidade).
+   - Substituir `classifyDays(period)` por `classifyDays(thresholds)`.
+
+2. **`src/components/mercadolivre/CoverageSettingsPopover.tsx`** *(novo)*
+   - `Popover` (shadcn) com trigger `<Button variant="outline" size="sm">` contendo ícone `Settings2` + label "Cobertura".
+   - Dois `Input type="number"` para Crítico e Alerta.
+   - Linha informativa fixa para Ruptura ("Estoque zerado").
+   - Botões `Restaurar padrão` (recalcula a partir do período atual) e `Salvar`.
+   - Props: `period`, `thresholds`, `onChange(next)`.
+
+3. **`src/pages/mercadolivre/MLEstoque.tsx`**
+   - Novo `useState<CoverageThresholds>` com hidratação do `localStorage` (lazy init).
+   - `useEffect` salvando no `localStorage` quando muda.
+   - Passar `thresholds` ao `useMLCoverage`.
+   - Inserir `<CoverageSettingsPopover />` na sticky header, entre o seletor de período e `TabsList`.
+   - Quando o usuário troca o período, NÃO sobrescreve thresholds salvos (apenas recalcula vendas).
+
+### Detalhes técnicos
+
+- Defaults iniciais (sem nada no `localStorage`): `criticoMax = ceil(period * 0.25)`, `alertaMax = period` — preserva visual atual no primeiro acesso.
+- Componente `Settings2` do `lucide-react` (já disponível na lib).
+- Popover com `align="end"` e `className="w-72"` para não atrapalhar o layout.
+- Acessibilidade: labels associados aos inputs, ENTER no input dispara Salvar, ESC fecha o popover.
 
