@@ -472,13 +472,20 @@ serve(async (req) => {
 
       // Aggregate state-level sales per day (from shipping address)
       if (date && date >= brtDateFrom && date <= brtDateTo) {
-        const stateObj = order.shipping?.receiver_address?.state;
-        const rawId: string | undefined = stateObj?.id;
-        const stateName: string = stateObj?.name || "";
-        let uf: string | null = null;
-        if (rawId && typeof rawId === "string") {
-          uf = rawId.includes("-") ? rawId.split("-")[1] : rawId;
-          if (uf) uf = uf.trim().toUpperCase().slice(0, 2);
+        // Primary source: shipment lookup (since orders/search omits receiver_address)
+        const sid = order.shipping?.id ? String(order.shipping.id) : null;
+        const fromShipment = sid ? shipmentStates.get(sid) : undefined;
+        let uf: string | null = fromShipment?.uf ?? null;
+        let stateName: string = fromShipment?.state_name ?? "";
+        // Fallback: inline receiver_address (rarely present)
+        if (!uf) {
+          const stateObj = order.shipping?.receiver_address?.state;
+          const rawId: string | undefined = stateObj?.id;
+          stateName = stateName || stateObj?.name || "";
+          if (rawId && typeof rawId === "string") {
+            uf = rawId.includes("-") ? rawId.split("-")[1] : rawId;
+            if (uf) uf = uf.trim().toUpperCase().slice(0, 2);
+          }
         }
         if (uf && uf.length === 2) {
           const stateKey = `${date}::${uf}`;
