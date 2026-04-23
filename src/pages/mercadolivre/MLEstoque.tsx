@@ -47,6 +47,14 @@ const COVERAGE_COLORS: Record<CoverageClass, string> = {
   sem_giro: "#94a3b8",
 };
 
+const COVERAGE_CLASS_ICONS: Record<CoverageClass, React.ComponentType<{ className?: string }>> = {
+  ruptura: PackageX,
+  critico: AlertTriangle,
+  alerta: Clock,
+  ok: CheckCircle2,
+  sem_giro: Activity,
+};
+
 function CoverageBadge({ cls }: { cls: CoverageClass }) {
   const color = COVERAGE_COLORS[cls];
   const label = COVERAGE_CLASS_LABELS[cls] ?? cls;
