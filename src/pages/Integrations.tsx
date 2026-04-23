@@ -738,6 +738,14 @@ export default function Integrations() {
   return (
     <div className="space-y-6">
 
+      {/* Page Header */}
+      <div className="pt-4 pb-4">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Integrações</h1>
+        <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+          Conecte suas contas de marketplaces para sincronizar dados automaticamente
+        </p>
+      </div>
+
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
