@@ -32,6 +32,9 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewerPermissions, setViewerPermissions] = useState<Set<string>>(new Set());
+  // Tracks which user id the current `orgs` state corresponds to.
+  // If this doesn't match the auth user, we are in a transient loading state.
+  const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
 
   const loadOrgs = useCallback(async (uid: string) => {
     setLoading(true);
@@ -77,6 +80,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       setViewerPermissions(new Set());
       localStorage.removeItem(STORAGE_KEY);
     } finally {
+      setLoadedUserId(uid);
       setLoading(false);
     }
   }, []);
@@ -101,6 +105,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       setOrgs([]);
       setCurrentOrg(null);
       setViewerPermissions(new Set());
+      setLoadedUserId(null);
       setLoading(false);
     }
   }, [user, loadOrgs]);
@@ -134,13 +139,19 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     }
   }, [user, currentOrg, loadViewerPermissions]);
 
+  // Effective loading: if auth user changed but orgs not yet reloaded for that
+  // user id, we MUST report loading=true. This prevents ProtectedRoute from
+  // observing a transient { user: set, currentOrg: null, loading: false } window
+  // and erroneously signing the user out.
+  const effectiveLoading = loading || (!!user && loadedUserId !== user.id);
+
   return (
     <OrganizationContext.Provider
       value={{
         orgs,
         currentOrg,
         orgRole: currentOrg?.role ?? null,
-        loading,
+        loading: effectiveLoading,
         viewerPermissions,
         switchOrg,
         refreshOrgs,
