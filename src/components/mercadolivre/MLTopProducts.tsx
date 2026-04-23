@@ -81,3 +81,5 @@ function MLTopProductsImpl({ products }: MLTopProductsProps) {
     </motion.div>
   );
 }
+
+export const MLTopProducts = memo(MLTopProductsImpl);

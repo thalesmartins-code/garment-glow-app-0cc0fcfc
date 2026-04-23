@@ -1,6 +1,6 @@
+import { memo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
-import { useState } from "react";
 
 interface HourlyBreakdown {
   date: string;
@@ -27,7 +27,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   return dir === "desc" ? <ArrowDown className="w-3 h-3 text-primary" /> : <ArrowUp className="w-3 h-3 text-primary" />;
 }
 
-export function HourlySalesTable({ hourly, title, titleIcon, compact }: Props) {
+function HourlySalesTableImpl({ hourly, title, titleIcon, compact }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("hour");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
@@ -188,3 +188,5 @@ export function HourlySalesTable({ hourly, title, titleIcon, compact }: Props) {
     </Card>
   );
 }
+
+export const HourlySalesTable = memo(HourlySalesTableImpl);
