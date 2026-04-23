@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { useHeaderScope } from "@/contexts/HeaderScopeContext";
 
 export interface MLStore {
@@ -88,6 +89,7 @@ const MLStoreContext = createContext<MLStoreState | null>(null);
 
 export function MLStoreProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { currentOrg } = useOrganization();
   const scope = useHeaderScope();
   const { sellerId, resolvedMLUserIds, scopeKey, hasMLConnection, tokens, loading: scopeLoading } = scope;
 
@@ -111,7 +113,7 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
 
   // Build stores list from scope tokens + user cache
   const fetchStores = useCallback(async () => {
-    if (!user || !sellerId || tokens.length === 0) {
+    if (!user || !currentOrg || !sellerId || tokens.length === 0) {
       setStores([]);
       setLoading(false);
       hasLoadedOnce.current = true;
@@ -125,7 +127,7 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
       const { data: userCaches } = await supabase
         .from("ml_user_cache")
         .select("ml_user_id, nickname, custom_name")
-        .eq("user_id", user.id);
+        .eq("organization_id", currentOrg.id);
 
       const cacheMap: Record<string, { nickname: string | null; custom_name: string | null }> = {};
       (userCaches || []).forEach((c: any) => {
@@ -153,7 +155,7 @@ export function MLStoreProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       hasLoadedOnce.current = true;
     }
-  }, [user, sellerId, tokens]);
+  }, [user, currentOrg, sellerId, tokens]);
 
   useEffect(() => {
     fetchStores();
