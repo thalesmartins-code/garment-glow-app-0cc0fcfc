@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -9,7 +10,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Trash2, Crown, SlidersHorizontal, RefreshCw } from "lucide-react";
+import { Loader2, Trash2, Crown, SlidersHorizontal, RefreshCw, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,6 +35,8 @@ export function OrgMembersTab({ orgId, myRole }: { orgId: string; myRole: OrgRol
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [permsTarget, setPermsTarget] = useState<{ id: string; name: string } | null>(null);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | OrgRole>("all");
 
   const canManage = myRole === "owner" || myRole === "admin";
   const isOwner = myRole === "owner";
@@ -121,11 +124,44 @@ export function OrgMembersTab({ orgId, myRole }: { orgId: string; myRole: OrgRol
         </Button>
       </CardHeader>
       <CardContent>
+        <div className="flex flex-col sm:flex-row gap-2 mb-4">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
+          <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as "all" | OrgRole)}>
+            <SelectTrigger className="h-9 w-full sm:w-40 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os cargos</SelectItem>
+              <SelectItem value="owner">Owner</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="member">Member</SelectItem>
+              <SelectItem value="viewer">Viewer</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
         ) : (
           <div className="space-y-2">
-            {members.map((m) => {
+            {(() => {
+              const q = search.trim().toLowerCase();
+              const filtered = members.filter((m) => {
+                if (roleFilter !== "all" && m.role !== roleFilter) return false;
+                if (!q) return true;
+                return (m.full_name ?? "").toLowerCase().includes(q);
+              });
+              if (filtered.length === 0) {
+                return <p className="text-sm text-muted-foreground py-6 text-center">Nenhum membro encontrado.</p>;
+              }
+              return filtered.map((m) => {
               const isSelf = m.user_id === user?.id;
               const isMemberOwner = m.role === "owner";
               const initials = (m.full_name ?? "U").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
@@ -216,7 +252,8 @@ export function OrgMembersTab({ orgId, myRole }: { orgId: string; myRole: OrgRol
                   )}
                 </div>
               );
-            })}
+              });
+            })()}
           </div>
         )}
       </CardContent>
