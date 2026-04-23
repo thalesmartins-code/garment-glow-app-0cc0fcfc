@@ -5,10 +5,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMLStore } from "@/contexts/MLStoreContext";
-import { useMarketplace } from "@/contexts/MarketplaceContext";
 import { useSeller } from "@/contexts/SellerContext";
-import { getMarketplaceDailyData, getMarketplaceHourlyData, getMarketplaceProducts, getAllMarketplaceMockDaily, getAllMarketplaceMockHourly, getAllMarketplaceMockProducts } from "@/data/marketplaceMockData";
-import { aggregateStoreDailyData, aggregateStoreHourlyData, aggregateStoreProducts, type StoreRef } from "@/data/storeMockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -72,26 +69,22 @@ function aggregateDailyRows(rows: DailyBreakdown[]): DailyBreakdown[] {
 export default function MercadoLivre() {
   const { user } = useAuth();
   const { stores, selectedStore, setSalesCache, scopeKey, sellerId, resolvedMLUserIds, hasMLConnection, loading: storeLoading } = useMLStore();
-  const { selectedMarketplace, activeMarketplace } = useMarketplace();
   const { selectedSeller, selectedStoreIds } = useSeller();
 
   // ── Filters ──
   const filters = useMLFilters();
   const { period, setPeriod, customRange, setCustomRange, chartMode, isHourlyAvailable, hourlyTargetDate, activeFilterKey, currentFrom, currentTo, prevFrom, prevTo, fetchFrom, fetchTo, adsChartFrom, periodLabel } = filters;
 
-  // ── Effective stores ──
-  const effectiveStores = useMemo<StoreRef[]>(() => {
-    const allActive = (selectedSeller?.stores ?? []).filter((s) => s.is_active);
+  // ── Effective stores (only ML is supported) ──
+  const mlStores = useMemo(() => {
+    const allActive = (selectedSeller?.stores ?? []).filter((s) => s.is_active && s.marketplace === "ml");
     const base = selectedStoreIds.length === 0 ? allActive : allActive.filter((s) => selectedStoreIds.includes(s.id));
-    return base.map((s) => ({ id: s.id, marketplace: s.marketplace }));
+    return base;
   }, [selectedSeller, selectedStoreIds]);
 
-  const mlStores = useMemo(() => effectiveStores.filter((s) => s.marketplace === "ml"), [effectiveStores]);
-  const nonMlStores = useMemo(() => effectiveStores.filter((s) => s.marketplace !== "ml"), [effectiveStores]);
-
-  const isML = selectedStore !== "all" || (mlStores.length > 0 && nonMlStores.length === 0);
+  const isML = true;
   const isAll = selectedStore === "all" && resolvedMLUserIds.length > 1;
-  const useRealData = mlStores.length > 0 || hasMLConnection;
+  const useRealData = true;
 
   // ── React Query data ──
   const { data: allDaily = [], isLoading: dailyLoading } = useMLDailyQuery(fetchFrom, fetchTo);
@@ -220,72 +213,22 @@ export default function MercadoLivre() {
       .slice(0, 10);
   }, [allProductSales, productStockMap]);
 
-  // ── Mock data ──
-  const mockDaily = useMemo(() => {
-    if (nonMlStores.length > 0) return aggregateStoreDailyData(nonMlStores, 30);
-    if (isAll) return getAllMarketplaceMockDaily(30);
-    if (!useRealData) return getMarketplaceDailyData(selectedMarketplace, 30);
-    return [];
-  }, [nonMlStores, isAll, useRealData, selectedMarketplace]);
-
-  const mockHourly = useMemo(() => {
-    if (nonMlStores.length > 0) return aggregateStoreHourlyData(nonMlStores);
-    if (isAll) return getAllMarketplaceMockHourly();
-    if (!useRealData) return getMarketplaceHourlyData(selectedMarketplace);
-    return [];
-  }, [nonMlStores, isAll, useRealData, selectedMarketplace]);
-
-  const mockProducts = useMemo(() => {
-    if (nonMlStores.length > 0) return aggregateStoreProducts(nonMlStores);
-    if (isAll) return getAllMarketplaceMockProducts();
-    if (!useRealData) return getMarketplaceProducts(selectedMarketplace);
-    return [];
-  }, [nonMlStores, isAll, useRealData, selectedMarketplace]);
-
-  // ── Effective data ──
+  // ── Effective data (Mercado Livre only) ──
   const effectiveDaily = useMemo(() => {
-    if (connected) {
-      const aggregated = aggregateDailyRows(daily);
-      if (nonMlStores.length > 0) {
-        const nonMlData = aggregateStoreDailyData(nonMlStores, 30).filter((d) => d.date >= currentFrom && d.date <= currentTo);
-        return aggregateDailyRows([...aggregated, ...nonMlData]);
-      }
-      return aggregated;
-    }
-    if (isAll) return mockDaily.filter((d) => d.date >= currentFrom && d.date <= currentTo).sort((a, b) => a.date.localeCompare(b.date));
-    if (isML) return daily;
-    return mockDaily.filter((d) => d.date >= currentFrom && d.date <= currentTo);
-  }, [connected, daily, nonMlStores, isAll, isML, mockDaily, currentFrom, currentTo]);
+    return aggregateDailyRows(daily);
+  }, [daily]);
 
   const effectiveHourly = useMemo(() => {
-    if (connected) {
-      const hourMap = new Map<number, HourlyBreakdown>();
-      for (const h of hourly) {
-        const existing = hourMap.get(h.hour);
-        if (existing) { existing.total += h.total; existing.approved += h.approved; existing.qty += h.qty; }
-        else hourMap.set(h.hour, { ...h });
-      }
-      return Array.from(hourMap.values()).sort((a, b) => a.hour - b.hour);
+    const hourMap = new Map<number, HourlyBreakdown>();
+    for (const h of hourly) {
+      const existing = hourMap.get(h.hour);
+      if (existing) { existing.total += h.total; existing.approved += h.approved; existing.qty += h.qty; }
+      else hourMap.set(h.hour, { ...h });
     }
-    if (isAll) return mockHourly;
-    if (isML) return hourly;
-    return mockHourly;
-  }, [connected, isAll, isML, hourly, mockHourly]);
+    return Array.from(hourMap.values()).sort((a, b) => a.hour - b.hour);
+  }, [hourly]);
 
-  const effectiveProducts = useMemo(() => {
-    if (connected) return filteredTopProducts;
-    if (isAll) {
-      const mlTagged = filteredTopProducts.map(p => ({ ...p, _marketplace: "mercado-livre" }));
-      const mockTagged = mockProducts.map(p => {
-        const prefix = p.item_id?.substring(0, 3)?.toLowerCase();
-        const mp = prefix === "ama" ? "amazon" : prefix === "sho" ? "shopee" : "other";
-        return { ...p, _marketplace: mp };
-      });
-      return [...mlTagged, ...mockTagged].sort((a, b) => b.revenue - a.revenue).slice(0, 15);
-    }
-    if (isML) return filteredTopProducts;
-    return mockProducts;
-  }, [connected, isAll, isML, filteredTopProducts, mockProducts]);
+  const effectiveProducts = filteredTopProducts;
 
   // ── Metrics ──
   const effectiveMetrics = useMemo(() => {
@@ -305,12 +248,10 @@ export default function MercadoLivre() {
     return m;
   }, [effectiveDaily]);
 
-  const effectivePreviousDaily = useMemo(() => {
-    if (connected) return aggregateDailyRows(previousDaily);
-    if (isAll) return mockDaily.filter(d => d.date >= prevFrom && d.date <= prevTo);
-    if (isML) return previousDaily;
-    return mockDaily.filter(d => d.date >= prevFrom && d.date <= prevTo);
-  }, [connected, isAll, isML, previousDaily, mockDaily, prevFrom, prevTo]);
+  const effectivePreviousDaily = useMemo(
+    () => aggregateDailyRows(previousDaily),
+    [previousDaily]
+  );
 
   const previousMetrics = useMemo(() => {
     if (effectivePreviousDaily.length === 0) return null;
@@ -386,7 +327,7 @@ export default function MercadoLivre() {
   }, [isAll, perMarketplaceHourly]);
 
   // ── Not connected state ──
-  const onlyMLSelected = mlStores.length > 0 && nonMlStores.length === 0;
+  const onlyMLSelected = mlStores.length > 0;
   if (onlyMLSelected && !loading && !connected) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
