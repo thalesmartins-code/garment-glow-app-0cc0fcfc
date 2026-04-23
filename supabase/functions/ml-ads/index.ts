@@ -375,7 +375,7 @@ serve(async (req) => {
 
     const { data: tokenRow, error: tokenErr } = await supabase
       .from("ml_tokens")
-      .select("access_token, user_id")
+      .select("access_token, user_id, organization_id, seller_id")
       .eq("ml_user_id", mlUserId)
       .order("updated_at", { ascending: false })
       .limit(1)
@@ -388,6 +388,8 @@ serve(async (req) => {
 
     const accessToken = tokenRow.access_token as string;
     const userId      = tokenRow.user_id      as string;
+    const orgId       = (tokenRow.organization_id as string | null) ?? null;
+    const tokenSellerId = (tokenRow.seller_id as string | null) ?? null;
 
     if (!forceSync) {
       const [cachedDaily, cachedCampaigns, cachedProducts] = await Promise.all([
@@ -420,9 +422,9 @@ serve(async (req) => {
     if (daily.length > 0) console.log("[ml-ads] summary:", JSON.stringify(summary));
 
     await Promise.all([
-      upsertDailyCache(supabase, userId, mlUserId, daily),
-      upsertCampaignsCache(supabase, userId, mlUserId, campaigns),
-      upsertProductsCache(supabase, userId, mlUserId, products),
+      upsertDailyCache(supabase, userId, mlUserId, daily, orgId, tokenSellerId),
+      upsertCampaignsCache(supabase, userId, mlUserId, campaigns, orgId, tokenSellerId),
+      upsertProductsCache(supabase, userId, mlUserId, products, orgId, tokenSellerId),
     ]).catch(err => console.error("[ml-ads] cache error:", err));
 
     return jsonResponse({ daily, campaigns, products, summary, adsAvailable, source: "api" });
