@@ -38,6 +38,50 @@ async function mlFetch(path: string, accessToken: string) {
 }
 
 /**
+ * Fetch shipment receiver state for a list of shipment ids.
+ * The /orders/search endpoint does NOT include receiver_address — it must be
+ * fetched per shipment. We run with a concurrency limit and tolerate failures.
+ */
+async function fetchShipmentStates(
+  shipmentIds: string[],
+  accessToken: string,
+): Promise<Map<string, { uf: string; state_name: string }>> {
+  const map = new Map<string, { uf: string; state_name: string }>();
+  if (shipmentIds.length === 0) return map;
+
+  const CONCURRENCY = 10;
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(CONCURRENCY, shipmentIds.length) }, async () => {
+    while (true) {
+      const idx = cursor++;
+      if (idx >= shipmentIds.length) return;
+      const sid = shipmentIds[idx];
+      try {
+        const data = await mlFetch(`/shipments/${sid}`, accessToken);
+        const stateObj = data?.receiver_address?.state;
+        const rawId: string | undefined = typeof stateObj === "string" ? stateObj : stateObj?.id;
+        const stateName: string =
+          (typeof stateObj === "object" && stateObj?.name) ||
+          data?.receiver_address?.state_name ||
+          "";
+        let uf: string | null = null;
+        if (rawId && typeof rawId === "string") {
+          uf = rawId.includes("-") ? rawId.split("-")[1] : rawId;
+          if (uf) uf = uf.trim().toUpperCase().slice(0, 2);
+        }
+        if (uf && uf.length === 2) {
+          map.set(sid, { uf, state_name: stateName });
+        }
+      } catch (_e) {
+        // tolerate per-shipment failures (PII permissions, deleted, etc.)
+      }
+    }
+  });
+  await Promise.all(workers);
+  return map;
+}
+
+/**
  * Paginate orders for a given ISO date range.
  * ML API caps offset at 1000; if total > 950 we recursively split the
  * time window in half so every sub-window stays under the limit.
@@ -320,6 +364,22 @@ serve(async (req) => {
       { date: string; uf: string; state_name: string; qty_orders: number; revenue: number; approved_revenue: number }
     > = {};
 
+    // Pre-fetch shipment receiver states (orders/search does not include them).
+    const shipmentIdsToFetch: string[] = [];
+    const seenShipmentIds = new Set<string>();
+    for (const order of orders) {
+      const dateCreated = order.date_created || null;
+      const date = dateCreated ? toBRT(dateCreated).date : null;
+      if (!date || date < brtDateFrom || date > brtDateTo) continue;
+      const sid = order.shipping?.id;
+      if (sid && !seenShipmentIds.has(String(sid))) {
+        seenShipmentIds.add(String(sid));
+        shipmentIdsToFetch.push(String(sid));
+      }
+    }
+    const shipmentStates = await fetchShipmentStates(shipmentIdsToFetch, access_token);
+    console.log(`Shipments: fetched state for ${shipmentStates.size}/${shipmentIdsToFetch.length}`);
+
     for (const order of orders) {
       const amount = Number(order.total_amount || 0);
       const dateCreated = order.date_created || null;
@@ -412,13 +472,20 @@ serve(async (req) => {
 
       // Aggregate state-level sales per day (from shipping address)
       if (date && date >= brtDateFrom && date <= brtDateTo) {
-        const stateObj = order.shipping?.receiver_address?.state;
-        const rawId: string | undefined = stateObj?.id;
-        const stateName: string = stateObj?.name || "";
-        let uf: string | null = null;
-        if (rawId && typeof rawId === "string") {
-          uf = rawId.includes("-") ? rawId.split("-")[1] : rawId;
-          if (uf) uf = uf.trim().toUpperCase().slice(0, 2);
+        // Primary source: shipment lookup (since orders/search omits receiver_address)
+        const sid = order.shipping?.id ? String(order.shipping.id) : null;
+        const fromShipment = sid ? shipmentStates.get(sid) : undefined;
+        let uf: string | null = fromShipment?.uf ?? null;
+        let stateName: string = fromShipment?.state_name ?? "";
+        // Fallback: inline receiver_address (rarely present)
+        if (!uf) {
+          const stateObj = order.shipping?.receiver_address?.state;
+          const rawId: string | undefined = stateObj?.id;
+          stateName = stateName || stateObj?.name || "";
+          if (rawId && typeof rawId === "string") {
+            uf = rawId.includes("-") ? rawId.split("-")[1] : rawId;
+            if (uf) uf = uf.trim().toUpperCase().slice(0, 2);
+          }
         }
         if (uf && uf.length === 2) {
           const stateKey = `${date}::${uf}`;
