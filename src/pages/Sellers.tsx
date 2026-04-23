@@ -115,14 +115,15 @@ export default function Sellers() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between gap-4 pt-4 pb-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Sellers</h1>
-          <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-            {sellers.length} {sellers.length === 1 ? "seller cadastrado" : "sellers cadastrados"}
-          </p>
-        </div>
-        <Dialog open={addSellerOpen} onOpenChange={setAddSellerOpen}>
+      <div className="sticky -top-4 md:-top-6 lg:-top-8 z-20 -mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 px-4 md:px-6 lg:px-8 pb-4 pt-4 bg-background/95 backdrop-blur-sm border-b border-border/40">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">Sellers</h1>
+            <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+              {sellers.length} {sellers.length === 1 ? "seller cadastrado" : "sellers cadastrados"}
+            </p>
+          </div>
+          <Dialog open={addSellerOpen} onOpenChange={setAddSellerOpen}>
           <DialogTrigger asChild>
             <Button size="sm" className="h-8 text-sm" onClick={() => setNewSellerName("")}>
               <Plus className="h-4 w-4 mr-1.5" /> Novo Seller
@@ -148,7 +149,8 @@ export default function Sellers() {
               <Button onClick={handleAddSeller}><Check className="h-4 w-4 mr-2" />Criar</Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {sellers.length === 0 && (
