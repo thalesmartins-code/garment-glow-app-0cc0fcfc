@@ -1,37 +1,37 @@
 project_id = "gionpsuunfkkzzjdubfy"
 
 [functions.admin-list-users]
-verify_jwt = false
+verify_jwt = true
 
 [functions.admin-create-user]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ml-oauth]
 verify_jwt = false
 
 [functions.mercado-libre-integration]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ml-token-refresh]
 verify_jwt = false
 
 [functions.ml-inventory]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ml-ads]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ml-reputation]
-verify_jwt = false
+verify_jwt = true
 
 [functions.admin-toggle-user]
-verify_jwt = false
+verify_jwt = true
 
 [functions.admin-update-role]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ml-products-aggregated]
-verify_jwt = false
+verify_jwt = true
 
 [functions.org-invite-create]
 verify_jwt = true
