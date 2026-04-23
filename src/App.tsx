@@ -15,6 +15,7 @@ import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { MenuVisibilityProvider } from "@/contexts/MenuVisibilityContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RoleRoute } from "@/components/auth/RoleRoute";
+import { TVRoleGuard } from "@/components/auth/TVRoleGuard";
 import { OAuthCodeRedirect } from "@/components/auth/OAuthCodeRedirect";
 import { PageLoader } from "@/components/ui/PageLoader";
 import Sellers from "./pages/Sellers";
@@ -76,7 +77,7 @@ const App = () => (
                     <Route path="/perfil" element={<Navigate to="/api/perfil" replace />} />
 
                     {/* Modo TV — acesso autenticado, sem sidebar/header */}
-                    <Route path="/api/tv" element={<ErrorBoundary fallbackTitle="Erro no Modo TV"><TVModeVendas /></ErrorBoundary>} />
+                    <Route path="/api/tv" element={<TVRoleGuard><ErrorBoundary fallbackTitle="Erro no Modo TV"><TVModeVendas /></ErrorBoundary></TVRoleGuard>} />
 
                     {/* Marketplaces via API (única experiência do app) */}
                     <Route element={<HeaderScopeProvider><MLStoreProvider><MLInventoryProvider><ApiLayout /></MLInventoryProvider></MLStoreProvider></HeaderScopeProvider>}>
