@@ -345,35 +345,73 @@ function TabEstado() {
   const { salesCache } = useMLStore();
   const { daily } = salesCache;
 
-  const stateData = useMemo(() => {
-    const totalRevenue = daily.reduce((s, d) => s + d.approved, 0);
-    const totalOrders = daily.reduce((s, d) => s + d.qty, 0);
-    return STATE_DIST.map((s) => {
-      const revenue = totalRevenue * (s.pct / 100);
-      const orders = Math.round(totalOrders * (s.pct / 100));
-      return {
-        uf: s.uf,
-        name: s.name,
-        revenue,
-        orders,
-        avgTicket: orders > 0 ? revenue / orders : 0,
-        pct: s.pct,
-      };
-    }).sort((a, b) => b.revenue - a.revenue);
+  // Derive period range from the cached daily rows so this tab follows the
+  // same period filter applied to the rest of the report.
+  const { rangeFrom, rangeTo } = useMemo(() => {
+    if (daily.length === 0) {
+      const today = new Date().toISOString().slice(0, 10);
+      return { rangeFrom: today, rangeTo: today };
+    }
+    const dates = daily.map((d) => d.date).sort();
+    return { rangeFrom: dates[0], rangeTo: dates[dates.length - 1] };
   }, [daily]);
 
-  const hasAny = daily.some((d) => d.approved > 0);
+  const { data: stateRows = [], isLoading } = useMLStateQuery(rangeFrom, rangeTo);
 
-  if (!hasAny) {
-    return <EmptyState message="Nenhum dado de vendas disponível para o período selecionado." />;
+  const stateData = useMemo(() => {
+    const agg: Record<string, { uf: string; name: string; revenue: number; orders: number }> = {};
+    for (const r of stateRows) {
+      if (!r.uf) continue;
+      if (!agg[r.uf]) {
+        agg[r.uf] = {
+          uf: r.uf,
+          name: r.state_name || UF_NAME_FALLBACK[r.uf] || r.uf,
+          revenue: 0,
+          orders: 0,
+        };
+      }
+      agg[r.uf].revenue += Number(r.approved_revenue || 0) || Number(r.revenue || 0);
+      agg[r.uf].orders += Number(r.qty_orders || 0);
+    }
+    const totalRevenue = Object.values(agg).reduce((s, v) => s + v.revenue, 0);
+    return Object.values(agg)
+      .map((s) => ({
+        uf: s.uf,
+        name: s.name,
+        revenue: s.revenue,
+        orders: s.orders,
+        avgTicket: s.orders > 0 ? s.revenue / s.orders : 0,
+        pct: totalRevenue > 0 ? (s.revenue / totalRevenue) * 100 : 0,
+      }))
+      .sort((a, b) => b.revenue - a.revenue);
+  }, [stateRows]);
+
+  const dailyHasSales = daily.some((d) => d.approved > 0 || d.qty > 0);
+
+  if (isLoading && stateData.length === 0) {
+    return <EmptyState message="Carregando dados de estado..." />;
+  }
+
+  if (stateData.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+          <span>
+            {dailyHasSales
+              ? "Sem dados de estado para o período. Execute uma sincronização para carregar pedidos com endereço de entrega."
+              : "Sem dados de estado para o período. Sincronize para carregar pedidos com endereço de entrega."}
+          </span>
+        </div>
+      </div>
+    );
   }
 
   const top10 = stateData.slice(0, 10);
+  const maxPct = top10[0]?.pct || 1;
 
   return (
     <div className="space-y-4">
-      <SimNote text="Distribuição estimada com base em padrões típicos do e-commerce brasileiro. A API de Pedidos (Orders) é necessária para dados reais por estado." />
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <Card>
           <div className="px-4 pt-4 pb-3">
@@ -397,7 +435,7 @@ function TabEstado() {
                   <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
                     <div
                       className="h-full rounded-full bg-primary"
-                      style={{ width: `${(s.pct / top10[0].pct) * 100}%` }}
+                      style={{ width: `${(s.pct / maxPct) * 100}%` }}
                     />
                   </div>
                   <span className="text-[10px] text-muted-foreground w-8 text-right">{pctFmt(s.pct)}</span>
