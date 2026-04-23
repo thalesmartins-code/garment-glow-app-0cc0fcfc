@@ -70,13 +70,13 @@ const App = () => (
                   <Route path="/login" element={<Login />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/aceitar-convite" element={<AcceptInvite />} />
-                  <Route path="/api/tv" element={<ProtectedRoute />}>
-                    <Route index element={<TVModeVendas />} />
-                  </Route>
                   <Route element={<ProtectedRoute />}>
                     {/* Root redirects to API environment */}
                     <Route path="/" element={<Navigate to="/api" replace />} />
                     <Route path="/perfil" element={<Navigate to="/api/perfil" replace />} />
+
+                    {/* Modo TV — acesso autenticado, sem sidebar/header */}
+                    <Route path="/api/tv" element={<ErrorBoundary fallbackTitle="Erro no Modo TV"><TVModeVendas /></ErrorBoundary>} />
 
                     {/* Marketplaces via API (única experiência do app) */}
                     <Route element={<HeaderScopeProvider><MLStoreProvider><MLInventoryProvider><ApiLayout /></MLInventoryProvider></MLStoreProvider></HeaderScopeProvider>}>
