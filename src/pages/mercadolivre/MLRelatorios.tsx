@@ -640,14 +640,12 @@ export default function MLRelatorios() {
           <TabsTrigger value="horario"    className="gap-1.5 text-xs"><Clock3   className="w-3.5 h-3.5" />Venda por Hora</TabsTrigger>
           <TabsTrigger value="ticket"     className="gap-1.5 text-xs"><TrendingUp className="w-3.5 h-3.5" />Ticket M&eacute;dio</TabsTrigger>
           <TabsTrigger value="estado"     className="gap-1.5 text-xs"><MapPin   className="w-3.5 h-3.5" />Por Estado</TabsTrigger>
-          <TabsTrigger value="pagamento"  className="gap-1.5 text-xs"><CreditCard className="w-3.5 h-3.5" />Pagamento</TabsTrigger>
           <TabsTrigger value="funil"      className="gap-1.5 text-xs"><GitMerge className="w-3.5 h-3.5" />Funil</TabsTrigger>
         </TabsList>
 
         <TabsContent value="horario"   className="mt-4"><TabHorario  /></TabsContent>
         <TabsContent value="ticket"    className="mt-4"><TabTicket   /></TabsContent>
         <TabsContent value="estado"    className="mt-4"><TabEstado   /></TabsContent>
-        <TabsContent value="pagamento" className="mt-4"><TabPagamento /></TabsContent>
         <TabsContent value="funil"     className="mt-4"><TabFunil    /></TabsContent>
       </Tabs>
     </div>
