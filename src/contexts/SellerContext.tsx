@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { Seller, SellerStore, ALL_MARKETPLACES, buildSeller, generateInitials } from "@/types/seller";
 
 interface AddStoreInput {
@@ -54,6 +55,7 @@ const SellerContext = createContext<SellerContextType | undefined>(undefined);
 
 export function SellerProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { currentOrg } = useOrganization();
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSellerId, setSelectedSellerId] = useState<string | null>(
@@ -77,7 +79,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
   const prevSellerIdRef = useRef<string | null>(null);
 
   const loadSellers = useCallback(async () => {
-    if (!user) {
+    if (!user || !currentOrg) {
       setSellers([]);
       setLoading(false);
       return;
@@ -89,11 +91,12 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
         supabase
           .from("sellers" as any)
           .select("id, name, initials, logo_url, is_active, created_at")
-          .eq("user_id", user.id)
+          .eq("organization_id", currentOrg.id)
           .order("created_at", { ascending: true }),
         supabase
           .from("seller_stores" as any)
           .select("id, seller_id, marketplace, store_name, external_id, is_active, created_at")
+          .eq("organization_id", currentOrg.id)
           .order("created_at", { ascending: true }),
       ]);
 
@@ -113,7 +116,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, currentOrg]);
 
   useEffect(() => {
     if (!loadedRef.current) {
@@ -125,7 +128,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     loadedRef.current = false;
     loadSellers();
-  }, [user?.id]);
+  }, [user?.id, currentOrg?.id]);
 
   // Persist selected seller id
   useEffect(() => {
