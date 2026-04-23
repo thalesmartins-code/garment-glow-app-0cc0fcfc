@@ -38,6 +38,50 @@ async function mlFetch(path: string, accessToken: string) {
 }
 
 /**
+ * Fetch shipment receiver state for a list of shipment ids.
+ * The /orders/search endpoint does NOT include receiver_address — it must be
+ * fetched per shipment. We run with a concurrency limit and tolerate failures.
+ */
+async function fetchShipmentStates(
+  shipmentIds: string[],
+  accessToken: string,
+): Promise<Map<string, { uf: string; state_name: string }>> {
+  const map = new Map<string, { uf: string; state_name: string }>();
+  if (shipmentIds.length === 0) return map;
+
+  const CONCURRENCY = 10;
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(CONCURRENCY, shipmentIds.length) }, async () => {
+    while (true) {
+      const idx = cursor++;
+      if (idx >= shipmentIds.length) return;
+      const sid = shipmentIds[idx];
+      try {
+        const data = await mlFetch(`/shipments/${sid}`, accessToken);
+        const stateObj = data?.receiver_address?.state;
+        const rawId: string | undefined = typeof stateObj === "string" ? stateObj : stateObj?.id;
+        const stateName: string =
+          (typeof stateObj === "object" && stateObj?.name) ||
+          data?.receiver_address?.state_name ||
+          "";
+        let uf: string | null = null;
+        if (rawId && typeof rawId === "string") {
+          uf = rawId.includes("-") ? rawId.split("-")[1] : rawId;
+          if (uf) uf = uf.trim().toUpperCase().slice(0, 2);
+        }
+        if (uf && uf.length === 2) {
+          map.set(sid, { uf, state_name: stateName });
+        }
+      } catch (_e) {
+        // tolerate per-shipment failures (PII permissions, deleted, etc.)
+      }
+    }
+  });
+  await Promise.all(workers);
+  return map;
+}
+
+/**
  * Paginate orders for a given ISO date range.
  * ML API caps offset at 1000; if total > 950 we recursively split the
  * time window in half so every sub-window stays under the limit.
