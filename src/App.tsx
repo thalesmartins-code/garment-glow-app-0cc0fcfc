@@ -18,12 +18,6 @@ import { RoleRoute } from "@/components/auth/RoleRoute";
 import { TVRoleGuard } from "@/components/auth/TVRoleGuard";
 import { OAuthCodeRedirect } from "@/components/auth/OAuthCodeRedirect";
 import { PageLoader } from "@/components/ui/PageLoader";
-import Sellers from "./pages/Sellers";
-import Profile from "./pages/Profile";
-import Integrations from "./pages/Integrations";
-import AdminMonitoring from "./pages/AdminMonitoring";
-import OrgSettings from "./pages/org/OrgSettings";
-import AcceptInvite from "./pages/AcceptInvite";
 import React, { Suspense } from "react";
 
 const MercadoLivre = React.lazy(() => import("./pages/MercadoLivre"));
@@ -38,10 +32,15 @@ const MLPerguntas = React.lazy(() => import("./pages/mercadolivre/MLPerguntas"))
 const MLMetas = React.lazy(() => import("./pages/mercadolivre/MLMetas"));
 const MLPrecosCustos = React.lazy(() => import("./pages/mercadolivre/MLPrecosCustos"));
 const TVModeVendas = React.lazy(() => import("./pages/TVModeVendas"));
-
-import Login from "./pages/Login";
-import ResetPassword from "./pages/ResetPassword";
-import NotFound from "./pages/NotFound";
+const Sellers = React.lazy(() => import("./pages/Sellers"));
+const Profile = React.lazy(() => import("./pages/Profile"));
+const Integrations = React.lazy(() => import("./pages/Integrations"));
+const AdminMonitoring = React.lazy(() => import("./pages/AdminMonitoring"));
+const OrgSettings = React.lazy(() => import("./pages/org/OrgSettings"));
+const AcceptInvite = React.lazy(() => import("./pages/AcceptInvite"));
+const Login = React.lazy(() => import("./pages/Login"));
+const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
+const NotFound = React.lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
