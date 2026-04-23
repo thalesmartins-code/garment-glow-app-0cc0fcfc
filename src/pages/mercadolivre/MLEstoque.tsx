@@ -1091,7 +1091,7 @@ export default function MLEstoque() {
             variant="minimal" size="compact" iconClassName="bg-success/10 text-success"
           />
           <KPICard
-            title="Em Ruptura"
+            title="RUPTURA"
             value={numFmt(filteredStats.ruptura)}
             icon={<PackageX className="w-4 h-4" />}
             variant={filteredStats.ruptura > 0 ? "danger" : "minimal"}
@@ -1106,7 +1106,14 @@ export default function MLEstoque() {
             size="compact"
             iconClassName="bg-warning/10 text-warning"
           />
-          <KPICard title="Sem Giro" value={numFmt(filteredStats.sem_giro)} icon={<Activity className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-muted text-muted-foreground" />
+          <KPICard
+            title="OK"
+            value={numFmt(filteredStats.ok)}
+            icon={<CheckCircle2 className="w-4 h-4" />}
+            variant="minimal"
+            size="compact"
+            iconClassName="bg-success/10 text-success"
+          />
         </div>
 
         <CoverageAlerts coverageMap={coverageMap} items={items} />
