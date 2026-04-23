@@ -47,6 +47,16 @@ const COVERAGE_COLORS: Record<CoverageClass, string> = {
   sem_giro: "#94a3b8",
 };
 
+import type { LucideIcon } from "lucide-react";
+
+const COVERAGE_CLASS_ICONS: Record<CoverageClass, LucideIcon> = {
+  ruptura: PackageX,
+  critico: AlertTriangle,
+  alerta: Clock,
+  ok: CheckCircle2,
+  sem_giro: Activity,
+};
+
 function CoverageBadge({ cls }: { cls: CoverageClass }) {
   const color = COVERAGE_COLORS[cls];
   const label = COVERAGE_CLASS_LABELS[cls] ?? cls;
@@ -985,17 +995,18 @@ export default function MLEstoque() {
   const filteredStats = useMemo(() => {
     const totalStockValue = filteredItems.reduce((s, i) => s + i.price * i.available_quantity, 0);
     const totalUnits = filteredItems.reduce((s, i) => s + i.available_quantity, 0);
-    let ruptura = 0, critico = 0, alerta = 0, sem_giro = 0, withDays = 0, sumDays = 0;
+    let ruptura = 0, critico = 0, alerta = 0, ok = 0, sem_giro = 0, withDays = 0, sumDays = 0;
     for (const item of filteredItems) {
       const cd = coverageMap.get(item.id);
       if (!cd) continue;
       if (cd.coverage_class === "ruptura") ruptura++;
       else if (cd.coverage_class === "critico") critico++;
       else if (cd.coverage_class === "alerta") alerta++;
+      else if (cd.coverage_class === "ok") ok++;
       else if (cd.coverage_class === "sem_giro") sem_giro++;
       if (cd.coverage_days !== null && cd.coverage_days > 0) { withDays++; sumDays += cd.coverage_days; }
     }
-    return { totalStockValue, totalUnits, ruptura, critico, alerta, sem_giro };
+    return { totalStockValue, totalUnits, ruptura, critico, alerta, ok, sem_giro };
   }, [filteredItems, coverageMap]);
 
   const toggleExpand = (id: string) => {
@@ -1090,7 +1101,7 @@ export default function MLEstoque() {
             variant="minimal" size="compact" iconClassName="bg-success/10 text-success"
           />
           <KPICard
-            title="Em Ruptura"
+            title="RUPTURA"
             value={numFmt(filteredStats.ruptura)}
             icon={<PackageX className="w-4 h-4" />}
             variant={filteredStats.ruptura > 0 ? "danger" : "minimal"}
@@ -1105,7 +1116,14 @@ export default function MLEstoque() {
             size="compact"
             iconClassName="bg-warning/10 text-warning"
           />
-          <KPICard title="Sem Giro" value={numFmt(filteredStats.sem_giro)} icon={<Activity className="w-4 h-4" />} variant="minimal" size="compact" iconClassName="bg-muted text-muted-foreground" />
+          <KPICard
+            title="OK"
+            value={numFmt(filteredStats.ok)}
+            icon={<CheckCircle2 className="w-4 h-4" />}
+            variant="minimal"
+            size="compact"
+            iconClassName="bg-success/10 text-success"
+          />
         </div>
 
         <CoverageAlerts coverageMap={coverageMap} items={items} />
@@ -1143,9 +1161,17 @@ export default function MLEstoque() {
                   <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas coberturas</SelectItem>
-                    {(Object.keys(COVERAGE_CLASS_LABELS) as CoverageClass[]).map((cls) => (
-                      <SelectItem key={cls} value={cls}>{COVERAGE_CLASS_LABELS[cls]}</SelectItem>
-                    ))}
+                    {(Object.keys(COVERAGE_CLASS_LABELS) as CoverageClass[]).map((cls) => {
+                      const Icon = COVERAGE_CLASS_ICONS[cls];
+                      return (
+                        <SelectItem key={cls} value={cls}>
+                          <span className="flex items-center gap-2">
+                            <Icon className="w-3.5 h-3.5" style={{ color: COVERAGE_COLORS[cls] }} />
+                            {COVERAGE_CLASS_LABELS[cls]}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
                 <div className="flex items-center gap-1.5 cursor-pointer opacity-60 hover:opacity-100 transition-opacity"
