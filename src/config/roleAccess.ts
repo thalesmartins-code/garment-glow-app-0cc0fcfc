@@ -8,41 +8,41 @@ const ORG_ADMIN: OrgRole[] = ["owner", "admin"];
 const OWNER_ONLY: OrgRole[] = ["owner"];
 
 export const roleAccess: Record<string, OrgRole[]> = {
-  "/api": ALL,
-  "/api/estoque": ALL,
-  "/api/anuncios": ALL,
-  "/api/publicidade": ALL,
-  "/api/financeiro": ALL,
-  "/api/reputacao": ALL,
-  "/api/perfil": ALL,
-  "/api/pedidos": OPERATIONAL,
-  "/api/perguntas": OPERATIONAL,
-  "/api/devolucoes": OPERATIONAL,
-  "/api/metas": OPERATIONAL,
-  "/api/precos-custos": OPERATIONAL,
-  "/api/organizacao": ORG_ADMIN,
-  "/api/sellers": OWNER_ONLY,
-  "/api/integracoes": OWNER_ONLY,
-  "/api/monitoramento": OWNER_ONLY,
+  "/": ALL,
+  "/estoque": ALL,
+  "/anuncios": ALL,
+  "/publicidade": ALL,
+  "/financeiro": ALL,
+  "/reputacao": ALL,
+  "/perfil": ALL,
+  "/pedidos": OPERATIONAL,
+  "/perguntas": OPERATIONAL,
+  "/devolucoes": OPERATIONAL,
+  "/metas": OPERATIONAL,
+  "/precos-custos": OPERATIONAL,
+  "/organizacao": ORG_ADMIN,
+  "/sellers": OWNER_ONLY,
+  "/integracoes": OWNER_ONLY,
+  "/monitoramento": OWNER_ONLY,
 };
 
 /**
  * Routes that can be individually toggled for viewers by owner/admin.
  * Viewers get DEFAULT-DENY: no access until owner/admin explicitly grants.
- * /api/perfil is always allowed for everyone (not in this list).
+ * /perfil is always allowed for everyone (not in this list).
  */
 export const VIEWER_ELIGIBLE_ROUTES: { path: string; label: string }[] = [
-  { path: "/api", label: "Vendas (Dashboard)" },
-  { path: "/api/estoque", label: "Estoque" },
-  { path: "/api/anuncios", label: "Anúncios" },
-  { path: "/api/publicidade", label: "Publicidade" },
-  { path: "/api/reputacao", label: "Reputação" },
-  { path: "/api/financeiro", label: "Financeiro" },
-  { path: "/api/pedidos", label: "Pedidos" },
-  { path: "/api/perguntas", label: "Perguntas" },
-  { path: "/api/devolucoes", label: "Devoluções" },
-  { path: "/api/metas", label: "Metas" },
-  { path: "/api/precos-custos", label: "Preços e Custos" },
+  { path: "/", label: "Vendas (Dashboard)" },
+  { path: "/estoque", label: "Estoque" },
+  { path: "/anuncios", label: "Anúncios" },
+  { path: "/publicidade", label: "Publicidade" },
+  { path: "/reputacao", label: "Reputação" },
+  { path: "/financeiro", label: "Financeiro" },
+  { path: "/pedidos", label: "Pedidos" },
+  { path: "/perguntas", label: "Perguntas" },
+  { path: "/devolucoes", label: "Devoluções" },
+  { path: "/metas", label: "Metas" },
+  { path: "/precos-custos", label: "Preços e Custos" },
 ];
 
 const VIEWER_ELIGIBLE_SET = new Set(VIEWER_ELIGIBLE_ROUTES.map((r) => r.path));
@@ -66,8 +66,8 @@ export function canAccessWithViewer(
 ): boolean {
   if (!role) return false;
   if (role !== "viewer") return canAccess(role, path);
-  // Viewer: /api/perfil always allowed
-  if (path === "/api/perfil") return true;
+  // Viewer: /perfil always allowed
+  if (path === "/perfil") return true;
   // Must be eligible AND explicitly granted
   if (!VIEWER_ELIGIBLE_SET.has(path)) return false;
   return viewerPermissions.has(path);

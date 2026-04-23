@@ -72,75 +72,71 @@ const App = () => (
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/aceitar-convite" element={<AcceptInvite />} />
                   <Route element={<ProtectedRoute />}>
-                    {/* Root redirects to API environment */}
-                    <Route path="/" element={<Navigate to="/api" replace />} />
-                    <Route path="/perfil" element={<Navigate to="/api/perfil" replace />} />
-
                     {/* Modo TV — acesso autenticado, sem sidebar/header */}
-                    <Route path="/api/tv" element={<TVRoleGuard><ErrorBoundary fallbackTitle="Erro no Modo TV"><TVModeVendas /></ErrorBoundary></TVRoleGuard>} />
+                    <Route path="/tv" element={<TVRoleGuard><ErrorBoundary fallbackTitle="Erro no Modo TV"><TVModeVendas /></ErrorBoundary></TVRoleGuard>} />
 
                     {/* Marketplaces via API (única experiência do app) */}
                     <Route element={<HeaderScopeProvider><MLStoreProvider><MLInventoryProvider><ApiLayout /></MLInventoryProvider></MLStoreProvider></HeaderScopeProvider>}>
-                      <Route path="/api/perfil" element={<Profile />} />
+                      <Route path="/perfil" element={<Profile />} />
                       <Route
-                        path="/api"
+                        path="/"
                         element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Vendas"><MercadoLivre /></ErrorBoundary></RoleRoute>}
                       />
                       <Route
-                        path="/api/estoque"
+                        path="/estoque"
                         element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Estoque"><MLEstoque /></ErrorBoundary></RoleRoute>}
                       />
                       <Route
-                        path="/api/anuncios"
+                        path="/anuncios"
                         element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Anúncios"><MLProdutos /></ErrorBoundary></RoleRoute>}
                       />
                       <Route
-                        path="/api/pedidos"
+                        path="/pedidos"
                         element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Pedidos"><MLPedidos /></ErrorBoundary></RoleRoute>}
                       />
                       <Route
-                        path="/api/publicidade"
+                        path="/publicidade"
                         element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Publicidade"><MLAnuncios /></ErrorBoundary></RoleRoute>}
                       />
                       <Route
-                        path="/api/financeiro"
+                        path="/financeiro"
                         element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página Financeiro"><MLFinanceiro /></ErrorBoundary></RoleRoute>}
                       />
                       <Route
-                        path="/api/reputacao"
+                        path="/reputacao"
                         element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Reputação"><MLReputacao /></ErrorBoundary></RoleRoute>}
                       />
                       <Route
-                        path="/api/devolucoes"
+                        path="/devolucoes"
                         element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Devoluções"><MLDevolucoes /></ErrorBoundary></RoleRoute>}
                       />
                       <Route
-                        path="/api/perguntas"
+                        path="/perguntas"
                         element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Perguntas"><MLPerguntas /></ErrorBoundary></RoleRoute>}
                       />
                       <Route
-                        path="/api/metas"
+                        path="/metas"
                         element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Metas"><MLMetas /></ErrorBoundary></RoleRoute>}
                       />
                       <Route
-                         path="/api/precos-custos"
+                         path="/precos-custos"
                          element={<RoleRoute><ErrorBoundary fallbackTitle="Erro na página de Preços e Custos"><MLPrecosCustos /></ErrorBoundary></RoleRoute>}
                       />
                       <Route
-                        path="/api/sellers"
+                        path="/sellers"
                         element={<RoleRoute><Sellers /></RoleRoute>}
                       />
                       <Route
-                        path="/api/integracoes"
+                        path="/integracoes"
                         element={<RoleRoute><Integrations /></RoleRoute>}
                       />
                       <Route
-                        path="/api/organizacao"
+                        path="/organizacao"
                         element={<RoleRoute><OrgSettings /></RoleRoute>}
                       />
-                      <Route path="/api/usuarios" element={<Navigate to="/api/organizacao" replace />} />
+                      <Route path="/usuarios" element={<Navigate to="/organizacao" replace />} />
                       <Route
-                        path="/api/monitoramento"
+                        path="/monitoramento"
                         element={<RoleRoute><ErrorBoundary fallbackTitle="Erro no Monitoramento"><AdminMonitoring /></ErrorBoundary></RoleRoute>}
                       />
                     </Route>

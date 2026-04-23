@@ -41,7 +41,7 @@ function NotConnected() {
         Conecte sua conta para acessar preços e custos.
       </p>
       <Button asChild>
-        <Link to="/api/integracoes">Conectar conta</Link>
+        <Link to="/integracoes">Conectar conta</Link>
       </Button>
     </div>
   );

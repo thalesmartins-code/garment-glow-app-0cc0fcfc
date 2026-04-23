@@ -88,7 +88,7 @@ export default function AcceptInvite() {
     await refreshOrgs();
     setStep("done");
     setSubmitting(false);
-    setTimeout(() => navigate("/api"), 1500);
+    setTimeout(() => navigate("/"), 1500);
   };
 
   if (step === "done") {
@@ -140,7 +140,7 @@ export default function AcceptInvite() {
           </p>
           <p className="text-xs text-muted-foreground">Saia da conta atual para criar uma nova ou entrar com o email convidado.</p>
           <Button className="w-full" onClick={handleSwitchAccount}>Sair e continuar</Button>
-          <Button variant="ghost" className="w-full" onClick={() => navigate("/api")}>Cancelar</Button>
+          <Button variant="ghost" className="w-full" onClick={() => navigate("/")}>Cancelar</Button>
         </div>
       </div>
     );

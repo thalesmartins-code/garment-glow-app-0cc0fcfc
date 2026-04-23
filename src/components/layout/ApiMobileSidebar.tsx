@@ -24,33 +24,33 @@ const sections = [
   {
     label: "Dashboard",
     items: [
-      { icon: TrendingUp,  label: "Vendas",      path: "/api"            },
-      { icon: Megaphone,   label: "Publicidade", path: "/api/publicidade" },
-      { icon: Receipt,     label: "Margem",      path: "/api/financeiro" },
+      { icon: TrendingUp,  label: "Vendas",      path: "/"            },
+      { icon: Megaphone,   label: "Publicidade", path: "/publicidade" },
+      { icon: Receipt,     label: "Margem",      path: "/financeiro" },
     ],
   },
   {
     label: "Operações",
     items: [
-      { icon: ShoppingBag,   label: "Anúncios", path: "/api/anuncios" },
-      { icon: Package,       label: "Estoque",  path: "/api/estoque"  },
-      { icon: ClipboardList, label: "Pedidos",  path: "/api/pedidos"  },
+      { icon: ShoppingBag,   label: "Anúncios", path: "/anuncios" },
+      { icon: Package,       label: "Estoque",  path: "/estoque"  },
+      { icon: ClipboardList, label: "Pedidos",  path: "/pedidos"  },
     ],
   },
   {
     label: "Pós-venda",
     items: [
-      { icon: Star,          label: "Reputação",  path: "/api/reputacao"  },
-      { icon: PackageX,      label: "Devoluções", path: "/api/devolucoes" },
-      { icon: MessageCircle, label: "Mensagens",  path: "/api/perguntas"  },
+      { icon: Star,          label: "Reputação",  path: "/reputacao"  },
+      { icon: PackageX,      label: "Devoluções", path: "/devolucoes" },
+      { icon: MessageCircle, label: "Mensagens",  path: "/perguntas"  },
     ],
   },
   {
     label: "Configurações",
     items: [
-      { icon: Target, label: "Metas",       path: "/api/metas"       },
-      { icon: Users,  label: "Sellers",     path: "/api/sellers"     },
-      { icon: Plug,   label: "Integrações", path: "/api/integracoes" },
+      { icon: Target, label: "Metas",       path: "/metas"       },
+      { icon: Users,  label: "Sellers",     path: "/sellers"     },
+      { icon: Plug,   label: "Integrações", path: "/integracoes" },
     ],
   },
 ];
