@@ -21,6 +21,7 @@ export type Database = {
           created_at: string | null
           details: Json | null
           id: string
+          organization_id: string | null
           target_user_id: string | null
         }
         Insert: {
@@ -29,6 +30,7 @@ export type Database = {
           created_at?: string | null
           details?: Json | null
           id?: string
+          organization_id?: string | null
           target_user_id?: string | null
         }
         Update: {
@@ -37,9 +39,18 @@ export type Database = {
           created_at?: string | null
           details?: Json | null
           id?: string
+          organization_id?: string | null
           target_user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ml_ads_campaigns_cache: {
         Row: {
@@ -54,6 +65,7 @@ export type Database = {
           impressions: number
           ml_user_id: string
           name: string
+          organization_id: string | null
           roas: number
           seller_id: string | null
           spend: number
@@ -73,6 +85,7 @@ export type Database = {
           impressions?: number
           ml_user_id?: string
           name?: string
+          organization_id?: string | null
           roas?: number
           seller_id?: string | null
           spend?: number
@@ -92,6 +105,7 @@ export type Database = {
           impressions?: number
           ml_user_id?: string
           name?: string
+          organization_id?: string | null
           roas?: number
           seller_id?: string | null
           spend?: number
@@ -100,6 +114,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ml_ads_campaigns_cache_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ml_ads_campaigns_cache_seller_id_fkey"
             columns: ["seller_id"]
@@ -120,6 +141,7 @@ export type Database = {
           id: string
           impressions: number
           ml_user_id: string
+          organization_id: string | null
           roas: number
           seller_id: string | null
           spend: number
@@ -136,6 +158,7 @@ export type Database = {
           id?: string
           impressions?: number
           ml_user_id?: string
+          organization_id?: string | null
           roas?: number
           seller_id?: string | null
           spend?: number
@@ -152,6 +175,7 @@ export type Database = {
           id?: string
           impressions?: number
           ml_user_id?: string
+          organization_id?: string | null
           roas?: number
           seller_id?: string | null
           spend?: number
@@ -159,6 +183,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ml_ads_daily_cache_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ml_ads_daily_cache_seller_id_fkey"
             columns: ["seller_id"]
@@ -179,6 +210,7 @@ export type Database = {
           impressions: number
           item_id: string
           ml_user_id: string
+          organization_id: string | null
           roas: number
           seller_id: string | null
           spend: number
@@ -197,6 +229,7 @@ export type Database = {
           impressions?: number
           item_id: string
           ml_user_id?: string
+          organization_id?: string | null
           roas?: number
           seller_id?: string | null
           spend?: number
@@ -215,6 +248,7 @@ export type Database = {
           impressions?: number
           item_id?: string
           ml_user_id?: string
+          organization_id?: string | null
           roas?: number
           seller_id?: string | null
           spend?: number
@@ -224,6 +258,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ml_ads_products_cache_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ml_ads_products_cache_seller_id_fkey"
             columns: ["seller_id"]
@@ -240,6 +281,7 @@ export type Database = {
           date: string
           id: string
           ml_user_id: string
+          organization_id: string | null
           qty_orders: number
           seller_id: string | null
           shipped_orders: number
@@ -256,6 +298,7 @@ export type Database = {
           date: string
           id?: string
           ml_user_id?: string
+          organization_id?: string | null
           qty_orders?: number
           seller_id?: string | null
           shipped_orders?: number
@@ -272,6 +315,7 @@ export type Database = {
           date?: string
           id?: string
           ml_user_id?: string
+          organization_id?: string | null
           qty_orders?: number
           seller_id?: string | null
           shipped_orders?: number
@@ -283,6 +327,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ml_daily_cache_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ml_daily_cache_seller_id_fkey"
             columns: ["seller_id"]
@@ -299,6 +350,7 @@ export type Database = {
           hour: number
           id: string
           ml_user_id: string
+          organization_id: string | null
           qty_orders: number
           seller_id: string | null
           synced_at: string
@@ -312,6 +364,7 @@ export type Database = {
           hour: number
           id?: string
           ml_user_id?: string
+          organization_id?: string | null
           qty_orders?: number
           seller_id?: string | null
           synced_at?: string
@@ -325,6 +378,7 @@ export type Database = {
           hour?: number
           id?: string
           ml_user_id?: string
+          organization_id?: string | null
           qty_orders?: number
           seller_id?: string | null
           synced_at?: string
@@ -333,6 +387,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ml_hourly_cache_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ml_hourly_cache_seller_id_fkey"
             columns: ["seller_id"]
@@ -348,6 +409,7 @@ export type Database = {
           id: string
           item_id: string
           ml_user_id: string
+          organization_id: string | null
           qty_sold: number
           revenue: number
           seller_id: string | null
@@ -361,6 +423,7 @@ export type Database = {
           id?: string
           item_id: string
           ml_user_id?: string
+          organization_id?: string | null
           qty_sold?: number
           revenue?: number
           seller_id?: string | null
@@ -374,6 +437,7 @@ export type Database = {
           id?: string
           item_id?: string
           ml_user_id?: string
+          organization_id?: string | null
           qty_sold?: number
           revenue?: number
           seller_id?: string | null
@@ -383,6 +447,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ml_product_daily_cache_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ml_product_daily_cache_seller_id_fkey"
             columns: ["seller_id"]
@@ -398,6 +469,7 @@ export type Database = {
           date: string
           id: string
           ml_user_id: string
+          organization_id: string | null
           qty_orders: number
           revenue: number
           seller_id: string | null
@@ -411,6 +483,7 @@ export type Database = {
           date: string
           id?: string
           ml_user_id?: string
+          organization_id?: string | null
           qty_orders?: number
           revenue?: number
           seller_id?: string | null
@@ -424,6 +497,7 @@ export type Database = {
           date?: string
           id?: string
           ml_user_id?: string
+          organization_id?: string | null
           qty_orders?: number
           revenue?: number
           seller_id?: string | null
@@ -432,7 +506,15 @@ export type Database = {
           uf?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ml_state_daily_cache_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ml_sync_log: {
         Row: {
@@ -442,6 +524,7 @@ export type Database = {
           id: string
           ml_user_id: string
           orders_fetched: number
+          organization_id: string | null
           seller_id: string | null
           source: string
           synced_at: string
@@ -454,6 +537,7 @@ export type Database = {
           id?: string
           ml_user_id?: string
           orders_fetched?: number
+          organization_id?: string | null
           seller_id?: string | null
           source?: string
           synced_at?: string
@@ -466,12 +550,20 @@ export type Database = {
           id?: string
           ml_user_id?: string
           orders_fetched?: number
+          organization_id?: string | null
           seller_id?: string | null
           source?: string
           synced_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ml_sync_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ml_sync_log_seller_id_fkey"
             columns: ["seller_id"]
@@ -488,6 +580,7 @@ export type Database = {
           expires_at: string | null
           id: string
           ml_user_id: string | null
+          organization_id: string | null
           refresh_token: string | null
           scope: string | null
           seller_id: string | null
@@ -501,6 +594,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           ml_user_id?: string | null
+          organization_id?: string | null
           refresh_token?: string | null
           scope?: string | null
           seller_id?: string | null
@@ -514,6 +608,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           ml_user_id?: string | null
+          organization_id?: string | null
           refresh_token?: string | null
           scope?: string | null
           seller_id?: string | null
@@ -522,6 +617,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "ml_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ml_tokens_seller_id_fkey"
             columns: ["seller_id"]
@@ -538,6 +640,7 @@ export type Database = {
           custom_name: string | null
           ml_user_id: number
           nickname: string | null
+          organization_id: string | null
           permalink: string | null
           seller_id: string | null
           synced_at: string
@@ -549,6 +652,7 @@ export type Database = {
           custom_name?: string | null
           ml_user_id: number
           nickname?: string | null
+          organization_id?: string | null
           permalink?: string | null
           seller_id?: string | null
           synced_at?: string
@@ -560,6 +664,7 @@ export type Database = {
           custom_name?: string | null
           ml_user_id?: number
           nickname?: string | null
+          organization_id?: string | null
           permalink?: string | null
           seller_id?: string | null
           synced_at?: string
@@ -567,10 +672,67 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "ml_user_cache_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ml_user_cache_seller_id_fkey"
             columns: ["seller_id"]
             isOneToOne: false
             referencedRelation: "sellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          organization_id: string
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["org_role"]
+          token_hash: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          organization_id: string
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["org_role"]
+          token_hash: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          organization_id?: string
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["org_role"]
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_invites_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -669,6 +831,7 @@ export type Database = {
           marketplace: string
           mes: number
           meta_vendas: number | null
+          organization_id: string | null
           pmt: number | null
           qtd_vendas: number | null
           seller_id: string
@@ -685,6 +848,7 @@ export type Database = {
           marketplace: string
           mes: number
           meta_vendas?: number | null
+          organization_id?: string | null
           pmt?: number | null
           qtd_vendas?: number | null
           seller_id: string
@@ -701,6 +865,7 @@ export type Database = {
           marketplace?: string
           mes?: number
           meta_vendas?: number | null
+          organization_id?: string | null
           pmt?: number | null
           qtd_vendas?: number | null
           seller_id?: string
@@ -710,7 +875,15 @@ export type Database = {
           venda_aprovada_real?: number | null
           venda_total?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sales_data_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       seller_stores: {
         Row: {
@@ -719,6 +892,7 @@ export type Database = {
           id: string
           is_active: boolean
           marketplace: string
+          organization_id: string | null
           seller_id: string
           store_name: string
         }
@@ -728,6 +902,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           marketplace: string
+          organization_id?: string | null
           seller_id: string
           store_name: string
         }
@@ -737,10 +912,18 @@ export type Database = {
           id?: string
           is_active?: boolean
           marketplace?: string
+          organization_id?: string | null
           seller_id?: string
           store_name?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "seller_stores_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "seller_stores_seller_id_fkey"
             columns: ["seller_id"]
@@ -758,6 +941,7 @@ export type Database = {
           is_active: boolean
           logo_url: string | null
           name: string
+          organization_id: string | null
           user_id: string
         }
         Insert: {
@@ -767,6 +951,7 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name: string
+          organization_id?: string | null
           user_id: string
         }
         Update: {
@@ -776,9 +961,18 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name?: string
+          organization_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sellers_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shopee_orders: {
         Row: {
@@ -788,6 +982,7 @@ export type Database = {
           order_date: string
           order_id: string
           order_status: string
+          organization_id: string | null
           product_name: string
           quantity: number
           sku: string
@@ -802,6 +997,7 @@ export type Database = {
           order_date: string
           order_id: string
           order_status?: string
+          organization_id?: string | null
           product_name?: string
           quantity?: number
           sku?: string
@@ -816,6 +1012,7 @@ export type Database = {
           order_date?: string
           order_id?: string
           order_status?: string
+          organization_id?: string | null
           product_name?: string
           quantity?: number
           sku?: string
@@ -823,7 +1020,15 @@ export type Database = {
           user_id?: string
           variation?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shopee_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shopee_sales: {
         Row: {
@@ -840,6 +1045,7 @@ export type Database = {
           imported_at: string
           new_buyers: number
           orders: number
+          organization_id: string | null
           potential_buyers: number
           repeat_purchase_rate: number
           returned_orders: number
@@ -863,6 +1069,7 @@ export type Database = {
           imported_at?: string
           new_buyers?: number
           orders?: number
+          organization_id?: string | null
           potential_buyers?: number
           repeat_purchase_rate?: number
           returned_orders?: number
@@ -886,6 +1093,7 @@ export type Database = {
           imported_at?: string
           new_buyers?: number
           orders?: number
+          organization_id?: string | null
           potential_buyers?: number
           repeat_purchase_rate?: number
           returned_orders?: number
@@ -895,7 +1103,15 @@ export type Database = {
           user_id?: string
           visitors?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shopee_sales_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -936,6 +1152,14 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      has_org_role: {
+        Args: {
+          _org_id: string
+          _role: Database["public"]["Enums"]["org_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -959,7 +1183,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "editor" | "viewer"
-      org_role: "owner" | "admin" | "member"
+      org_role: "owner" | "admin" | "member" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1088,7 +1312,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "editor", "viewer"],
-      org_role: ["owner", "admin", "member"],
+      org_role: ["owner", "admin", "member", "viewer"],
     },
   },
 } as const
