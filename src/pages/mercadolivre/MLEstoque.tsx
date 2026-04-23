@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMLInventory } from "@/contexts/MLInventoryContext";
-import { useMLCoverage, COVERAGE_PERIODS, COVERAGE_CLASS_LABELS } from "@/hooks/useMLCoverage";
-import type { CoveragePeriod, CoverageClass, CoverageData } from "@/hooks/useMLCoverage";
+import { useMLCoverage, COVERAGE_PERIODS, COVERAGE_CLASS_LABELS, defaultThresholds } from "@/hooks/useMLCoverage";
+import type { CoveragePeriod, CoverageClass, CoverageData, CoverageThresholds } from "@/hooks/useMLCoverage";
 import type { ProductItem } from "@/contexts/MLInventoryContext";
 import { CoverageAlerts } from "@/components/mercadolivre/CoverageAlerts";
+import { CoverageSettingsPopover } from "@/components/mercadolivre/CoverageSettingsPopover";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -888,7 +889,38 @@ export default function MLEstoque() {
   // hasToken: null = ainda carregando, false = sem token, true = conectado
   const isConnected = hasToken !== false;
   const [coveragePeriod, setCoveragePeriod] = useState<CoveragePeriod>(30);
-  const { coverageMap, stats } = useMLCoverage(items, coveragePeriod);
+  const [thresholds, setThresholds] = useState<CoverageThresholds>(() => {
+    if (typeof window === "undefined") return defaultThresholds(30);
+    try {
+      const raw = window.localStorage.getItem("ml_coverage_thresholds");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (
+          parsed &&
+          Number.isInteger(parsed.criticoMax) &&
+          Number.isInteger(parsed.alertaMax) &&
+          parsed.criticoMax >= 1 &&
+          parsed.alertaMax <= 365 &&
+          parsed.criticoMax < parsed.alertaMax
+        ) {
+          return { criticoMax: parsed.criticoMax, alertaMax: parsed.alertaMax };
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    return defaultThresholds(30);
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("ml_coverage_thresholds", JSON.stringify(thresholds));
+    } catch {
+      /* ignore */
+    }
+  }, [thresholds]);
+
+  const { coverageMap, stats } = useMLCoverage(items, coveragePeriod, thresholds);
 
   // Filter / sort state
   const [search, setSearch] = useState("");
@@ -1013,6 +1045,11 @@ export default function MLEstoque() {
                 </button>
               ))}
             </div>
+            <CoverageSettingsPopover
+              period={coveragePeriod}
+              thresholds={thresholds}
+              onChange={setThresholds}
+            />
             <TabsList className="h-8">
               <TabsTrigger value="estoque" className="text-xs px-3 h-7">Estoque</TabsTrigger>
               <TabsTrigger value="relatorios" className="text-xs px-3 h-7">Relatórios</TabsTrigger>
