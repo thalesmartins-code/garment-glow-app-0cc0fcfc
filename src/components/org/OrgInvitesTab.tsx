@@ -191,16 +191,31 @@ export function OrgInvitesTab({ orgId }: { orgId: string }) {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Apagar convite?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            O convite para <span className="font-medium">{inv.email}</span> será removido permanentemente.
-                            {isPending && " Se o link já foi compartilhado, ele deixará de funcionar."}
+                          <AlertDialogTitle>Apagar convite permanentemente?</AlertDialogTitle>
+                          <AlertDialogDescription asChild>
+                            <div className="space-y-3">
+                              <p>
+                                Esta ação é <span className="font-semibold text-destructive">irreversível</span>.
+                                O convite enviado para{" "}
+                                <span className="font-medium text-foreground">{inv.email}</span> será apagado do
+                                histórico desta organização.
+                              </p>
+                              <ul className="text-xs space-y-1 list-disc pl-4 text-muted-foreground">
+                                <li>O registro deste convite some da lista — não fica como "Revogado".</li>
+                                {isPending && <li>O link já compartilhado deixará de funcionar imediatamente.</li>}
+                                <li>Para conceder acesso novamente será necessário emitir um novo convite.</li>
+                              </ul>
+                              <p className="text-xs text-muted-foreground">
+                                Se você só quer impedir o uso do link mantendo o histórico, prefira{" "}
+                                <span className="font-medium">Revogar</span>.
+                              </p>
+                            </div>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
                           <AlertDialogAction onClick={() => handleDelete(inv.id)} className="bg-destructive hover:bg-destructive/90">
-                            Apagar
+                            Apagar permanentemente
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
