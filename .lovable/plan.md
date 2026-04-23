@@ -1,55 +1,37 @@
 
+## Loader global em tela cheia (sem piscar o menu)
 
-# Nova matriz de permissões por role
+### Problema
+Ao entrar em qualquer rota autenticada, o `LayoutShell` (sidebar + header) é renderizado imediatamente, e só depois o `OrganizationContext` termina de carregar — gerando o efeito de "piscante" onde o menu aparece, some, e o conteúdo encaixa. O loader atual em `OrgSettings` só centra o spinner dentro do shell já visível, não resolve a causa.
 
-## Regras solicitadas
+### Solução
+Bloquear toda a renderização do `LayoutShell` (sidebar, header, conteúdo) enquanto a organização ainda está carregando. No lugar, mostrar o `PageLoader` existente em tela cheia. Quando `loading` virar `false`, o app inteiro aparece de uma vez, sem flashes intermediários.
 
-- **Owner**: acesso total (única role com acesso a Organização, Sellers, Integrações e Monitoramento, conforme pedido).
-- **Admin**: acesso total a operação + acesso à página de Organização (gerenciar membros e convites). Sem Sellers, Integrações ou Monitoramento.
-- **Member**: foco em operação diária — vê e edita dados de catálogo, vendas, pedidos, financeiro, devoluções, perguntas e metas. Sem áreas administrativas (Org/Sellers/Integrações/Monitoramento).
-- **Viewer**: somente leitura de dashboards e relatórios. Não acessa Pedidos, Perguntas, Devoluções, Metas, Preços/Custos (áreas que envolvem ação operacional ou estratégia sensível).
+### Mudanças
 
-## Matriz proposta
+**1. `src/components/layout/LayoutShell.tsx`**
+- Importar `useOrganization` e `PageLoader`.
+- Antes de qualquer JSX, checar `loading` da organização.
+- Se `loading === true`, retornar `<PageLoader />` ocupando a viewport inteira — nada de sidebar, header ou Outlet.
+- Caso contrário, renderizar o layout normal como hoje.
 
+**2. `src/pages/org/OrgSettings.tsx`**
+- Remover o bloco `if (loading) return <Loader2 ... />` — agora redundante, já que o `LayoutShell` segura tudo antes.
+- Manter apenas o fallback `if (!currentOrg)` para "Nenhuma organização selecionada".
+
+### Resultado
 ```text
-Rota                    Owner  Admin  Member  Viewer   Observação
-/api                      ✓      ✓      ✓       ✓     Hub de vendas
-/api/estoque              ✓      ✓      ✓       ✓     Catálogo (leitura)
-/api/anuncios             ✓      ✓      ✓       ✓     Anúncios/ranking
-/api/publicidade          ✓      ✓      ✓       ✓     ADS leitura
-/api/reputacao            ✓      ✓      ✓       ✓     Reputação leitura
-/api/financeiro           ✓      ✓      ✓       ✓     Financeiro leitura
-/api/vendas-hora          ✓      ✓      ✓       ✓     Análise por hora
-/api/relatorios           ✓      ✓      ✓       ✓     Relatórios
-/api/pedidos              ✓      ✓      ✓       ✗     Operacional
-/api/perguntas            ✓      ✓      ✓       ✗     Atendimento
-/api/devolucoes           ✓      ✓      ✓       ✗     Pós-venda
-/api/metas                ✓      ✓      ✓       ✗     Definição de metas
-/api/precos-custos        ✓      ✓      ✓       ✗     Estratégia de preço
-/api/perfil               ✓      ✓      ✓       ✓     Perfil pessoal
-/api/organizacao          ✓      ✓      ✗       ✗     Membros/convites
-/api/sellers              ✓      ✗      ✗       ✗     Apenas Owner
-/api/integracoes          ✓      ✗      ✗       ✗     Apenas Owner
-/api/monitoramento        ✓      ✗      ✗       ✗     Apenas Owner
+Antes:                              Depois:
+┌──────────────────────────┐        ┌──────────────────────────┐
+│ Sidebar │  Header        │        │                          │
+│  menu   ├────────────────┤   →    │           ◐              │
+│  itens  │      ◐         │        │      Carregando...       │
+│ (pisca) │   (centra)     │        │      (tela cheia)        │
+└──────────────────────────┘        └──────────────────────────┘
 ```
 
-## Mudanças técnicas
-
-**Arquivo**: `src/config/roleAccess.ts`
-
-- Substituir os grupos por:
-  - `ALL` = todos os 4 roles (dashboards visíveis a todos).
-  - `OPERATIONAL` = `owner | admin | member` (operação que viewer não acessa: pedidos, perguntas, devoluções, metas, preços-custos).
-  - `ORG_ADMIN` = `owner | admin` (apenas `/api/organizacao`).
-  - `OWNER_ONLY` = `owner` (Sellers, Integrações, Monitoramento).
-- Reatribuir cada rota da matriz acima.
-
-**Sidebar/EnvironmentSidebar**: já consomem `canAccess`, então o menu lateral oculta automaticamente os itens que o role não pode ver — sem mudanças adicionais no Sidebar.
-
-**Sem mudanças** em RLS, edge functions, contextos ou outras telas. Só a tabela de permissões de rota muda; o restante já depende dela.
-
-## Considerações
-
-- **Admin sem Sellers/Integrações**: significa que Admins gerenciam pessoas (membros/convites) mas não conectam contas Mercado Livre nem cadastram novos sellers — isso fica concentrado no Owner. Confirme se é a intenção; se quiser Admin também nessas áreas, troque `OWNER_ONLY` por `ORG_ADMIN` em `/api/sellers` e `/api/integracoes`.
-- **Viewer puramente leitura**: bloqueado em pedidos/perguntas/devoluções para evitar que ele tome ações operacionais por engano. Caso prefira que veja (sem editar), podemos adicionar essas rotas ao grupo `ALL` — mas as próprias páginas precisariam respeitar role para esconder botões de ação (não está no escopo agora).
-
+### Notas técnicas
+- `PageLoader` (`src/components/ui/PageLoader.tsx`) já existe com `min-h-screen` centralizado e animação do logo — reutilizado sem criar componente novo.
+- O gate fica no `LayoutShell` (wrapper de todas as rotas autenticadas via `App.tsx`), então o efeito é consistente em qualquer rota, não só `/api/organizacao`.
+- `ProtectedRoute` continua à frente cuidando do gate de autenticação; este loader cobre apenas a janela "autenticado mas org ainda não carregada".
+- Sem mudanças em contextos, rotas ou lógica de dados.
