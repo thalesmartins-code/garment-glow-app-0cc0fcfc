@@ -775,16 +775,12 @@ export default function Integrations() {
         </Card>
       </div>
 
-      {/* Seller info + selector */}
+      {/* Seller info */}
       {selectedSeller && (
-        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-muted/50 border border-border text-sm flex-wrap">
-          <span className="font-medium">Seller ativo:</span>
-          <Badge variant="outline">{selectedSeller.name}</Badge>
-          <span className="text-muted-foreground">— As integrações abaixo serão vinculadas a este seller.</span>
-          <div className="ml-auto">
-            <SellerMarketplaceBar showStores={false} />
-          </div>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          As integrações abaixo serão vinculadas ao seller{" "}
+          <span className="font-medium text-foreground">{selectedSeller.name}</span>.
+        </p>
       )}
 
       {/* Magalu Metrics */}
