@@ -766,7 +766,8 @@ serve(async (req) => {
             orders_fetched: orders.length,
             source: "auto",
             synced_at: syncedAt,
-            ...(seller_id ? { seller_id } : {}),
+            ...(effectiveSellerId ? { seller_id: effectiveSellerId } : {}),
+            ...(organization_id ? { organization_id } : {}),
           },
           { onConflict: "user_id,ml_user_id,date_from,date_to,source" },
         ).then(({ error }) => { if (error) console.error("Sync log error:", error); });
