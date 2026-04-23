@@ -259,7 +259,7 @@ function isCacheFresh(rows: any[]): boolean {
   return (Date.now() - new Date(latest).getTime()) < CACHE_TTL_MS;
 }
 
-async function upsertDailyCache(supabase: any, userId: string, mlUserId: string, daily: any[]) {
+async function upsertDailyCache(supabase: any, userId: string, mlUserId: string, daily: any[], orgId: string | null, sellerId: string | null) {
   if (daily.length === 0) return;
   const rows = daily.map((d: any) => ({
     user_id: userId,
@@ -274,6 +274,8 @@ async function upsertDailyCache(supabase: any, userId: string, mlUserId: string,
     ctr: d.ctr,
     roas: d.roas,
     synced_at: new Date().toISOString(),
+    ...(orgId ? { organization_id: orgId } : {}),
+    ...(sellerId ? { seller_id: sellerId } : {}),
   }));
   const { error } = await supabase.from("ml_ads_daily_cache").upsert(rows, {
     onConflict: "user_id,ml_user_id,date",
@@ -281,7 +283,7 @@ async function upsertDailyCache(supabase: any, userId: string, mlUserId: string,
   if (error) console.error("upsertDailyCache error:", error);
 }
 
-async function upsertCampaignsCache(supabase: any, userId: string, mlUserId: string, campaigns: any[]) {
+async function upsertCampaignsCache(supabase: any, userId: string, mlUserId: string, campaigns: any[], orgId: string | null, sellerId: string | null) {
   if (campaigns.length === 0) return;
   const rows = campaigns.map((c: any) => ({
     user_id: userId,
@@ -299,6 +301,8 @@ async function upsertCampaignsCache(supabase: any, userId: string, mlUserId: str
     ctr: c.ctr,
     roas: c.roas,
     synced_at: new Date().toISOString(),
+    ...(orgId ? { organization_id: orgId } : {}),
+    ...(sellerId ? { seller_id: sellerId } : {}),
   }));
   const { error } = await supabase.from("ml_ads_campaigns_cache").upsert(rows, {
     onConflict: "user_id,ml_user_id,campaign_id",
@@ -306,7 +310,7 @@ async function upsertCampaignsCache(supabase: any, userId: string, mlUserId: str
   if (error) console.error("upsertCampaignsCache error:", error);
 }
 
-async function upsertProductsCache(supabase: any, userId: string, mlUserId: string, products: any[]) {
+async function upsertProductsCache(supabase: any, userId: string, mlUserId: string, products: any[], orgId: string | null, sellerId: string | null) {
   if (products.length === 0) return;
   const rows = products.map((p: any) => ({
     user_id: userId,
@@ -323,6 +327,8 @@ async function upsertProductsCache(supabase: any, userId: string, mlUserId: stri
     ctr: p.ctr,
     roas: p.roas,
     synced_at: new Date().toISOString(),
+    ...(orgId ? { organization_id: orgId } : {}),
+    ...(sellerId ? { seller_id: sellerId } : {}),
   }));
   const { error } = await supabase.from("ml_ads_products_cache").upsert(rows, {
     onConflict: "user_id,ml_user_id,item_id",
