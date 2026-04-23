@@ -27,8 +27,7 @@ interface HeaderProps {
 
 export function Header({ title, subtitle, showSellerSwitcher = true, showSellerMarketplaceBar = false, hideStores = false, onMenuClick }: HeaderProps) {
   const { selectedSeller, setSelectedSeller, activeSellers } = useSeller();
-  const { profile, signOut } = useAuth();
-  const { role: appRole } = useAuth();
+  const { profile, signOut, role: appRole } = useAuth();
   const { orgRole } = useOrganization();
   const navigate = useNavigate();
 
