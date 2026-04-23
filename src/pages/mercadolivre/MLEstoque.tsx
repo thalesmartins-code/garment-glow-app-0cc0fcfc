@@ -1159,9 +1159,17 @@ export default function MLEstoque() {
                   <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas coberturas</SelectItem>
-                    {(Object.keys(COVERAGE_CLASS_LABELS) as CoverageClass[]).map((cls) => (
-                      <SelectItem key={cls} value={cls}>{COVERAGE_CLASS_LABELS[cls]}</SelectItem>
-                    ))}
+                    {(Object.keys(COVERAGE_CLASS_LABELS) as CoverageClass[]).map((cls) => {
+                      const Icon = COVERAGE_CLASS_ICONS[cls];
+                      return (
+                        <SelectItem key={cls} value={cls}>
+                          <span className="flex items-center gap-2">
+                            <Icon className="w-3.5 h-3.5" style={{ color: COVERAGE_COLORS[cls] }} />
+                            {COVERAGE_CLASS_LABELS[cls]}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
                 <div className="flex items-center gap-1.5 cursor-pointer opacity-60 hover:opacity-100 transition-opacity"
