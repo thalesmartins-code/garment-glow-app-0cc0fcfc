@@ -903,7 +903,17 @@ export default function MLEstoque() {
           parsed.alertaMax <= 365 &&
           parsed.criticoMax < parsed.alertaMax
         ) {
-          return { criticoMax: parsed.criticoMax, alertaMax: parsed.alertaMax };
+          const rupturaMax =
+            Number.isInteger(parsed.rupturaMax) &&
+            parsed.rupturaMax >= 0 &&
+            parsed.rupturaMax < parsed.criticoMax
+              ? parsed.rupturaMax
+              : 0;
+          return {
+            rupturaMax,
+            criticoMax: parsed.criticoMax,
+            alertaMax: parsed.alertaMax,
+          };
         }
       }
     } catch {
