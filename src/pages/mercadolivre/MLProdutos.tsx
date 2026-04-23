@@ -837,8 +837,14 @@ export default function MLProdutos() {
               <TabsTrigger value="catalogo" className="text-xs px-3 h-7">Catálogo</TabsTrigger>
               <TabsTrigger value="relatorios" className="text-xs px-3 h-7">Relatórios</TabsTrigger>
             </TabsList>
-            <Button onClick={() => { refresh(); precosRefresh(); }} disabled={loading} size="sm" variant="outline" className="h-8">
-              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+            <Button
+              onClick={() => { refresh(); precosRefresh(); }}
+              disabled={loading}
+              size="sm"
+              variant="ghost"
+              className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:bg-muted hover:text-muted-foreground"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
               Atualizar
             </Button>
           </div>
