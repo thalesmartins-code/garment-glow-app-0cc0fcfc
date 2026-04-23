@@ -269,7 +269,7 @@ serve(async (req) => {
     // Look up ML access_token from DB (by ml_user_id, validate org membership)
     const { data: tokenRow, error: tokenErr } = await supabaseAdmin
       .from("ml_tokens")
-      .select("access_token, organization_id")
+      .select("access_token, organization_id, seller_id")
       .eq("ml_user_id", reqMLUserId)
       .not("access_token", "is", null)
       .limit(1)
@@ -295,6 +295,9 @@ serve(async (req) => {
       }
     }
     const access_token = tokenRow.access_token as string;
+    const organization_id = tokenRow.organization_id as string | null;
+    const tokenSellerId = tokenRow.seller_id as string | null;
+    const effectiveSellerId = seller_id || tokenSellerId;
 
     const user = await mlFetch("/users/me", access_token);
     const sellerId = user.id;
@@ -614,7 +617,8 @@ serve(async (req) => {
           unique_visits: data.unique_visits,
           unique_buyers: data.unique_buyers,
           synced_at: syncedAt,
-          ...(seller_id ? { seller_id } : {}),
+          ...(effectiveSellerId ? { seller_id: effectiveSellerId } : {}),
+          ...(organization_id ? { organization_id } : {}),
         }));
 
         const hourlyRows = Object.values(hourlySales).map((data) => ({
@@ -627,7 +631,8 @@ serve(async (req) => {
           qty_orders: data.qty,
           units_sold: data.units_sold,
           synced_at: syncedAt,
-          ...(seller_id ? { seller_id } : {}),
+          ...(effectiveSellerId ? { seller_id: effectiveSellerId } : {}),
+          ...(organization_id ? { organization_id } : {}),
         }));
 
         // Paraleliza upserts de daily + hourly + user simultaneamente
@@ -662,7 +667,8 @@ serve(async (req) => {
           qty_sold: p.qty_sold,
           revenue: p.revenue,
           synced_at: syncedAt,
-          ...(seller_id ? { seller_id } : {}),
+          ...(effectiveSellerId ? { seller_id: effectiveSellerId } : {}),
+          ...(organization_id ? { organization_id } : {}),
         }));
 
         // Products: fire-and-forget (paralelo internamente)
@@ -699,7 +705,8 @@ serve(async (req) => {
           revenue: s.revenue,
           approved_revenue: s.approved_revenue,
           synced_at: syncedAt,
-          ...(seller_id ? { seller_id } : {}),
+          ...(effectiveSellerId ? { seller_id: effectiveSellerId } : {}),
+          ...(organization_id ? { organization_id } : {}),
         }));
 
         if (stateRows.length > 0) {
@@ -737,7 +744,8 @@ serve(async (req) => {
                 permalink: user.permalink,
                 active_listings: activeListings,
                 synced_at: syncedAt,
-                ...(seller_id ? { seller_id } : {}),
+                ...(effectiveSellerId ? { seller_id: effectiveSellerId } : {}),
+                ...(organization_id ? { organization_id } : {}),
               },
               { onConflict: "user_id,ml_user_id" },
             )
@@ -758,7 +766,8 @@ serve(async (req) => {
             orders_fetched: orders.length,
             source: "auto",
             synced_at: syncedAt,
-            ...(seller_id ? { seller_id } : {}),
+            ...(effectiveSellerId ? { seller_id: effectiveSellerId } : {}),
+            ...(organization_id ? { organization_id } : {}),
           },
           { onConflict: "user_id,ml_user_id,date_from,date_to,source" },
         ).then(({ error }) => { if (error) console.error("Sync log error:", error); });
