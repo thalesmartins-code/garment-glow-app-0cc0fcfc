@@ -294,7 +294,7 @@ function SubTabCobertura({ items, coverageMap, coveragePeriod }: Pick<Relatorios
                     <TableRow key={item.id} className="group">
                       <TableCell className="p-1 pl-3">
                         {item.thumbnail ? (
-                          <img src={item.thumbnail.replace("http://", "https://")} alt="" className="w-8 h-8 rounded object-cover" />
+                          <img src={item.thumbnail.replace("http://", "https://")} alt="" loading="lazy" decoding="async" className="w-8 h-8 rounded object-cover" />
                         ) : (
                           <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
                             <Package className="w-3.5 h-3.5 text-muted-foreground" />
@@ -1250,7 +1250,7 @@ export default function MLEstoque() {
                             </TableCell>
                             <TableCell className="p-1">
                               {item.thumbnail ? (
-                                <img src={item.thumbnail} alt="" className="w-8 h-8 rounded object-cover" />
+                                <img src={item.thumbnail} alt="" loading="lazy" decoding="async" className="w-8 h-8 rounded object-cover" />
                               ) : (
                                 <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
                                   <Package className="w-4 h-4 text-muted-foreground" />
