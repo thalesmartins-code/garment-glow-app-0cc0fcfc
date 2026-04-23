@@ -212,3 +212,5 @@ function BrazilHeatMapImpl({ data }: BrazilHeatMapProps) {
     </div>
   );
 }
+
+export const BrazilHeatMap = memo(BrazilHeatMapImpl);
