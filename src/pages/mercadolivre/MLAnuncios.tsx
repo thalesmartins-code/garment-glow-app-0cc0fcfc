@@ -416,7 +416,7 @@ export default function MLAnuncios() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5 min-w-[200px]">
                         {p.thumbnail && (
-                          <img src={p.thumbnail} alt={p.title} className="h-9 w-9 rounded-md object-cover shrink-0 border border-border/50" />
+                          <img src={p.thumbnail} alt={p.title} loading="lazy" decoding="async" className="h-9 w-9 rounded-md object-cover shrink-0 border border-border/50" />
                         )}
                         <div>
                           <p className="font-medium leading-tight line-clamp-1 max-w-[200px]">{p.title}</p>

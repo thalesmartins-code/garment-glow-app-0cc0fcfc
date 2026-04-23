@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import type { ProductSalesRow } from "./TopSellingProducts";
@@ -6,7 +7,7 @@ interface MLTopProductsProps {
   products: (ProductSalesRow & { _marketplace?: string })[];
 }
 
-export function MLTopProducts({ products }: MLTopProductsProps) {
+function MLTopProductsImpl({ products }: MLTopProductsProps) {
   return (
     <motion.div className="lg:col-span-4" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }}>
       <Card className="h-full">
@@ -39,7 +40,7 @@ export function MLTopProducts({ products }: MLTopProductsProps) {
                         {medal ?? `${i + 1}`}
                       </span>
                       {p.thumbnail ? (
-                        <img src={p.thumbnail} alt="" className="w-7 h-7 rounded object-cover flex-shrink-0" />
+                        <img src={p.thumbnail} alt="" loading="lazy" decoding="async" className="w-7 h-7 rounded object-cover flex-shrink-0" />
                       ) : (
                         <span className="w-7 h-7 rounded bg-muted flex-shrink-0" />
                       )}
@@ -80,3 +81,5 @@ export function MLTopProducts({ products }: MLTopProductsProps) {
     </motion.div>
   );
 }
+
+export const MLTopProducts = memo(MLTopProductsImpl);

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { memo, useState, useMemo } from "react";
 
 interface StateData {
   uf: string;
@@ -82,7 +82,7 @@ function getHeatColor(intensity: number): string {
 const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const fmtNum = (v: number) => v.toLocaleString("pt-BR");
 
-export function BrazilHeatMap({ data }: BrazilHeatMapProps) {
+function BrazilHeatMapImpl({ data }: BrazilHeatMapProps) {
   const [hoveredState, setHoveredState] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
@@ -212,3 +212,5 @@ export function BrazilHeatMap({ data }: BrazilHeatMapProps) {
     </div>
   );
 }
+
+export const BrazilHeatMap = memo(BrazilHeatMapImpl);

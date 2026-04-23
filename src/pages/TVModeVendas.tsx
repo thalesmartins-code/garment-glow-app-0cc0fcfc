@@ -438,7 +438,7 @@ const TVModeVendas = () => {
                           </td>
                           <td className="py-2 pl-1">
                             {p.thumbnail
-                              ? <img src={p.thumbnail} alt="" className="w-11 h-11 rounded-lg object-cover shrink-0" />
+                              ? <img src={p.thumbnail} alt="" loading="lazy" decoding="async" className="w-11 h-11 rounded-lg object-cover shrink-0" />
                               : <div className="w-11 h-11 rounded-lg bg-muted shrink-0" />}
                           </td>
                           <td className="py-2 pl-2 overflow-hidden">
