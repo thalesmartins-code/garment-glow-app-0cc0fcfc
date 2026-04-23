@@ -667,7 +667,8 @@ serve(async (req) => {
           qty_sold: p.qty_sold,
           revenue: p.revenue,
           synced_at: syncedAt,
-          ...(seller_id ? { seller_id } : {}),
+          ...(effectiveSellerId ? { seller_id: effectiveSellerId } : {}),
+          ...(organization_id ? { organization_id } : {}),
         }));
 
         // Products: fire-and-forget (paralelo internamente)
@@ -704,7 +705,8 @@ serve(async (req) => {
           revenue: s.revenue,
           approved_revenue: s.approved_revenue,
           synced_at: syncedAt,
-          ...(seller_id ? { seller_id } : {}),
+          ...(effectiveSellerId ? { seller_id: effectiveSellerId } : {}),
+          ...(organization_id ? { organization_id } : {}),
         }));
 
         if (stateRows.length > 0) {
