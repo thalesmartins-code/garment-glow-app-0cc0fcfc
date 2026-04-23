@@ -338,7 +338,7 @@ export default function MercadoLivre() {
             ? "Conecte sua conta do Mercado Livre para visualizar os dados desta loja."
             : `Conecte as ${mlStores.length} contas do Mercado Livre para visualizar os dados.`}
         </p>
-        <Button asChild><Link to="/api/integracoes">Ir para Integrações</Link></Button>
+        <Button asChild><Link to="/integracoes">Ir para Integrações</Link></Button>
       </div>
     );
   }
@@ -389,7 +389,7 @@ export default function MercadoLivre() {
           <div className="flex items-center justify-between gap-4">
             <MLPageHeader title="Vendas" lastUpdated={useRealData && lastSyncedAt ? new Date(lastSyncedAt) : null} />
             <div className="flex items-center gap-2 flex-wrap">
-              <Link to="/api/tv" target="_blank">
+              <Link to="/tv" target="_blank">
                 <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
                   <Monitor className="w-3.5 h-3.5" />
                   Modo TV

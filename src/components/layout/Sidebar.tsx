@@ -40,12 +40,12 @@ const baseNavItems = [
 ];
 
 const mlSubItems = [
-  { icon: TrendingUp, label: "Vendas", path: "/api" },
-  { icon: Package, label: "Estoque", path: "/api/estoque" },
-  { icon: ShoppingBag, label: "Anúncios", path: "/api/anuncios" },
-  { icon: ClipboardList, label: "Pedidos",     path: "/api/pedidos" },
-  { icon: Megaphone,    label: "Publicidade", path: "/api/publicidade" },
-  { icon: Receipt,      label: "Financeiro",  path: "/api/financeiro" },
+  { icon: TrendingUp, label: "Vendas", path: "/" },
+  { icon: Package, label: "Estoque", path: "/estoque" },
+  { icon: ShoppingBag, label: "Anúncios", path: "/anuncios" },
+  { icon: ClipboardList, label: "Pedidos",     path: "/pedidos" },
+  { icon: Megaphone,    label: "Publicidade", path: "/publicidade" },
+  { icon: Receipt,      label: "Financeiro",  path: "/financeiro" },
 ];
 
 export function Sidebar() {
@@ -59,7 +59,7 @@ export function Sidebar() {
   const visibleMlSubItems = mlSubItems.filter(
     (item) => canAccessWithViewer(role, item.path, viewerPermissions) && isMenuItemVisible(item.path, role)
   );
-  const isMLActive = location.pathname.startsWith("/api");
+  const isMLActive = location.pathname.startsWith("/");
   const showMLGroup = visibleMlSubItems.length > 0;
 
   const renderLink = (item: { icon: any; label: string; path: string }, isSubItem = false) => {
@@ -113,7 +113,7 @@ export function Sidebar() {
         <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
             <Link
-              to="/api"
+              to="/"
               className={cn(
                 "flex items-center justify-center w-12 py-2.5 rounded-xl transition-all duration-200",
                 isMLActive

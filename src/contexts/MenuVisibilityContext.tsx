@@ -14,34 +14,34 @@ export const MENU_SECTIONS = [
   {
     label: "Dashboard",
     items: [
-      { label: "Vendas",      path: "/api" },
-      { label: "Publicidade", path: "/api/publicidade" },
-      { label: "Margem",      path: "/api/financeiro" },
+      { label: "Vendas",      path: "/" },
+      { label: "Publicidade", path: "/publicidade" },
+      { label: "Margem",      path: "/financeiro" },
     ],
   },
   {
     label: "Operações",
     items: [
-      { label: "Anúncios", path: "/api/anuncios" },
-      { label: "Estoque",  path: "/api/estoque" },
-      { label: "Pedidos",  path: "/api/pedidos" },
-      { label: "Preços e Custos", path: "/api/precos-custos" },
+      { label: "Anúncios", path: "/anuncios" },
+      { label: "Estoque",  path: "/estoque" },
+      { label: "Pedidos",  path: "/pedidos" },
+      { label: "Preços e Custos", path: "/precos-custos" },
     ],
   },
   {
     label: "Pós-venda",
     items: [
-      { label: "Reputação",  path: "/api/reputacao" },
-      { label: "Devoluções", path: "/api/devolucoes" },
-      { label: "Mensagens",  path: "/api/perguntas" },
+      { label: "Reputação",  path: "/reputacao" },
+      { label: "Devoluções", path: "/devolucoes" },
+      { label: "Mensagens",  path: "/perguntas" },
     ],
   },
   {
     label: "Configurações",
     items: [
-      { label: "Metas",       path: "/api/metas" },
-      { label: "Sellers",     path: "/api/sellers" },
-      { label: "Integrações", path: "/api/integracoes" },
+      { label: "Metas",       path: "/metas" },
+      { label: "Sellers",     path: "/sellers" },
+      { label: "Integrações", path: "/integracoes" },
     ],
   },
 ] as const;

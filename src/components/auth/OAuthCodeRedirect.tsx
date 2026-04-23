@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
 /**
- * Detects OAuth `code` param on any page and redirects to /api/integracoes
+ * Detects OAuth `code` param on any page and redirects to /integracoes
  * preserving the code so it can be exchanged for a token.
  */
 export function OAuthCodeRedirect({ children }: { children: React.ReactNode }) {
@@ -12,8 +12,8 @@ export function OAuthCodeRedirect({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const code = searchParams.get("code");
     const path = window.location.pathname;
-    if (code && path !== "/api/integracoes") {
-      navigate(`/api/integracoes?code=${encodeURIComponent(code)}`, { replace: true });
+    if (code && path !== "/integracoes") {
+      navigate(`/integracoes?code=${encodeURIComponent(code)}`, { replace: true });
     }
   }, [searchParams, navigate]);
 

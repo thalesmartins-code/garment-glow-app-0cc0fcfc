@@ -93,7 +93,7 @@ export function GoalsCard({
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <span className="text-sm font-medium text-foreground">Metas do Mês</span>
         <Link
-          to="/api/metas"
+          to="/metas"
           className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
         >
           {hasTargets ? "Editar" : "Definir metas"}
@@ -107,7 +107,7 @@ export function GoalsCard({
           <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center py-4">
             <p className="text-xs text-muted-foreground">Nenhuma meta definida para este mês.</p>
             <Link
-              to="/api/metas"
+              to="/metas"
               className="text-xs font-medium text-primary hover:underline"
             >
               Clique aqui para definir suas metas

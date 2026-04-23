@@ -31,8 +31,8 @@ export function Header({ title, subtitle, showSellerSwitcher = true, showSellerM
   const { orgRole } = useOrganization();
   const navigate = useNavigate();
 
-  const profilePath = "/api/perfil";
-  const orgPath = "/api/organizacao";
+  const profilePath = "/perfil";
+  const orgPath = "/organizacao";
   const displayName = profile?.full_name || "Usuário";
   const initials = displayName
     .split(" ")
@@ -158,7 +158,7 @@ export function Header({ title, subtitle, showSellerSwitcher = true, showSellerM
               </DropdownMenuItem>
             )}
             {isOrgAdmin && (
-              <DropdownMenuItem onClick={() => navigate("/api/monitoramento")} className="rounded-lg px-2 py-2 text-sm hover:bg-muted focus:bg-muted">
+              <DropdownMenuItem onClick={() => navigate("/monitoramento")} className="rounded-lg px-2 py-2 text-sm hover:bg-muted focus:bg-muted">
                 <Activity className="mr-2 h-4 w-4 text-muted-foreground" />
                 Monitoramento
               </DropdownMenuItem>

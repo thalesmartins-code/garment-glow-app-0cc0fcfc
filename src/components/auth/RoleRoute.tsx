@@ -16,7 +16,7 @@ export function RoleRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!canAccessWithViewer(orgRole, location.pathname, viewerPermissions)) {
-    return <Navigate to="/api" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

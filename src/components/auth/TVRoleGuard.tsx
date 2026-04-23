@@ -6,7 +6,7 @@ import { Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 /**
- * Guard para o Modo TV (/api/tv).
+ * Guard para o Modo TV (/tv).
  * Reaproveita as permissões da rota /api (Vendas/Dashboard):
  * quem pode ver o dashboard de vendas pode abrir o Modo TV.
  */
@@ -16,7 +16,7 @@ export function TVRoleGuard({ children }: { children: React.ReactNode }) {
 
   if (loading) return <PageLoader />;
 
-  const allowed = canAccessWithViewer(orgRole, "/api", viewerPermissions);
+  const allowed = canAccessWithViewer(orgRole, "/", viewerPermissions);
 
   if (!allowed) {
     return (
@@ -32,7 +32,7 @@ export function TVRoleGuard({ children }: { children: React.ReactNode }) {
               organização permissão para o dashboard de Vendas.
             </p>
           </div>
-          <Button variant="secondary" onClick={() => navigate("/api/perfil")}>
+          <Button variant="secondary" onClick={() => navigate("/perfil")}>
             Voltar
           </Button>
         </div>
