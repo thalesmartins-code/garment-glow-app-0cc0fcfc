@@ -6,7 +6,11 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Mail, Trash2, Copy, Check } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Mail, Trash2, Copy, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { OrgRole } from "@/contexts/OrganizationContext";
@@ -72,6 +76,15 @@ export function OrgInvitesTab({ orgId }: { orgId: string }) {
       .eq("id", id);
     if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
     else { toast({ title: "Convite revogado" }); await load(); }
+  };
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase
+      .from("organization_invites")
+      .delete()
+      .eq("id", id);
+    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    else { toast({ title: "Convite apagado" }); await load(); }
   };
 
   const statusOf = (inv: Invite) => {
@@ -159,11 +172,39 @@ export function OrgInvitesTab({ orgId }: { orgId: string }) {
                           size="icon"
                           className="h-8 w-8 text-destructive hover:bg-destructive/10"
                           onClick={() => handleRevoke(inv.id)}
+                          title="Revogar convite"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <X className="w-4 h-4" />
                         </Button>
                       </>
                     )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          title="Apagar convite"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Apagar convite?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            O convite para <span className="font-medium">{inv.email}</span> será removido permanentemente.
+                            {isPending && " Se o link já foi compartilhado, ele deixará de funcionar."}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(inv.id)} className="bg-destructive hover:bg-destructive/90">
+                            Apagar
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 );
               })}
