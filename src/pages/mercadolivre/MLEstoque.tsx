@@ -1045,6 +1045,11 @@ export default function MLEstoque() {
                 </button>
               ))}
             </div>
+            <CoverageSettingsPopover
+              period={coveragePeriod}
+              thresholds={thresholds}
+              onChange={setThresholds}
+            />
             <TabsList className="h-8">
               <TabsTrigger value="estoque" className="text-xs px-3 h-7">Estoque</TabsTrigger>
               <TabsTrigger value="relatorios" className="text-xs px-3 h-7">Relatórios</TabsTrigger>
