@@ -15,6 +15,7 @@ import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { MenuVisibilityProvider } from "@/contexts/MenuVisibilityContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RoleRoute } from "@/components/auth/RoleRoute";
+import { SuperAdminRoute } from "@/components/auth/SuperAdminRoute";
 import { TVRoleGuard } from "@/components/auth/TVRoleGuard";
 import { OAuthCodeRedirect } from "@/components/auth/OAuthCodeRedirect";
 import { PageLoader } from "@/components/ui/PageLoader";
@@ -41,6 +42,11 @@ const AcceptInvite = React.lazy(() => import("./pages/AcceptInvite"));
 const Login = React.lazy(() => import("./pages/Login"));
 const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
+
+const AdminLayout = React.lazy(() => import("./components/admin/AdminLayout").then(m => ({ default: m.AdminLayout })));
+const AdminDashboard = React.lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminOrganizations = React.lazy(() => import("./pages/admin/AdminOrganizations"));
+const AdminUsers = React.lazy(() => import("./pages/admin/AdminUsers"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,6 +79,22 @@ const App = () => (
                   <Route element={<ProtectedRoute />}>
                     {/* Modo TV — acesso autenticado, sem sidebar/header */}
                     <Route path="/tv" element={<TVRoleGuard><ErrorBoundary fallbackTitle="Erro no Modo TV"><TVModeVendas /></ErrorBoundary></TVRoleGuard>} />
+
+                    {/* Painel Super Admin — acesso restrito a app_role = 'admin' */}
+                    <Route
+                      path="/admin"
+                      element={
+                        <SuperAdminRoute>
+                          <ErrorBoundary fallbackTitle="Erro no painel admin">
+                            <AdminLayout />
+                          </ErrorBoundary>
+                        </SuperAdminRoute>
+                      }
+                    >
+                      <Route index element={<AdminDashboard />} />
+                      <Route path="organizacoes" element={<AdminOrganizations />} />
+                      <Route path="usuarios" element={<AdminUsers />} />
+                    </Route>
 
                     {/* Marketplaces via API (única experiência do app) */}
                     <Route element={<HeaderScopeProvider><MLStoreProvider><MLInventoryProvider><ApiLayout /></MLInventoryProvider></MLStoreProvider></HeaderScopeProvider>}>

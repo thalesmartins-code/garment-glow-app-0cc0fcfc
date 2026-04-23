@@ -10,6 +10,7 @@ FloatingChat removed — do not re-add. No Lovable native payments (Stripe/Paddl
 
 ## Memories
 - [Visual identity](mem://style/visual-identity) — Typography (Plus Jakarta Sans), spacing, minimal KPI variants
+- [Super Admin Portal](mem://features/super-admin-portal) — /admin isolado para app_role=admin, CRUD orgs + usuários globais
 - [UI Elements](mem://style/ui-elements) — Standardized hovers (bg-muted), destructive buttons, secondary checkboxes
 - [Data persistence](mem://tech/data-persistence) — RLS roles (admin/editor) and unique indexes for sales_data
 - [State management](mem://tech/state-management) — HeaderScopeContext logic and explicit ml_user_id mapping
