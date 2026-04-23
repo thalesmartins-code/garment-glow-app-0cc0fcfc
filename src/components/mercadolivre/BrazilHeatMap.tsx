@@ -96,6 +96,9 @@ export function BrazilHeatMap({ data }: BrazilHeatMapProps) {
 
   const hoveredData = hoveredState ? dataMap.get(hoveredState) : null;
 
+  // Stable order for staggered entrance animation
+  const stateEntries = useMemo(() => Object.entries(STATE_PATHS), []);
+
   return (
     <div className="relative">
       <svg
@@ -103,13 +106,20 @@ export function BrazilHeatMap({ data }: BrazilHeatMapProps) {
         className="w-full max-w-[600px] mx-auto h-auto"
         onMouseLeave={() => setHoveredState(null)}
       >
-        {Object.entries(STATE_PATHS).map(([uf, path]) => {
+        {stateEntries.map(([uf, path], idx) => {
           const stateData = dataMap.get(uf);
           const intensity = stateData ? stateData.orders / maxOrders : 0;
           const isHovered = hoveredState === uf;
 
           return (
-            <g key={uf}>
+            <g
+              key={uf}
+              style={{
+                animation: `brazilStateIn 420ms ease-out both`,
+                animationDelay: `${idx * 18}ms`,
+                transformOrigin: "center",
+              }}
+            >
               <path
                 d={path}
                 fill={getHeatColor(intensity)}
