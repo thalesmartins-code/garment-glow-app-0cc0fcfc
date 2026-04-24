@@ -1220,6 +1220,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      trigger_ml_token_refresh: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "editor" | "viewer"
