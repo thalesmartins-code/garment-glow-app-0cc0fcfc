@@ -27,19 +27,13 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // ─── Require shared cron secret (read from vault) ───────────────────────
+    // ─── Require shared cron secret (read from vault via RPC) ──────────────
     // This endpoint is invoked by pg_cron / scheduled jobs only. The cron job
     // sends X-Cron-Secret with the value stored in vault.secrets('CRON_SECRET').
     // Reading from the vault keeps a single source of truth.
     const providedSecret = req.headers.get("x-cron-secret");
-    const { data: secretRow, error: secretErr } = await supabase
-      .schema("vault")
-      .from("decrypted_secrets")
-      .select("decrypted_secret")
-      .eq("name", "CRON_SECRET")
-      .maybeSingle();
+    const { data: expectedSecret, error: secretErr } = await supabase.rpc("get_cron_secret");
 
-    const expectedSecret = (secretRow as any)?.decrypted_secret as string | undefined;
     if (secretErr || !expectedSecret || providedSecret !== expectedSecret) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
