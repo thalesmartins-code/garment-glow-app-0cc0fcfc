@@ -1183,6 +1183,7 @@ export type Database = {
           total_size: string
         }[]
       }
+      get_cron_secret: { Args: never; Returns: string }
       get_org_role: {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["org_role"]
@@ -1219,6 +1220,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      trigger_ml_token_refresh: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "editor" | "viewer"

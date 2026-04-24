@@ -13,18 +13,6 @@ serve(async (req) => {
   }
 
   try {
-    // ─── Require shared cron secret ─────────────────────────────────────────
-    // This endpoint is invoked by pg_cron / scheduled jobs only. Require a
-    // shared secret in the X-Cron-Secret header to prevent public abuse.
-    const expectedSecret = Deno.env.get("CRON_SECRET");
-    const providedSecret = req.headers.get("x-cron-secret");
-    if (!expectedSecret || providedSecret !== expectedSecret) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const ML_APP_ID = Deno.env.get("ML_APP_ID");
     const ML_CLIENT_SECRET = Deno.env.get("ML_CLIENT_SECRET");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -38,6 +26,20 @@ serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // ─── Require shared cron secret (read from vault via RPC) ──────────────
+    // This endpoint is invoked by pg_cron / scheduled jobs only. The cron job
+    // sends X-Cron-Secret with the value stored in vault.secrets('CRON_SECRET').
+    // Reading from the vault keeps a single source of truth.
+    const providedSecret = req.headers.get("x-cron-secret");
+    const { data: expectedSecret, error: secretErr } = await supabase.rpc("get_cron_secret");
+
+    if (secretErr || !expectedSecret || providedSecret !== expectedSecret) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Find tokens expiring within the next 30 minutes
     const thresholdDate = new Date(Date.now() + 30 * 60 * 1000).toISOString();
