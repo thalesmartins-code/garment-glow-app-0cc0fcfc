@@ -91,18 +91,6 @@ export function OrgMembersTab({ orgId, myRole }: { orgId: string; myRole: OrgRol
 
   useEffect(() => { load(); }, [orgId]);
 
-  // Refresh when tab/window regains focus (catches newly-accepted invites)
-  useEffect(() => {
-    const onFocus = () => load();
-    const onVisible = () => { if (document.visibilityState === "visible") load(); };
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, [orgId]);
-
   const handleRoleChange = async (memberUserId: string, newRole: OrgRole) => {
     setBusyId(memberUserId);
     const { error } = await supabase.functions.invoke("org-member-update-role", {
