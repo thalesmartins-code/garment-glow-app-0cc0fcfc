@@ -94,13 +94,14 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     setViewerPermissions(new Set((data ?? []).map((r: any) => r.route)));
   }, []);
 
+  // Depend on `user?.id` (primitive) instead of the user object so that
+  // silent token refreshes (which produce a new `user` reference for the
+  // same id) don't trigger a full reload of organizations.
+  const userId = user?.id ?? null;
   useEffect(() => {
-    if (user) {
-      // Mark loading synchronously so ProtectedRoute won't see
-      // a transient { user: truthy, currentOrg: null, loading: false }
-      // state and incorrectly sign the user out.
+    if (userId) {
       setLoading(true);
-      loadOrgs(user.id);
+      loadOrgs(userId);
     } else {
       setOrgs([]);
       setCurrentOrg(null);
@@ -108,18 +109,20 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       setLoadedUserId(null);
       setLoading(false);
     }
-  }, [user, loadOrgs]);
+  }, [userId, loadOrgs]);
 
   // Load viewer permissions whenever current org changes (only relevant for viewer role)
+  const currentOrgId = currentOrg?.id ?? null;
+  const currentOrgRole = currentOrg?.role ?? null;
   useEffect(() => {
-    if (user && currentOrg) {
-      if (currentOrg.role === "viewer") {
-        loadViewerPermissions(user.id, currentOrg.id);
+    if (userId && currentOrgId) {
+      if (currentOrgRole === "viewer") {
+        loadViewerPermissions(userId, currentOrgId);
       } else {
         setViewerPermissions(new Set());
       }
     }
-  }, [user, currentOrg, loadViewerPermissions]);
+  }, [userId, currentOrgId, currentOrgRole, loadViewerPermissions]);
 
   const switchOrg = useCallback((id: string) => {
     const found = orgs.find((o) => o.id === id);
@@ -143,7 +146,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   // user id, we MUST report loading=true. This prevents ProtectedRoute from
   // observing a transient { user: set, currentOrg: null, loading: false } window
   // and erroneously signing the user out.
-  const effectiveLoading = loading || (!!user && loadedUserId !== user.id);
+  const effectiveLoading = loading || (!!userId && loadedUserId !== userId);
 
   return (
     <OrganizationContext.Provider
