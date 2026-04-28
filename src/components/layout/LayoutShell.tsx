@@ -24,9 +24,13 @@ export function LayoutShell({ sidebar, mobileSidebar, showSellerSwitcher = true,
   const hideStores = HIDE_STORES_ROUTES.includes(location.pathname);
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { loading: orgLoading } = useOrganization();
+  const { loading: orgLoading, currentOrg } = useOrganization();
 
-  if (orgLoading) {
+  // Only show the full-screen loader on the very first load (when we don't
+  // have an organization yet). Subsequent reloads of org data (e.g. after a
+  // silent auth token refresh) keep the current UI visible to avoid a jarring
+  // "Carregando…" flash every time the tab regains focus.
+  if (orgLoading && !currentOrg) {
     return <PageLoader />;
   }
 

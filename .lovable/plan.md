@@ -1,164 +1,64 @@
+## Problema
 
+Sempre que você sai da aba e volta (ou minimiza/restaura a janela), o app inteiro mostra "Carregando…" e refaz todas as requisições. Isso deixa a navegação lenta e gasta requisições à toa.
 
-# Sugestões de Melhorias para Escalabilidade Comercial
+## Causa raiz
 
-Plano dividido em 4 áreas (segurança, organização de código, CSS/design system, performance). Cada item tem **prioridade** (🔴 crítico, 🟡 importante, 🟢 polimento) e impacto estimado. Você pode aprovar tudo ou escolher fases.
+O Supabase faz refresh automático do token de autenticação em background. Quando você volta para a aba, ele dispara o evento `TOKEN_REFRESHED` no `onAuthStateChange` (em `src/contexts/AuthContext.tsx`). O handler atual roda **sempre** dois `setState`:
 
----
-
-## 🔒 1. SEGURANÇA
-
-### 🔴 1.1 — Endurecer `verify_jwt` nas Edge Functions
-Hoje **12 das 17** edge functions estão com `verify_jwt = false` no `supabase/config.toml`. Várias delas (`admin-create-user`, `admin-list-users`, `ml-inventory`, `ml-ads`, `ml-reputation`, `ml-products-aggregated`, `ml-precos-custos`) fazem validação manual via `getUser()`, mas isso é frágil — qualquer regressão expõe a função.
-
-**Ação:** ligar `verify_jwt = true` em todas exceto as públicas legítimas (`ml-oauth` callback, `org-invite-accept`, `ml-token-refresh` se chamada por cron). Migrar para `getClaims(token)` (mais rápido, usa JWKS local).
-
-### 🔴 1.2 — Rotacionar segredos sensíveis suspeitos
-Há um segredo nomeado `"Marketplace Analytics Pro"` (nome estranho, possivelmente colado por engano) e `MAGALU_*` (4 segredos não usados após a remoção do Magalu). Limpar reduz superfície de ataque.
-
-**Ação:** remover secrets Magalu (`MAGALU_CLIENT_ID`, `MAGALU_CLIENT_SECRET`, `MAGALU_API_KEY`, `MAGALU_API_KEY_ID`, `MAGALU_API_KEY_SECRET`) e o segredo de nome esquisito. Auditar uso antes.
-
-### 🟡 1.3 — Rate limiting básico nas edge functions de OAuth/admin
-Funções `ml-oauth`, `admin-create-user` não têm proteção contra abuso. Em escala comercial isso vira vetor de enumeração de usuários e spam.
-
-**Ação:** adicionar rate limit por IP/user usando uma tabela `rate_limits` (chave + janela) consultada no início da função. ~30 linhas por função.
-
-### 🟡 1.4 — Headers de segurança no `index.html`
-Faltam CSP, `X-Frame-Options`, `Referrer-Policy`. Sem CSP, qualquer XSS injetado vira execução total.
-
-**Ação:** adicionar `<meta>` headers em `index.html` + recomendar configurar headers no provedor de hosting (analytics.alcavie.com).
-
-### 🟢 1.5 — Validação de input com Zod nas edge functions
-Hoje a validação é manual (regex em `admin-create-user`). Padronizar com Zod no Deno reduz bugs.
-
----
-
-## 🗂️ 2. ORGANIZAÇÃO DE CÓDIGO
-
-### 🔴 2.1 — Quebrar páginas gigantes
-Tamanhos atuais preocupantes:
-- `MLProdutos.tsx` — **1809 linhas**
-- `MLEstoque.tsx` — **1350 linhas**
-- `Integrations.tsx` — **965 linhas**
-- `MLRelatorios.tsx` — **651 linhas**
-
-**Ação:** extrair em componentes co-localizados:
-```text
-src/pages/mercadolivre/MLProdutos/
-  ├── index.tsx              (orquestração, ~200 linhas)
-  ├── ProductsTable.tsx
-  ├── ProductFilters.tsx
-  ├── BrandAnalysisTab.tsx
-  ├── ABCCurveTab.tsx
-  └── hooks/useProductsData.ts
-```
-Mesmo padrão para `MLEstoque` e `Integrations`. Reduz risco de merge conflicts e melhora cold-load (split chunks).
-
-### 🟡 2.2 — Centralizar formatadores e utilitários
-`currencyFmt`, formatters de data, `parseISO + format` aparecem duplicados em ~15 arquivos.
-
-**Ação:** criar `src/lib/formatters.ts` com `formatCurrency`, `formatDate`, `formatPercent`, `formatCompactNumber`. Uma única fonte de verdade.
-
-### 🟡 2.3 — Camada de serviços para Supabase
-Componentes hoje chamam `supabase.from(...).select(...)` direto. Em escala isso vira manutenção pesada (mudou nome de coluna → caça em 40 arquivos).
-
-**Ação:** criar `src/services/` com módulos por domínio: `mlSalesService.ts`, `organizationService.ts`, `userService.ts`. Páginas/hooks só consomem serviços. Já existe `mlCacheService.ts` — generalizar o padrão.
-
-### 🟢 2.4 — Tipos compartilhados em `src/types/`
-Várias interfaces (`MLStore`, `DailyBreakdown`, etc.) vivem dentro de contexts/hooks. Mover para `src/types/ml.ts`.
-
-### 🟢 2.5 — Eliminar `any` (12 arquivos)
-Tipar corretamente respostas de edge functions e props. Habilitar `noImplicitAny` no `tsconfig.app.json`.
-
-### 🟢 2.6 — Limpar `console.log/warn/error` (13 arquivos)
-Substituir por um wrapper `src/lib/logger.ts` que silencia em produção e envia para Sentry/Logflare em casos críticos.
-
----
-
-## 🎨 3. ORGANIZAÇÃO CSS / DESIGN SYSTEM
-
-### 🟡 3.1 — Erradicar cores diretas (53 ocorrências)
-Encontradas 53 usos de `text-white`, `bg-black`, etc. e 1 hex hardcoded. Quebra dark mode futuro e branding multi-tenant.
-
-**Ação:** substituir por tokens semânticos (`text-primary-foreground`, `bg-card`). Adicionar regra ESLint `no-restricted-syntax` proibindo classes de cor literais.
-
-### 🟡 3.2 — Variantes via CVA para padrões repetidos
-KPI cards, badges de loja e botões de ação repetem combinações de classes longas. Já existe `KPICard` com variant `tv` — expandir esse padrão.
-
-**Ação:** padronizar com `class-variance-authority` (já instalado via shadcn) para `KPICard`, `StoreChip`, `MetricBadge`. Reduz duplicação de className em ~30%.
-
-### 🟢 3.3 — Consolidar tokens de espaçamento
-Adicionar tokens `--space-section`, `--space-card`, `--space-inline` no `index.css` para padronizar gaps entre páginas.
-
-### 🟢 3.4 — Documentar design system
-Criar `src/components/ui/README.md` listando: paleta semântica, variantes, quando usar cada componente. Onboarding de novos devs cai de dias para horas.
-
----
-
-## ⚡ 4. PERFORMANCE
-
-### 🔴 4.1 — Code-splitting agressivo
-Hoje só as páginas ML são `React.lazy`. `Sellers`, `Integrations` (965 linhas!), `UserManagement`, `AdminMonitoring`, `OrgSettings` carregam no bundle inicial.
-
-**Ação:** mover todas para `React.lazy`. Estimativa: −150 KB no bundle inicial.
-
-### 🔴 4.2 — Configurar `manualChunks` no Vite
-Sem chunking manual, libs pesadas (recharts, framer-motion, date-fns, supabase) entram em chunks aleatórios e quebram o cache do browser a cada deploy.
-
-**Ação:** adicionar em `vite.config.ts`:
 ```ts
-build: {
-  rollupOptions: {
-    output: {
-      manualChunks: {
-        'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-        'supabase': ['@supabase/supabase-js'],
-        'charts': ['recharts'],
-        'ui-vendor': ['framer-motion', '@radix-ui/react-dialog', /* ... */],
-      }
-    }
-  }
-}
+setSession(session);          // nova referência
+setUser(session?.user ?? null); // nova referência (mesmo userId!)
 ```
 
-### 🟡 4.3 — `React.memo` + `useMemo` em componentes pesados
-`MLRevenueChart`, `BrazilHeatMap`, `MLTopProducts`, `HourlySalesTable` re-renderizam toda vez que o filtro de período muda no header. Em telas com 10+ cards o efeito é cumulativo.
+Mesmo sendo o **mesmo usuário**, o objeto `user` muda de referência. Isso provoca uma cascata:
 
-**Ação:** envelopar em `memo`, garantir que props sejam estáveis (`useCallback`, `useMemo` nos pais).
+1. `OrganizationContext` tem `useEffect([user, loadOrgs])` → re-executa `loadOrgs`, marca `loading=true`, refaz query de organizações + permissões.
+2. `LayoutShell` observa `orgLoading` e renderiza `<PageLoader />` no lugar do conteúdo (causa o "Carregando…" de tela cheia).
+3. `MLStoreContext`, `HeaderScopeContext`, `SellerContext` etc. dependem de `user`/`currentOrg` → também recarregam stores, sales cache, etc.
+4. Ao voltar o `loading=false`, todas as páginas remontam e o React Query refaz fetches.
 
-### 🟡 4.4 — Virtualização em tabelas longas
-`MLProdutos` e `MLEstoque` podem renderizar 500+ linhas sem virtualização → travam em listas grandes (já temos sellers com catálogos enormes em vista).
+Não é o `refetchOnWindowFocus` (já está `false`) — é o ciclo de auth + contextos que se reinicia.
 
-**Ação:** adotar `@tanstack/react-virtual` (sem nova dependência pesada) nas tabelas `MLProdutos` e `MLEstoque`.
+Há também um listener manual em `OrgMembersTab.tsx` (`visibilitychange`) que refaz fetch ao voltar à aba, contribuindo no mesmo problema na tela de membros.
 
-### 🟡 4.5 — React Query: `select` para reduzir re-renders
-Hooks em `useMLQueries.ts` retornam objetos completos. Páginas que usam só uma fatia ainda re-renderizam.
+## Solução
 
-**Ação:** usar `select: (data) => data.kpis` em consumidores específicos.
+### 1. `AuthContext.tsx` — ignorar eventos de auth que não mudam o usuário
 
-### 🟢 4.6 — Pré-conexão a recursos críticos
-Adicionar `<link rel="preconnect" href="https://gionpsuunfkkzzjdubfy.supabase.co">` no `index.html`. −100 a 200ms no primeiro request.
+No callback do `onAuthStateChange`, só atualizar `session`/`user` quando algo realmente mudou. Ignorar especificamente `TOKEN_REFRESHED` e `USER_UPDATED` quando o `user.id` continua o mesmo (apenas atualizar a `session` silenciosamente, sem trocar a referência do `user`):
 
-### 🟢 4.7 — Imagens (avatars, thumbnails ML) com `loading="lazy"` e `decoding="async"`
-Tabela de produtos com 200 thumbs de ML hoje carrega tudo eagerly.
+- Manter `setSession(session)` (necessário para o token novo).
+- Só chamar `setUser(...)` se o `user.id` mudou de fato (login/logout/troca de conta).
+- Não chamar `fetchUserData` em refresh de token (o role/profile não mudaram).
+- Tratar `INITIAL_SESSION` para não duplicar com o `getSession()` inicial.
 
----
+Isso isola o refresh de token do resto do app.
 
-## 📦 ENTREGA EM FASES SUGERIDAS
+### 2. `OrganizationContext.tsx` — depender do `user.id`, não do objeto `user`
 
-| Fase | Escopo | Esforço | Impacto |
-|------|--------|---------|---------|
-| **A — Segurança crítica** | 1.1, 1.2, 1.4 | 1 sessão | 🔴 Bloqueia incidentes |
-| **B — Performance crítica** | 4.1, 4.2, 4.6 | 1 sessão | Bundle −30%, TTI mais rápido |
-| **C — Refactor páginas grandes** | 2.1 (MLProdutos + MLEstoque + Integrations) | 2-3 sessões | Manutenibilidade |
-| **D — Design system** | 3.1, 3.2, 2.2 | 1 sessão | Consistência visual |
-| **E — Polimento** | 1.3, 1.5, 2.3-2.6, 3.3-3.4, 4.3-4.5, 4.7 | 2 sessões | Qualidade geral |
+Trocar `useEffect([user, loadOrgs])` por algo dependente apenas do **id** do usuário (`user?.id`). Mesmo que o item 1 já resolva, isso é uma defesa extra e barata.
 
----
+Mesma coisa para o `useEffect` de `loadViewerPermissions`: depender de `user?.id` + `currentOrg?.id` + `currentOrg?.role`, não dos objetos completos.
 
-## ❓ COMO PROSSEGUIR
+### 3. `LayoutShell.tsx` — não tampar o conteúdo durante reloads silenciosos
 
-Me diga **qual fase começar** (ou um subset específico) e eu implemento. Recomendo começar pela **Fase A (Segurança)** + **Fase B (Performance)** — juntas dão o maior ROI imediato e não exigem refatorações grandes.
+Hoje qualquer `orgLoading=true` substitui a tela inteira por `<PageLoader />`. Mudar para mostrar o loader apenas no **primeiro carregamento** (quando ainda não há `currentOrg`). Em reloads subsequentes, manter o conteúdo atual visível e deixar cada página gerenciar seu próprio estado de loading.
 
-Se quiser ver detalhes técnicos de algum item específico antes de decidir, é só pedir.
+### 4. `OrgMembersTab.tsx` — remover refetch em `visibilitychange`
 
+Remover o listener manual de `visibilitychange` que força refetch ao voltar à aba. O React Query já controla cache e o usuário pode atualizar manualmente se quiser.
+
+## Arquivos afetados
+
+- `src/contexts/AuthContext.tsx` — handler do `onAuthStateChange` mais inteligente.
+- `src/contexts/OrganizationContext.tsx` — dependências dos `useEffect` por id.
+- `src/components/layout/LayoutShell.tsx` — não bloquear UI em reloads silenciosos.
+- `src/components/org/OrgMembersTab.tsx` — remover listener de `visibilitychange`.
+
+## Resultado esperado
+
+- Sair e voltar para a aba: **nada acontece** visualmente. O token é renovado em background sem piscar telas.
+- Minimizar/restaurar a janela: igual, sem reload.
+- Login/logout/troca real de organização: continuam funcionando normalmente, mostrando loader quando apropriado.
+- Performance percebida muito melhor; sem chamadas desnecessárias à Edge Functions e ao Supabase.

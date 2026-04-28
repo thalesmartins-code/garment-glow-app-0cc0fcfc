@@ -52,19 +52,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Track current user id outside React state so we can compare without
+    // causing re-renders on token refresh events.
+    let currentUserId: string | null = null;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (event, session) => {
+        const nextUserId = session?.user?.id ?? null;
+
+        // Always keep the latest session reference (token may have changed),
+        // but do NOT replace the `user` object reference unless the user id
+        // actually changed. This prevents the whole app from re-rendering /
+        // refetching every time Supabase silently refreshes the token (which
+        // happens when the tab regains focus).
         setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          // Use setTimeout to avoid Supabase deadlock
-          setTimeout(() => fetchUserData(session.user.id), 0);
-        } else {
-          setRole(null);
-          setProfile(null);
+
+        if (nextUserId !== currentUserId) {
+          currentUserId = nextUserId;
+          setUser(session?.user ?? null);
+          if (session?.user) {
+            // Use setTimeout to avoid Supabase deadlock
+            setTimeout(() => fetchUserData(session.user.id), 0);
+          } else {
+            setRole(null);
+            setProfile(null);
+          }
         }
-        setLoading(false);
+        // INITIAL_SESSION fires once on subscribe; getSession() below also
+        // sets loading=false. Either is fine.
+        if (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "SIGNED_OUT") {
+          setLoading(false);
+        }
       }
     );
 
@@ -95,11 +114,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
         setSession(session);
-        setUser(session.user);
-        fetchUserData(session.user.id);
+        if (currentUserId !== session.user.id) {
+          currentUserId = session.user.id;
+          setUser(session.user);
+          fetchUserData(session.user.id);
+        }
       } else {
         setSession(null);
         setUser(null);
+        currentUserId = null;
       }
       setLoading(false);
     });
