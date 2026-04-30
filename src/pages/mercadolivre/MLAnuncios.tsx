@@ -139,13 +139,14 @@ export default function MLAnuncios() {
 
       <div className="sticky -top-4 md:-top-6 lg:-top-8 z-20 -mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 px-4 md:px-6 lg:px-8 pb-4 pt-4 bg-background/95 backdrop-blur-sm border-b border-border/40">
         <MLPageHeader title="Publicidade" lastUpdated={null}>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {!isRealData && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600 cursor-help">
                     <Info className="h-3 w-3" />
-                    Dados simulados
+                    <span className="hidden sm:inline">Dados simulados</span>
+                    <span className="sm:hidden">Simulado</span>
                   </span>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs text-xs">
@@ -159,22 +160,23 @@ export default function MLAnuncios() {
               onClick={sync}
               disabled={syncing || !connected}
               className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:bg-muted hover:text-muted-foreground"
+              aria-label="Sincronizar"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
-              {syncing ? "Sincronizando..." : "Sincronizar"}
+              <span className="hidden sm:inline">{syncing ? "Sincronizando..." : "Sincronizar"}</span>
             </Button>
           </div>
         </MLPageHeader>
       </div>
 
       {/* Period selector */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1">
         {QUICK_RANGES.map((r) => (
           <Button
             key={r.days}
             size="sm"
             variant={selectedDays === r.days ? "default" : "outline"}
-            className="h-7 px-3 text-xs"
+            className="h-7 px-3 text-xs shrink-0"
             onClick={() => setSelectedDays(r.days)}
           >
             {r.label}
