@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, Trophy, ExternalLink, AlertTriangle } from "lucide-react";
+import { Package, Trophy, ExternalLink, AlertTriangle, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import * as XLSX from "xlsx";
 import * as React from "react";
 
 export interface ProductSalesRow {
@@ -29,6 +31,26 @@ const MP_BADGE: Record<string, { label: string; cls: string }> = {
 
 export function TopSellingProducts({ products, loading, showOrigin }: Props) {
   const visibleProducts = products.slice(0, 10);
+
+  const handleExport = () => {
+    if (!products.length) return;
+    const rows = products.map((p, i) => ({
+      "#": i + 1,
+      "Item ID": p.item_id,
+      "Título": p.title,
+      "Loja": p._marketplace ? (MP_BADGE[p._marketplace]?.label ?? p._marketplace) : "—",
+      "Qtd. Vendida": p.qty_sold,
+      "Receita (R$)": Number(p.revenue.toFixed(2)),
+      "Estoque": p.available_quantity ?? "Sem estoque",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 70 }, { wch: 14 }, { wch: 14 }, { wch: 18 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Ranking de anúncios");
+    const stamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `ranking-anuncios-${stamp}.xlsx`);
+  };
+
   if (loading) {
     return (
       <Card className="h-full flex flex-col">
@@ -55,8 +77,19 @@ export function TopSellingProducts({ products, loading, showOrigin }: Props) {
 
   return (
     <Card className="h-full flex flex-col">
-      <div className="px-4 pt-4 pb-2">
+      <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <span className="text-sm font-medium text-foreground">Ranking de anúncios</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleExport}
+          disabled={!products.length}
+          className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+          title="Exportar todos os anúncios para Excel"
+        >
+          <Download className="w-3.5 h-3.5 mr-1" />
+          Exportar
+        </Button>
       </div>
       <CardContent className="flex-1 p-0 flex flex-col">
         {products.length === 0 ? (
