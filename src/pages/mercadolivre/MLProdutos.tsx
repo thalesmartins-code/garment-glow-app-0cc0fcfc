@@ -1465,10 +1465,10 @@ export default function MLProdutos() {
                         XLSX.writeFile(wb, `ranking-anuncios-${stamp}.xlsx`);
                       }}
                       disabled={!rankingFiltered.length}
-                      className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+                      className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:bg-muted hover:text-muted-foreground"
                       title="Exportar ranking para Excel"
                     >
-                      <Download className="w-3.5 h-3.5 mr-1" />
+                      <Download className={`w-3.5 h-3.5`} />
                       Exportar
                     </Button>
                   </>
