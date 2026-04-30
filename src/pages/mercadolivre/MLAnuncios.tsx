@@ -8,9 +8,8 @@ import { format, subDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Megaphone, TrendingUp, TrendingDown, MousePointerClick, Eye,
-  ShoppingCart, DollarSign, Zap, RefreshCw, Info, BarChart3, ListFilter, Plug, Download,
+  ShoppingCart, DollarSign, Zap, RefreshCw, Info, BarChart3, ListFilter, Plug,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -394,36 +393,6 @@ export default function MLAnuncios() {
                   <TabsTrigger value="roas" className="text-xs px-2.5 h-6">Maior ROAS</TabsTrigger>
                 </TabsList>
               </Tabs>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  const list = productTab === "spend" ? topBySpend : topByRoas;
-                  if (!list.length) return;
-                  const rows = list.map((p, i) => ({
-                    "#": i + 1,
-                    "Item ID": p.item_id,
-                    "Título": p.title,
-                    "Gasto (R$)": Number((p.spend ?? 0).toFixed(2)),
-                    "Cliques": p.clicks ?? 0,
-                    "CTR (%)": Number((p.ctr ?? 0).toFixed(2)),
-                    "Pedidos": p.attributed_orders ?? 0,
-                    "Receita ADS (R$)": Number((p.attributed_revenue ?? 0).toFixed(2)),
-                    "ROAS": Number((p.roas ?? 0).toFixed(2)),
-                  }));
-                  const ws = XLSX.utils.json_to_sheet(rows);
-                  const wb = XLSX.utils.book_new();
-                  XLSX.utils.book_append_sheet(wb, ws, "Top Anúncios");
-                  const stamp = new Date().toISOString().slice(0, 10);
-                  XLSX.writeFile(wb, `ranking-anuncios-${productTab}-${stamp}.xlsx`);
-                }}
-                disabled={!(productTab === "spend" ? topBySpend : topByRoas).length}
-                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-                title="Exportar ranking para Excel"
-              >
-                <Download className="w-3.5 h-3.5 mr-1" />
-                Exportar
-              </Button>
             </div>
           </div>
         </div>
