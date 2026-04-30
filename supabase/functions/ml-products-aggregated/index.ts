@@ -56,21 +56,41 @@ serve(async (req) => {
 
     const { date_from, date_to, ml_user_ids, limit, offset } = parsed.data;
 
-    // Server-side aggregation query using RPC or direct query
-    // Aggregate products by item_id across dates, returning top N by total revenue
-    const { data, error } = await supabase
-      .from("ml_product_daily_cache")
-      .select("item_id, title, thumbnail, qty_sold, revenue, ml_user_id, date")
-      .eq("user_id", userId)
-      .in("ml_user_id", ml_user_ids)
-      .gte("date", date_from)
-      .lte("date", date_to)
-      .order("revenue", { ascending: false })
-      .range(offset, offset + limit * 30 - 1); // Fetch more rows to aggregate
+    // Fetch ALL daily rows in the period across all selected stores, paginating
+    // to bypass the default 1000-row limit. We must NOT order by revenue and
+    // slice, otherwise stores with higher per-day revenue (e.g. SP) crowd out
+    // smaller stores (e.g. MG) before aggregation.
+    const PAGE = 1000;
+    const MAX_ROWS = 50000;
+    const data: Array<{
+      item_id: string;
+      title: string | null;
+      thumbnail: string | null;
+      qty_sold: number | null;
+      revenue: number | null;
+      ml_user_id: string | null;
+      date: string;
+    }> = [];
+    let from = 0;
+    while (from < MAX_ROWS) {
+      const { data: page, error } = await supabase
+        .from("ml_product_daily_cache")
+        .select("item_id, title, thumbnail, qty_sold, revenue, ml_user_id, date")
+        .eq("user_id", userId)
+        .in("ml_user_id", ml_user_ids)
+        .gte("date", date_from)
+        .lte("date", date_to)
+        .order("date", { ascending: true })
+        .range(from, from + PAGE - 1);
 
-    if (error) {
-      console.error("Query error:", error);
-      return jsonResponse({ error: "Database query failed" }, 500);
+      if (error) {
+        console.error("Query error:", error);
+        return jsonResponse({ error: "Database query failed" }, 500);
+      }
+      if (!page || page.length === 0) break;
+      data.push(...(page as any));
+      if (page.length < PAGE) break;
+      from += PAGE;
     }
 
     // Aggregate in-memory (server-side, not client-side)
