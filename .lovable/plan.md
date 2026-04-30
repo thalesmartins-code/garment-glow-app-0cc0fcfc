@@ -1,64 +1,93 @@
-## Problema
+# Melhoria de responsividade — Mobile e Tablet
 
-Sempre que você sai da aba e volta (ou minimiza/restaura a janela), o app inteiro mostra "Carregando…" e refaz todas as requisições. Isso deixa a navegação lenta e gasta requisições à toa.
+Foco: header global, `SellerMarketplaceBar`, `StoreGroupSelector` e as toolbars internas das páginas Vendas, Anúncios, Estoque, Metas e Perfil. Hoje, em telas <768px (e em vários casos <1024px), os elementos quebram em várias linhas, ficam apertados ou estouram horizontalmente.
 
-## Causa raiz
+## Problemas identificados
 
-O Supabase faz refresh automático do token de autenticação em background. Quando você volta para a aba, ele dispara o evento `TOKEN_REFRESHED` no `onAuthStateChange` (em `src/contexts/AuthContext.tsx`). O handler atual roda **sempre** dois `setState`:
+**Header global (`Header.tsx`)**
+- Mostra simultaneamente: `OrganizationSwitcher` + `SellerMarketplaceBar` (com chips de lojas) + `Seller Switcher` (dropdown) + sino + avatar/usuário. Em mobile vira 2–3 linhas e o título da página some.
+- Há 2 seletores de seller (a barra e o dropdown) — redundante já no desktop e crítico no mobile.
 
-```ts
-setSession(session);          // nova referência
-setUser(session?.user ?? null); // nova referência (mesmo userId!)
+**`SellerMarketplaceBar` + `StoreGroupSelector`**
+- Os chips das lojas usam `flex-wrap`, o que empurra o conteúdo para baixo no header e quebra o layout.
+- Em tablet, a barra inteira disputa espaço com tabs e period picker.
+
+**Toolbars internas (Vendas / Anúncios / Estoque / Metas / Perfil)**
+- Padrão repetido: `sticky` com `flex items-center justify-between` segurando título à esquerda e (TabsList + Botão TV + PeriodPicker + Sync) à direita.
+- Em <1024px o lado direito quebra em múltiplas linhas, sobrepõe o título e o `TabsList` fica espremido.
+- Period picker (`MLPeriodPicker`) tem label "Período:" + ícone + texto + chevron — muito largo no mobile.
+- KPI grids já são responsivos, mas charts/cards não têm `min-w-0` e podem causar overflow horizontal.
+
+## Plano de implementação
+
+### 1. Header global (`src/components/layout/Header.tsx`)
+- Esconder `OrganizationSwitcher` em <md (acessível via menu da conta) — manter apenas o avatar do usuário, sino e botão de menu mobile.
+- Mover `SellerMarketplaceBar` para BAIXO do header em mobile/tablet (fica numa segunda faixa horizontal scrollável apenas quando necessário). No desktop continua inline.
+- Remover o segundo dropdown de seller redundante em <md (a barra já permite trocar). Manter no desktop por compatibilidade.
+- Avatar: ocultar bloco `<div>` com nome/role em <sm (já é o caso) e garantir o trigger não cresça.
+
+### 2. `SellerMarketplaceBar` (`src/components/layout/SellerMarketplaceBar.tsx`)
+- Trocar `flex-wrap` do container por scroll horizontal em mobile: `overflow-x-auto no-scrollbar` com `flex-nowrap`.
+- Reduzir paddings em mobile (`px-1.5 py-1`) e diminuir min-width do trigger (`min-w-0`).
+- Quando `showStores` e há muitas lojas: mostrar máximo de 2 chips e um botão "+N" que abre um popover com a lista completa em <md.
+
+### 3. `StoreGroupSelector` (`src/components/layout/StoreGroupSelector.tsx`)
+- Manter chips, mas envolver em `overflow-x-auto no-scrollbar flex-nowrap` em mobile (sem wrap).
+- Em <md, o chip "Todas" fica fixo (sticky left) e os demais rolam.
+- Adicionar utilitário `.no-scrollbar` em `src/index.css`.
+
+### 4. Toolbars das páginas
+
+Padrão novo aplicado a Vendas, Anúncios e Estoque:
+
+```text
+Mobile (<md):                    Desktop (≥md):
+┌──────────────────────────┐     ┌─────────────────────────────────┐
+│ Título            [⋯]    │     │ Título     Tabs   TV  Período  │
+├──────────────────────────┤     └─────────────────────────────────┘
+│ Tabs (scroll)   Período  │
+└──────────────────────────┘
 ```
 
-Mesmo sendo o **mesmo usuário**, o objeto `user` muda de referência. Isso provoca uma cascata:
+- Título numa linha sozinha em <md; ações em segunda linha com `flex-wrap` controlado.
+- `TabsList` ganha `overflow-x-auto no-scrollbar` para não espremer.
+- Botão "Modo TV" e "Sincronizar" colapsam para apenas ícone (`size-icon`) em <sm, com `aria-label`.
+- `MLPeriodPicker`: ocultar label "Período:" em <sm, manter só ícone + texto.
 
-1. `OrganizationContext` tem `useEffect([user, loadOrgs])` → re-executa `loadOrgs`, marca `loading=true`, refaz query de organizações + permissões.
-2. `LayoutShell` observa `orgLoading` e renderiza `<PageLoader />` no lugar do conteúdo (causa o "Carregando…" de tela cheia).
-3. `MLStoreContext`, `HeaderScopeContext`, `SellerContext` etc. dependem de `user`/`currentOrg` → também recarregam stores, sales cache, etc.
-4. Ao voltar o `loading=false`, todas as páginas remontam e o React Query refaz fetches.
+**Páginas afetadas**
+- `src/pages/MercadoLivre.tsx` (Vendas) — toolbar nas linhas 389–417.
+- `src/pages/mercadolivre/MLAnuncios.tsx` — header (linhas 140–168) + barra de quick ranges (171–183) que precisa scroll horizontal em mobile.
+- `src/pages/mercadolivre/MLEstoque.tsx` — toolbar nas linhas 1049–1078; `TabsList` interna 854–861 ganha scroll.
+- `src/pages/mercadolivre/MLMetas.tsx` — toolbar 163–164: empilhar selects de Loja/Ano/Mês em coluna no mobile (`flex-col sm:flex-row gap-2`).
+- `src/pages/Profile.tsx` — header simples, apenas garantir `flex-col sm:flex-row` e padding correto; conteúdo do card já se adapta.
 
-Não é o `refetchOnWindowFocus` (já está `false`) — é o ciclo de auth + contextos que se reinicia.
+### 5. Conteúdo geral
+- Adicionar `min-w-0` nos containers grid das páginas para evitar overflow de tabelas/charts (sintoma comum de scroll horizontal indesejado na página inteira).
+- Tabelas largas (campanhas em Anúncios, produtos em Estoque) já têm `overflow-x-auto` no wrapper — manter.
+- KPI grids: já usam `grid-cols-2 md:grid-cols-3 lg:grid-cols-5` — manter.
 
-Há também um listener manual em `OrgMembersTab.tsx` (`visibilitychange`) que refaz fetch ao voltar à aba, contribuindo no mesmo problema na tela de membros.
+### 6. Utilitário CSS
+Adicionar em `src/index.css`:
+```css
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+```
 
-## Solução
+## Arquivos a editar
 
-### 1. `AuthContext.tsx` — ignorar eventos de auth que não mudam o usuário
+1. `src/index.css` — utilitário `.no-scrollbar`.
+2. `src/components/layout/Header.tsx` — esconder switchers redundantes em mobile, mover bar.
+3. `src/components/layout/LayoutShell.tsx` — renderizar `SellerMarketplaceBar` em faixa abaixo do header em mobile/tablet quando `showSellerMarketplaceBar=true`.
+4. `src/components/layout/SellerMarketplaceBar.tsx` — scroll horizontal, paddings reduzidos.
+5. `src/components/layout/StoreGroupSelector.tsx` — flex-nowrap + scroll em mobile.
+6. `src/components/mercadolivre/MLPeriodPicker.tsx` — esconder label "Período:" em <sm.
+7. `src/components/mercadolivre/MLPageHeader.tsx` — permitir título quebrar para coluna em mobile (`flex-col sm:flex-row`, `items-start sm:items-center`).
+8. `src/pages/MercadoLivre.tsx` — toolbar responsiva (Vendas).
+9. `src/pages/mercadolivre/MLAnuncios.tsx` — toolbar + quick ranges com scroll.
+10. `src/pages/mercadolivre/MLEstoque.tsx` — toolbar + TabsList com scroll.
+11. `src/pages/mercadolivre/MLMetas.tsx` — selects empilhados em mobile.
+12. `src/pages/Profile.tsx` — pequenos ajustes de padding/empilhamento.
 
-No callback do `onAuthStateChange`, só atualizar `session`/`user` quando algo realmente mudou. Ignorar especificamente `TOKEN_REFRESHED` e `USER_UPDATED` quando o `user.id` continua o mesmo (apenas atualizar a `session` silenciosamente, sem trocar a referência do `user`):
-
-- Manter `setSession(session)` (necessário para o token novo).
-- Só chamar `setUser(...)` se o `user.id` mudou de fato (login/logout/troca de conta).
-- Não chamar `fetchUserData` em refresh de token (o role/profile não mudaram).
-- Tratar `INITIAL_SESSION` para não duplicar com o `getSession()` inicial.
-
-Isso isola o refresh de token do resto do app.
-
-### 2. `OrganizationContext.tsx` — depender do `user.id`, não do objeto `user`
-
-Trocar `useEffect([user, loadOrgs])` por algo dependente apenas do **id** do usuário (`user?.id`). Mesmo que o item 1 já resolva, isso é uma defesa extra e barata.
-
-Mesma coisa para o `useEffect` de `loadViewerPermissions`: depender de `user?.id` + `currentOrg?.id` + `currentOrg?.role`, não dos objetos completos.
-
-### 3. `LayoutShell.tsx` — não tampar o conteúdo durante reloads silenciosos
-
-Hoje qualquer `orgLoading=true` substitui a tela inteira por `<PageLoader />`. Mudar para mostrar o loader apenas no **primeiro carregamento** (quando ainda não há `currentOrg`). Em reloads subsequentes, manter o conteúdo atual visível e deixar cada página gerenciar seu próprio estado de loading.
-
-### 4. `OrgMembersTab.tsx` — remover refetch em `visibilitychange`
-
-Remover o listener manual de `visibilitychange` que força refetch ao voltar à aba. O React Query já controla cache e o usuário pode atualizar manualmente se quiser.
-
-## Arquivos afetados
-
-- `src/contexts/AuthContext.tsx` — handler do `onAuthStateChange` mais inteligente.
-- `src/contexts/OrganizationContext.tsx` — dependências dos `useEffect` por id.
-- `src/components/layout/LayoutShell.tsx` — não bloquear UI em reloads silenciosos.
-- `src/components/org/OrgMembersTab.tsx` — remover listener de `visibilitychange`.
-
-## Resultado esperado
-
-- Sair e voltar para a aba: **nada acontece** visualmente. O token é renovado em background sem piscar telas.
-- Minimizar/restaurar a janela: igual, sem reload.
-- Login/logout/troca real de organização: continuam funcionando normalmente, mostrando loader quando apropriado.
-- Performance percebida muito melhor; sem chamadas desnecessárias à Edge Functions e ao Supabase.
+## QA
+Testar nos breakpoints 360, 414, 768, 834 e 1024px após a implementação:
+- Vendas, Anúncios, Estoque, Metas, Perfil — verificar que header não quebra em ≥3 linhas, que tabs/period picker não se sobrepõem ao título, e que não há scroll horizontal na página principal.
