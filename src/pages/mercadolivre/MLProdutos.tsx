@@ -1439,6 +1439,38 @@ export default function MLProdutos() {
                     {rankingBrandFilter !== "all" && (
                       <Button variant="ghost" size="sm" className="h-8 text-xs px-2" onClick={() => setRankingBrandFilter("all")}>✕</Button>
                     )}
+                    <div className="w-px h-4 bg-border" />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (!rankingFiltered.length) return;
+                        const totalRev = rankingFiltered.reduce((s, r) => s + r.revenue, 0);
+                        const rows = rankingFiltered.map((r, i) => ({
+                          "#": i + 1,
+                          "Item ID": r.id,
+                          "Título": r.title,
+                          "Marca": r.brand,
+                          "Preço (R$)": Number((r.price ?? 0).toFixed(2)),
+                          "Qtd. Vendida": r.sold,
+                          "Receita (R$)": Number((r.revenue ?? 0).toFixed(2)),
+                          "% Participação": totalRev > 0 ? Number(((r.revenue / totalRev) * 100).toFixed(2)) : 0,
+                          "Estoque": r.stock ?? 0,
+                        }));
+                        const ws = XLSX.utils.json_to_sheet(rows);
+                        ws["!cols"] = [{ wch: 5 }, { wch: 16 }, { wch: 70 }, { wch: 18 }, { wch: 12 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 10 }];
+                        const wb = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(wb, ws, "Ranking de Anúncios");
+                        const stamp = new Date().toISOString().slice(0, 10);
+                        XLSX.writeFile(wb, `ranking-anuncios-${stamp}.xlsx`);
+                      }}
+                      disabled={!rankingFiltered.length}
+                      className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+                      title="Exportar ranking para Excel"
+                    >
+                      <Download className="w-3.5 h-3.5 mr-1" />
+                      Exportar
+                    </Button>
                   </>
                 )}
               </div>
