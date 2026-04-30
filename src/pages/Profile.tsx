@@ -77,17 +77,17 @@ export default function Profile() {
   return (
     <div className="space-y-6">
       <div className="sticky -top-4 md:-top-6 lg:-top-8 z-20 -mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 px-4 md:px-6 lg:px-8 pb-4 pt-4 bg-background/95 backdrop-blur-sm border-b border-border/40">
-        <div className="flex items-center justify-between gap-4">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 min-w-0">
+          <div className="min-w-0">
             <h1 className="text-xl font-semibold tracking-tight text-foreground">Perfil</h1>
-            <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+            <p className="text-[11px] text-muted-foreground/60 mt-0.5 truncate">
               {user?.email ?? ""}
             </p>
           </div>
         </div>
       </div>
 
-      <Card className="max-w-2xl">
+      <Card className="w-full max-w-2xl">
         <CardContent className="space-y-6 pt-6">
           <div className="flex flex-col items-center gap-3">
             <div className="relative group">
