@@ -386,16 +386,16 @@ export default function MercadoLivre() {
               );
             })()}
           </AnimatePresence>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4 min-w-0">
             <MLPageHeader title="Vendas" lastUpdated={useRealData && lastSyncedAt ? new Date(lastSyncedAt) : null} />
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap min-w-0">
               <Link to="/tv" target="_blank">
-                <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
+                <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs px-2 sm:px-3" aria-label="Modo TV">
                   <Monitor className="w-3.5 h-3.5" />
-                  Modo TV
+                  <span className="hidden sm:inline">Modo TV</span>
                 </Button>
               </Link>
-              <TabsList className="h-8">
+              <TabsList className="h-8 overflow-x-auto no-scrollbar max-w-full">
                 <TabsTrigger value="vendas" className="text-xs px-3 h-7">Vendas</TabsTrigger>
                 <TabsTrigger value="relatorios" className="text-xs px-3 h-7">Relatórios</TabsTrigger>
               </TabsList>

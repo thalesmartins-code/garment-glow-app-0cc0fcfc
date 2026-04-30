@@ -48,21 +48,25 @@ export function Header({ title, subtitle, showSellerSwitcher = true, showSellerM
   const isSuperAdmin = appRole === "admin";
 
   return (
-    <header className="flex items-center justify-between border-b border-border bg-card px-4 md:px-8 py-3 md:py-4 gap-2">
-      <div className="flex items-center gap-2 md:gap-4 min-w-0">
+    <header className="flex items-center justify-between border-b border-border bg-card px-3 md:px-8 py-2.5 md:py-4 gap-2">
+      <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1 overflow-hidden">
         {onMenuClick && (
           <Button variant="ghost" size="icon" className="shrink-0 rounded-xl hover:bg-secondary/50 md:hidden" onClick={onMenuClick}>
             <Menu className="h-5 w-5" />
           </Button>
         )}
-        <OrganizationSwitcher />
+        <div className="hidden sm:block shrink-0">
+          <OrganizationSwitcher />
+        </div>
         {showSellerMarketplaceBar && !hideStores ? (
-          <SellerMarketplaceBar showStores />
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <SellerMarketplaceBar showStores />
+          </div>
         ) : null}
       </div>
 
-      <div className="flex items-center gap-2 md:gap-3 shrink-0">
-        {showSellerSwitcher && (
+      <div className="flex items-center gap-1 md:gap-3 shrink-0">
+        {showSellerSwitcher && !showSellerMarketplaceBar && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
