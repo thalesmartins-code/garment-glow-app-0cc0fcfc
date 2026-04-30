@@ -1,6 +1,9 @@
 import { memo } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import * as XLSX from "xlsx";
 import type { ProductSalesRow } from "./TopSellingProducts";
 
 interface MLTopProductsProps {
@@ -8,12 +11,45 @@ interface MLTopProductsProps {
 }
 
 function MLTopProductsImpl({ products }: MLTopProductsProps) {
+  const handleExport = () => {
+    if (!products.length) return;
+    const totalRevenue = products.reduce((s, p) => s + p.revenue, 0);
+    const rows = products.map((p, i) => ({
+      "#": i + 1,
+      "Item ID": p.item_id,
+      "Título": p.title,
+      "Loja": (p as any)._marketplace ?? "—",
+      "Qtd. Vendida": p.qty_sold,
+      "Receita (R$)": Number(p.revenue.toFixed(2)),
+      "% Participação": totalRevenue > 0 ? Number(((p.revenue / totalRevenue) * 100).toFixed(2)) : 0,
+      "Estoque": p.available_quantity ?? "—",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Top Anúncios");
+    const stamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `top-anuncios-${stamp}.xlsx`);
+  };
+
   return (
     <motion.div className="lg:col-span-4" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }}>
       <Card className="h-full">
         <div className="px-4 pt-4 pb-2 flex items-center justify-between">
           <span className="text-sm font-medium text-foreground">Top Anúncios</span>
-          <span className="text-[10px] text-muted-foreground">{products.length} produtos</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-muted-foreground">{products.length} produtos</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleExport}
+              disabled={!products.length}
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+              title="Exportar para Excel"
+            >
+              <Download className="w-3.5 h-3.5 mr-1" />
+              Exportar
+            </Button>
+          </div>
         </div>
         <CardContent className="px-4 pb-4">
           {products.length > 0 ? (
