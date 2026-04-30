@@ -30,7 +30,7 @@ export function SellerMarketplaceBar({ className, showStores = true }: Props) {
   return (
     <div
       className={cn(
-        "flex items-center gap-1.5 rounded-xl border border-border/60 bg-card px-2 py-1.5 shadow-sm",
+        "flex items-center gap-1.5 rounded-xl border border-border/60 bg-card px-1.5 sm:px-2 py-1 sm:py-1.5 shadow-sm min-w-0 max-w-full overflow-x-auto no-scrollbar flex-nowrap",
         className
       )}
     >
@@ -40,9 +40,9 @@ export function SellerMarketplaceBar({ className, showStores = true }: Props) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 gap-2 px-2 text-sm font-medium hover:bg-transparent hover:text-inherit"
+            className="h-7 gap-2 px-1.5 sm:px-2 text-sm font-medium hover:bg-transparent hover:text-inherit shrink-0"
           >
-            <div className="relative flex items-center gap-2 min-w-[80px] sm:min-w-[130px]">
+            <div className="relative flex items-center gap-2 min-w-[72px] sm:min-w-[130px]">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={selectedSeller?.id ?? "empty"}
@@ -63,7 +63,7 @@ export function SellerMarketplaceBar({ className, showStores = true }: Props) {
                       {selectedSeller?.initials ?? "?"}
                     </span>
                   )}
-                  <span className="max-w-[70px] sm:max-w-[110px] truncate">{selectedSeller?.name ?? "Seller"}</span>
+                  <span className="max-w-[64px] sm:max-w-[110px] truncate">{selectedSeller?.name ?? "Seller"}</span>
                 </motion.div>
               </AnimatePresence>
             </div>
