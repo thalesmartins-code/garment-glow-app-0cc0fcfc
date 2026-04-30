@@ -8,9 +8,8 @@ import { format, subDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Megaphone, TrendingUp, TrendingDown, MousePointerClick, Eye,
-  ShoppingCart, DollarSign, Zap, RefreshCw, Info, BarChart3, ListFilter, Plug, Download,
+  ShoppingCart, DollarSign, Zap, RefreshCw, Info, BarChart3, ListFilter, Plug,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
