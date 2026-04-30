@@ -1047,16 +1047,16 @@ export default function MLEstoque() {
     <Tabs defaultValue="estoque" className="space-y-5">
       {/* ── Sticky header ── */}
       <div className="sticky -top-4 md:-top-6 lg:-top-8 z-20 -mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 px-4 md:px-6 lg:px-8 pb-4 pt-4 bg-background/95 backdrop-blur-sm border-b border-border/40">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4 min-w-0">
           <MLPageHeader title="Estoque" lastUpdated={lastUpdated} />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
             {/* Coverage period selector */}
-            <div className="flex gap-1">
+            <div className="flex gap-1 overflow-x-auto no-scrollbar">
               {COVERAGE_PERIODS.map(({ label, value }) => (
                 <button
                   key={value}
                   onClick={() => setCoveragePeriod(value)}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors border ${
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors border shrink-0 ${
                     coveragePeriod === value
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-background border-border text-muted-foreground hover:bg-muted"
@@ -1071,7 +1071,7 @@ export default function MLEstoque() {
               thresholds={thresholds}
               onChange={setThresholds}
             />
-            <TabsList className="h-8">
+            <TabsList className="h-8 overflow-x-auto no-scrollbar max-w-full">
               <TabsTrigger value="estoque" className="text-xs px-3 h-7">Estoque</TabsTrigger>
               <TabsTrigger value="relatorios" className="text-xs px-3 h-7">Relatórios</TabsTrigger>
             </TabsList>
@@ -1081,9 +1081,10 @@ export default function MLEstoque() {
               onClick={refresh}
               disabled={isLoading}
               className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:bg-muted hover:text-muted-foreground"
+              aria-label="Atualizar"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
-              Atualizar
+              <span className="hidden sm:inline">Atualizar</span>
             </Button>
           </div>
         </div>
