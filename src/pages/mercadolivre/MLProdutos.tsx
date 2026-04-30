@@ -26,8 +26,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   ShoppingBag, RefreshCw, Search, ExternalLink, Plug, DollarSign, Tag, TrendingUp, Package,
   ChevronDown, ChevronRight, Receipt, LayoutGrid, Truck, ArrowUpDown, ArrowUp, ArrowDown,
-  BookOpen, CalendarIcon, X, Check, Lightbulb, BarChart2, CheckCircle2, TrendingDown, AlertCircle,
+  BookOpen, CalendarIcon, X, Check, Lightbulb, BarChart2, CheckCircle2, TrendingDown, AlertCircle, Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MLPageHeader } from "@/components/mercadolivre/MLPageHeader";
