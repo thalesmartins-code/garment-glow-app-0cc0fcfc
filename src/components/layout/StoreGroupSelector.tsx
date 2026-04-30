@@ -28,7 +28,7 @@ export function StoreGroupSelector({ className }: Props) {
   const chipInactive = "border-border/50 text-muted-foreground hover:bg-muted/50";
 
   return (
-    <div className={cn("flex items-center gap-1.5 flex-wrap", className)}>
+    <div className={cn("flex items-center gap-1.5 flex-nowrap min-w-0", className)}>
       {/* "Todas" chip */}
       <button
         onClick={() => setStoreId("all")}
